@@ -1,4 +1,4 @@
- "use client";
+"use client";
 
 import { FormEvent, useState } from "react";
 
@@ -100,21 +100,22 @@ export default function BookingForm() {
             const result = await verifyRes.json();
 
             if (verifyRes.ok && result.success) {
+              setLoading(false);
               setOk(true);
               setStatus("Payment confirmed! We’ll reach out shortly to schedule your call.");
             } else {
+              setLoading(false);
               setOk(false);
               setStatus(
                 `Payment received but confirmation failed. Payment ID: ${response.razorpay_payment_id}`
               );
             }
           } catch {
+            setLoading(false);
             setOk(false);
             setStatus(
               `Payment received but confirmation could not be completed. Payment ID: ${response.razorpay_payment_id}`
             );
-          } finally {
-            setLoading(false);
           }
         },
       });
@@ -184,7 +185,7 @@ export default function BookingForm() {
               <span className="amt">₹500</span>
             </div>
             <button type="submit" className="btn-primary pay-btn" disabled={loading || ok}>
-              {loading ? "Preparing payment…" : ok ? "Payment confirmed ✓" : "Pay ₹500 & book session"}
+              {ok ? "Payment confirmed ✓" : loading ? "Preparing payment…" : "Pay ₹500 & book session"}
             </button>
             <p className="note">
               Payments are processed securely by Razorpay. Your card/UPI details never touch our servers.
