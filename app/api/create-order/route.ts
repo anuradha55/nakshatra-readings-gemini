@@ -35,7 +35,7 @@ export async function POST(request: Request) {
         email: booking.email,
         service: booking.service,
         birthDetails: booking.birthdetails || null,
-        amount: order.amount,
+        amount: Number(order.amount),
         currency: order.currency,
         razorpayOrderId: order.id,
       },
