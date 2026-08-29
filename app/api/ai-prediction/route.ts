@@ -1,11 +1,146 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import Groq from "groq-sdk";
+import { getKundli, Observer } from "@prisri/jyotish";
 
 export const runtime = "nodejs";
 
 function clean(value: unknown, max = 500) {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
+}
+
+const PLANET_ORDER = [
+  "Sun",
+  "Moon",
+  "Mars",
+  "Mercury",
+  "Jupiter",
+  "Venus",
+  "Saturn",
+  "Rahu",
+  "Ketu",
+];
+
+function formatDate(value: unknown) {
+  if (!value) return "Unknown";
+  const date = new Date(String(value));
+  return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function formatDegree(degree: number, minute: number, second: number) {
+  return `${degree}° ${minute}' ${second}"`;
+}
+
+function getCurrentPeriodLabel(period: any) {
+  if (!period?.planet) return "Not available";
+  return `${period.planet} (${formatDate(period.startTime)} – ${formatDate(period.endTime)})`;
+}
+
+async function geocodeBirthPlace(place: string) {
+  const url = new URL("https://geocoding-api.open-meteo.com/v1/search");
+  url.searchParams.set("name", place);
+  url.searchParams.set("count", "1");
+  url.searchParams.set("language", "en");
+  url.searchParams.set("format", "json");
+
+  const response = await fetch(url.toString(), {
+    headers: { "User-Agent": "NakshatraReadings/1.0" },
+    cache: "no-store",
+  });
+
+  if (!response.ok) throw new Error("Unable to locate the birth place.");
+
+  const data = await response.json();
+  const result = data?.results?.[0];
+  if (!result?.latitude || !result?.longitude) {
+    throw new Error(`Birth place could not be located: ${place}`);
+  }
+
+  return {
+    latitude: Number(result.latitude),
+    longitude: Number(result.longitude),
+    timezone: String(result.timezone || "UTC"),
+    resolvedName: [result.name, result.admin1, result.country].filter(Boolean).join(", "),
+  };
+}
+
+/** Convert a local wall-clock birth time in an IANA timezone into a UTC Date. */
+function localTimeToUtc(dateText: string, timeText: string, timeZone: string) {
+  const [year, month, day] = dateText.split("-").map(Number);
+  const [hour, minute] = timeText.split(":").map(Number);
+
+  if (![year, month, day, hour, minute].every(Number.isFinite)) {
+    throw new Error("Invalid birth date or birth time.");
+  }
+
+  const naiveUtc = Date.UTC(year, month - 1, day, hour, minute, 0);
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hour12: false,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+
+  const parts = Object.fromEntries(
+    formatter.formatToParts(new Date(naiveUtc)).map((part) => [part.type, part.value]),
+  );
+
+  const asUtc = Date.UTC(
+    Number(parts.year),
+    Number(parts.month) - 1,
+    Number(parts.day),
+    Number(parts.hour),
+    Number(parts.minute),
+    Number(parts.second),
+  );
+
+  const offsetMs = asUtc - naiveUtc;
+  return new Date(naiveUtc - offsetMs);
+}
+
+function buildChartSummary(kundli: any) {
+  const planets = PLANET_ORDER.map((name) => {
+    const p = kundli.planets?.[name];
+    if (!p) return `${name}: unavailable`;
+
+    const house = kundli.houses?.find((h: any) => h.planets?.includes(name))?.number ?? "?";
+    return `${name}: ${p.rashiName} ${formatDegree(p.degree, p.minute, p.second)}, House ${house}, Nakshatra ${p.nakshatra} Pada ${p.pada}, Lord ${p.nakshatraLord}, ${p.isRetrograde ? "retrograde" : "direct"}`;
+  }).join("\n");
+
+  const houses = (kundli.houses ?? [])
+    .map((h: any) => `House ${h.number}: ${h.planets?.length ? h.planets.join(", ") : "empty"}`)
+    .join("\n");
+
+  const currentMaha = kundli.dasha?.currentMahadasha;
+  const currentAntar = kundli.dasha?.currentAntar;
+  const currentPratyantar = kundli.dasha?.currentPratyantar;
+
+  return `
+ASCENDANT
+${kundli.ascendant.rashiName} ${formatDegree(kundli.ascendant.degree, kundli.ascendant.minute, kundli.ascendant.second)}; Nakshatra ${kundli.ascendant.nakshatra}, Pada ${kundli.ascendant.pada}; Ascendant Lord ${kundli.ascendant.rashiLord}
+
+MOON / BIRTH NAKSHATRA
+Moon: ${kundli.planets.Moon.rashiName} ${formatDegree(kundli.planets.Moon.degree, kundli.planets.Moon.minute, kundli.planets.Moon.second)}; Nakshatra ${kundli.planets.Moon.nakshatra}, Pada ${kundli.planets.Moon.pada}; Nakshatra Lord ${kundli.planets.Moon.nakshatraLord}
+
+PLANETARY POSITIONS
+${planets}
+
+HOUSE OCCUPANCY
+${houses}
+
+VIMSHOTTARI DASHA
+Birth Nakshatra: ${kundli.dasha?.birthNakshatra ?? "Unknown"}, Pada ${kundli.dasha?.nakshatraPada ?? "?"}
+Current Mahadasha: ${getCurrentPeriodLabel(currentMaha)}
+Current Antardasha: ${getCurrentPeriodLabel(currentAntar)}
+Current Pratyantardasha: ${getCurrentPeriodLabel(currentPratyantar)}
+
+MAHADASHA TIMELINE
+${(kundli.dasha?.mahadashas ?? []).slice(0, 12).map((d: any) => `${d.planet}: ${formatDate(d.startTime)} – ${formatDate(d.endTime)}`).join("\n")}
+`;
 }
 
 export async function POST(request: Request) {
@@ -18,17 +153,10 @@ export async function POST(request: Request) {
     const birthPlace = clean(body.birthPlace, 150);
     const question = clean(body.question, 500);
 
-    if (
-      !email ||
-      !email.includes("@") ||
-      !birthDate ||
-      !birthTime ||
-      !birthPlace ||
-      !question
-    ) {
+    if (!email || !email.includes("@") || !birthDate || !birthTime || !birthPlace || !question) {
       return NextResponse.json(
         { error: "Please provide your email, birth date, birth time, birth place and question." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -37,73 +165,88 @@ export async function POST(request: Request) {
 
     if (used >= limit) {
       return NextResponse.json(
-        {
-          error: "You have used your free AI predictions.",
-          limitReached: true,
-          used,
-          limit,
-        },
-        { status: 429 }
+        { error: "You have used your free AI predictions.", limitReached: true, used, limit },
+        { status: 429 },
       );
     }
 
     const apiKey = process.env.GROQ_API_KEY;
-    const model = process.env.GROQ_MODEL ?? "mixtral-8x7b-32768";
+    const model = process.env.GROQ_MODEL ?? "openai/gpt-oss-20b";
 
     if (!apiKey) {
-      console.error("GROQ_API_KEY not found in environment variables");
-      return NextResponse.json(
-        { error: "Groq AI service is not configured." },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "Groq AI service is not configured." }, { status: 500 });
     }
+
+    // Resolve the customer's birth place so the astronomical calculation uses the actual coordinates and timezone.
+    const location = await geocodeBirthPlace(birthPlace);
+    const birthInstantUtc = localTimeToUtc(birthDate, birthTime, location.timezone);
+    const observer = new Observer(location.latitude, location.longitude, 0);
+
+    // @prisri/jyotish calculates a sidereal Vedic Kundli, including Lagna, planets, houses and Vimshottari Dasha.
+    const kundli = getKundli(birthInstantUtc, observer, { houseSystem: "whole_sign", ayanamsa: "lahiri" });
+    const chartSummary = buildChartSummary(kundli);
 
     const groq = new Groq({ apiKey });
 
     const systemPrompt = `You are the AI assistant for Nakshatra Readings, a Vedic-astrology consultation website.
 
-Give a warm, concise, engaging astrology-style interpretation based on the customer's supplied birth details and question.
+You are given a VERIFIED Vedic chart calculated by the application's astrology engine. The chart data, not your own guess, is the source of truth for planetary positions, houses, Nakshatras and Vimshottari Dasha.
 
-Rules:
-- Clearly frame the result as an AI-generated astrology interpretation, not a scientific prediction or guaranteed future event.
-- Do not claim to have calculated exact planetary degrees, houses, nakshatras, dashas, ascendant, or transits unless those values are explicitly supplied in the input.
-- Do not invent exact astronomical placements.
-- Avoid medical, legal, financial, or other high-stakes certainty. If the question is high-stakes, give general reflective guidance and recommend a qualified professional.
-- Do not create fear, threats, curses, death predictions, or claims that a supernatural entity will harm the customer.
-- Do not say that a paid consultation is required to avoid a bad outcome.
-- Keep the answer around 180-300 words.
-- Use headings and 3-5 useful bullet points when appropriate.
-- End with a gentle invitation to book a ₹500 human consultation for a deeper, personalized reading.`;
+Your job is to interpret that chart in a clear, warm and convincing way for a customer who asked a specific question.
 
-    const userMessage = `Customer name: ${name || "Not provided"}
+MANDATORY RESPONSE STRUCTURE:
+## 1. Birth Chart Snapshot
+State the Ascendant (Lagna), Ascendant degree, Moon sign, Moon Nakshatra/Pada and the resolved birth place.
+
+## 2. Planetary Positions
+Provide a compact table with Planet, Sign, Degree, House and Nakshatra. Include Sun, Moon, Mars, Mercury, Jupiter, Venus, Saturn, Rahu and Ketu.
+
+## 3. Current Vimshottari Dasha
+Clearly state the current Mahadasha, Antardasha and Pratyantardasha if supplied, including their dates.
+
+## 4. Analysis of Your Question
+Directly answer the customer's question. Identify the relevant houses, their lords, relevant planets, aspects/placements supplied by the chart and how the current Dasha supports or challenges the matter. Do not invent yogas or aspects that cannot be supported by the supplied chart.
+
+## 5. Practical Outlook
+Give 3-5 concise points about likely themes, opportunities and cautions. Use astrology as interpretive guidance, not certainty.
+
+## 6. Conclusion
+Give a concise, personalized conclusion that directly answers the question.
+
+RULES:
+- Never alter or invent the supplied planetary positions, houses, degrees, Nakshatras or Dasha dates.
+- Do not claim that you independently calculated the Kundli; say the chart was calculated from the supplied birth details by the site's astrology engine when relevant.
+- Keep the interpretation specific to this customer's chart rather than generic horoscope language.
+- Do not make medical, legal or financial guarantees.
+- Do not create fear, curses, death predictions or supernatural threats.
+- Do not say a paid consultation is required to prevent a bad outcome.
+- The reading is an AI-generated astrology interpretation and is not a scientific prediction or guarantee.
+- Aim for approximately 600-900 words so the customer can see enough actual chart information to understand why the interpretation was made.`;
+
+    const userMessage = `CUSTOMER
+Name: ${name || "Not provided"}
 Birth date: ${birthDate}
 Birth time: ${birthTime}
-Birth place: ${birthPlace}
-Question: ${question}`;
+Birth place entered: ${birthPlace}
+Resolved place: ${location.resolvedName}
+Question: ${question}
+
+CALCULATED VEDIC CHART
+${chartSummary}`;
 
     const response = await groq.chat.completions.create({
       model,
       messages: [
-        {
-          role: "system",
-          content: systemPrompt,
-        },
-        {
-          role: "user",
-          content: userMessage,
-        },
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userMessage },
       ],
-      max_tokens: 500,
-      temperature: 0.7,
+      max_tokens: 2200,
+      temperature: 0.35,
     });
 
     const answer = response.choices[0]?.message?.content?.trim();
-
     if (!answer) {
-      return NextResponse.json(
-        { error: "No prediction was generated. Please try again." },
-        { status: 502 }
-      );
+      return NextResponse.json({ error: "No prediction was generated. Please try again." }, { status: 502 });
     }
 
     await prisma.aiPrediction.create({
@@ -127,9 +270,7 @@ Question: ${question}`;
     });
   } catch (error) {
     console.error("AI_PREDICTION_ERROR", error);
-    return NextResponse.json(
-      { error: "Unable to generate your prediction." },
-      { status: 500 }
-    );
+    const message = error instanceof Error ? error.message : "Unable to generate your prediction.";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
