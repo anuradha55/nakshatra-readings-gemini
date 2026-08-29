@@ -12,22 +12,22 @@
     "db:deploy": "prisma migrate deploy"
   },
   "dependencies": {
-    "next": "15.5.2",
-    "react": "19.1.1",
-    "react-dom": "19.1.1",
-    "razorpay": "2.9.6",
-    "@prisma/client": "7.10.0",
     "@prisma/adapter-pg": "7.10.0",
-    "pg": "^8.16.3",
+    "@prisma/client": "7.10.0",
+    "@prisri/jyotish": "^1.0.6",
     "groq-sdk": "^0.37.0",
-    "@prisri/jyotish": "^1.0.6"
+    "next": "^15.5.24",
+    "pg": "^8.16.3",
+    "razorpay": "2.9.6",
+    "react": "19.1.1",
+    "react-dom": "19.1.1"
   },
   "devDependencies": {
     "@types/node": "^20.19.11",
+    "@types/pg": "^8.15.5",
     "@types/react": "^19.1.10",
     "@types/react-dom": "^19.1.7",
-    "typescript": "^5.9.2",
     "prisma": "7.10.0",
-    "@types/pg": "^8.15.5"
+    "typescript": "^5.9.2"
   }
 }
