@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import About from "@/components/About";
@@ -9,6 +10,24 @@ import AiPrediction from "@/components/AiPrediction";
 import Starfield from "@/components/Starfield";
 
 export default function Home() {
+  useEffect(() => {
+    // Suppress hydration mismatch warnings from browser extensions
+    const originalError = console.error;
+    console.error = (...args: any[]) => {
+      if (
+        typeof args[0] === 'string' &&
+        args[0].includes('hydrated but some attributes')
+      ) {
+        return;
+      }
+      originalError(...args);
+    };
+
+    return () => {
+      console.error = originalError;
+    };
+  }, []);
+
   return (
     <>
       <Starfield />
