@@ -51,6 +51,7 @@ export async function POST(request: Request) {
     const model = process.env.GROQ_MODEL ?? "mixtral-8x7b-32768";
 
     if (!apiKey) {
+      console.error("GROQ_API_KEY not found in environment variables");
       return NextResponse.json(
         { error: "Groq AI service is not configured." },
         { status: 500 }
