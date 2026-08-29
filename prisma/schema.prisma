@@ -1,0 +1,52 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum BookingStatus {
+  PENDING
+  PAID
+  CANCELLED
+  REFUNDED
+}
+
+model Booking {
+  id                  String        @id @default(cuid())
+  name                String
+  phone               String
+  email               String
+  service             String
+  birthDetails        String?
+  amount              Int           @default(50000)
+  currency            String        @default("INR")
+  status              BookingStatus @default(PENDING)
+  razorpayOrderId     String        @unique
+  razorpayPaymentId   String?       @unique
+  paymentVerifiedAt   DateTime?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  @@index([email])
+  @@index([status])
+  @@index([createdAt])
+}
+
+
+model AiPrediction {
+  id           String   @id @default(cuid())
+  email        String
+  name         String?
+  birthDate    String
+  birthTime    String
+  birthPlace   String
+  question     String
+  answer       String
+  model        String
+  createdAt    DateTime @default(now())
+
+  @@index([email, createdAt])
+}
