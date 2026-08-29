@@ -18,11 +18,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Razorpay is not configured on the server." }, { status: 500 });
     }
 
+    const configuredAmount = Number(process.env.BOOKING_AMOUNT ?? "50000");
+    if (!Number.isInteger(configuredAmount) || configuredAmount <= 0) {
+      return NextResponse.json({ error: "Invalid BOOKING_AMOUNT configuration." }, { status: 500 });
+    }
+
     const razorpay = new Razorpay({ key_id: keyId, key_secret: keySecret });
     const receipt = `nr_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
 
     const order = await razorpay.orders.create({
-      amount: 50000,
+      amount: configuredAmount,
       currency: "INR",
       receipt,
       notes: { service: booking.service, email: booking.email },
