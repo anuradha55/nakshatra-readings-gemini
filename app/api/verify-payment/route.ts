@@ -6,10 +6,9 @@ export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, bookingId } =
-      await request.json();
+    const { razorpay_payment_id, razorpay_signature, bookingId } = await request.json();
 
-    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !bookingId) {
+    if (!razorpay_payment_id || !razorpay_signature || !bookingId) {
       return NextResponse.json({ error: "Invalid payment verification request." }, { status: 400 });
     }
 
@@ -18,32 +17,37 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Razorpay secret is not configured." }, { status: 500 });
     }
 
-    const expectedSignature = crypto
-      .createHmac("sha256", secret)
-      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
-      .digest("hex");
-
-    const valid =
-      expectedSignature.length === razorpay_signature.length &&
-      crypto.timingSafeEqual(Buffer.from(expectedSignature), Buffer.from(razorpay_signature));
-
-    if (!valid) {
-      return NextResponse.json({ error: "Payment signature verification failed." }, { status: 400 });
-    }
-
     const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
     if (!booking) {
       return NextResponse.json({ error: "Booking not found." }, { status: 404 });
     }
 
-    if (booking.razorpayOrderId !== razorpay_order_id) {
-      return NextResponse.json({ error: "Order does not match booking." }, { status: 400 });
+    if (!booking.razorpayOrderId) {
+      return NextResponse.json({ error: "Booking has no Razorpay order." }, { status: 400 });
+    }
+
+    // Razorpay signature is calculated from the server-stored order ID and
+    // the payment ID returned by Razorpay. Do not trust the order ID sent by
+    // the browser for signature verification.
+    const expectedSignature = crypto
+      .createHmac("sha256", secret)
+      .update(`${booking.razorpayOrderId}|${razorpay_payment_id}`)
+      .digest("hex");
+
+    if (
+      expectedSignature.length !== razorpay_signature.length ||
+      !crypto.timingSafeEqual(
+        Buffer.from(expectedSignature, "utf8"),
+        Buffer.from(razorpay_signature, "utf8")
+      )
+    ) {
+      return NextResponse.json({ error: "Payment signature verification failed." }, { status: 400 });
     }
 
     const updated = await prisma.booking.updateMany({
       where: {
         id: bookingId,
-        razorpayOrderId: razorpay_order_id,
+        razorpayOrderId: booking.razorpayOrderId,
         status: "PENDING",
       },
       data: {
@@ -53,8 +57,6 @@ export async function POST(request: Request) {
       },
     });
 
-    // Idempotency: if the browser retries after the booking is already PAID,
-    // return success without creating another payment record.
     if (updated.count === 0) {
       const latest = await prisma.booking.findUnique({ where: { id: bookingId } });
       if (latest?.status === "PAID" && latest.razorpayPaymentId === razorpay_payment_id) {
@@ -66,7 +68,7 @@ export async function POST(request: Request) {
     console.log("PAID BOOKING", {
       bookingId,
       email: booking.email,
-      razorpayOrderId: razorpay_order_id,
+      razorpayOrderId: booking.razorpayOrderId,
       razorpayPaymentId: razorpay_payment_id,
     });
 
