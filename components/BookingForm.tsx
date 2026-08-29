@@ -41,6 +41,7 @@ export default function BookingForm() {
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
+    setOk(false);
     setStatus("");
 
     const form = new FormData(e.currentTarget);
@@ -84,30 +85,37 @@ export default function BookingForm() {
         handler: async (response: Record<string, string>) => {
           setStatus("Confirming payment…");
 
-          const verifyRes = await fetch("/api/verify-payment", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-              bookingId: order.bookingId,
-            }),
-          });
+          try {
+            const verifyRes = await fetch("/api/verify-payment", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                bookingId: order.bookingId,
+              }),
+            });
 
-          const result = await verifyRes.json();
+            const result = await verifyRes.json();
 
-          if (verifyRes.ok && result.success) {
-            setOk(true);
-            setStatus("Payment confirmed! We’ll reach out shortly to schedule your call.");
-            e.currentTarget.reset();
-          } else {
+            if (verifyRes.ok && result.success) {
+              setOk(true);
+              setStatus("Payment confirmed! We’ll reach out shortly to schedule your call.");
+            } else {
+              setOk(false);
+              setStatus(
+                `Payment received but confirmation failed. Payment ID: ${response.razorpay_payment_id}`
+              );
+            }
+          } catch {
             setOk(false);
             setStatus(
-              `Payment received but confirmation failed. Payment ID: ${response.razorpay_payment_id}`
+              `Payment received but confirmation could not be completed. Payment ID: ${response.razorpay_payment_id}`
             );
+          } finally {
+            setLoading(false);
           }
-          setLoading(false);
         },
       });
 
@@ -175,8 +183,8 @@ export default function BookingForm() {
               <span>Session fee</span>
               <span className="amt">₹500</span>
             </div>
-            <button type="submit" className="btn-primary pay-btn" disabled={loading}>
-              {loading ? "Preparing payment…" : "Pay ₹500 & book session"}
+            <button type="submit" className="btn-primary pay-btn" disabled={loading || ok}>
+              {loading ? "Preparing payment…" : ok ? "Payment confirmed ✓" : "Pay ₹500 & book session"}
             </button>
             <p className="note">
               Payments are processed securely by Razorpay. Your card/UPI details never touch our servers.
