@@ -12,7 +12,7 @@
     "db:deploy": "prisma migrate deploy"
   },
   "dependencies": {
-    "next": "15.5.2",
+    "next": "15.5.24",
     "react": "19.1.1",
     "react-dom": "19.1.1",
     "razorpay": "2.9.6",
