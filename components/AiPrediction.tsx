@@ -5,8 +5,6 @@ import NorthIndianChart from "@/components/NorthIndianChart";
 type ChartData = React.ComponentProps<typeof NorthIndianChart>;
 type PlaceSuggestion = { name: string; admin1?: string; country?: string; latitude: number; longitude: number; timezone?: string };
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
-
 function renderInline(text: string) {
   const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`|<br\s*\/?\s*>)/gi);
   return parts.map((part, index) => {
@@ -135,11 +133,6 @@ export default function AiPrediction() {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
     const email = String(form.get("email") ?? "").trim().toLowerCase();
-    if (!EMAIL_PATTERN.test(email)) {
-      setMessage("Please enter a valid email address, for example name@example.com.");
-      setEmailStatus("");
-      return;
-    }
 
     setLoading(true); setAnswer(""); setChart(null); setMessage(""); setEmailStatus("");
     const payload = JSON.stringify({ name: form.get("name"), email, birthDate: form.get("birthDate"), birthTime: form.get("birthTime"), birthPlace: form.get("birthPlace"), question: form.get("question") });
@@ -198,7 +191,7 @@ export default function AiPrediction() {
           </div>
           <form className="ai-form" onSubmit={submit}>
             <div className="field"><label htmlFor="ai-name">Your name</label><input id="ai-name" name="name" /></div>
-            <div className="field"><label htmlFor="ai-email">Email</label><input id="ai-email" name="email" type="email" required pattern="[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}" title="Enter a valid email address, for example name@example.com" /></div>
+            <div className="field"><label htmlFor="ai-email">Email</label><input id="ai-email" name="email" type="email" required autoComplete="email" placeholder="name@example.com" title="Enter a valid email address, for example name@example.com" /></div>
             <div className="ai-two">
               <div className="field"><label htmlFor="ai-date">Birth date</label><input id="ai-date" name="birthDate" type="date" required /></div>
               <div className="field"><label htmlFor="ai-time">Birth time</label><select id="ai-time" name="birthTime" value={birthTime} onChange={(e) => setBirthTime(e.target.value)} required><option value="">Select time</option>{TIME_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></div>
