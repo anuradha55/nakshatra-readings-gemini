@@ -131,9 +131,22 @@ export async function POST(request: Request) {
     if (!email || !email.includes("@") || !birthDate || !birthTime || !birthPlace || !question) {
       return NextResponse.json({ error: "Please provide your email, birth date, birth time, birth place and question." }, { status: 400 });
     }
-    const limit = Number(process.env.AI_FREE_QUESTIONS ?? 2);
-    const used = await prisma.aiPrediction.count({ where: { email } });
-    if (used >= limit) return NextResponse.json({ error: "You have used your free AI predictions.", limitReached: true, used, limit }, { status: 429 });
+
+    // Testing mode: leave AI_FREE_QUESTIONS unset, empty, or set to "unlimited" to allow unlimited predictions.
+    // To enable a production limit later, set AI_FREE_QUESTIONS to a positive integer.
+    const limitSetting = String(process.env.AI_FREE_QUESTIONS ?? "unlimited").trim().toLowerCase();
+    const unlimited = limitSetting === "" || limitSetting === "unlimited" || limitSetting === "0";
+    const limit = unlimited ? null : Number(limitSetting);
+    if (!unlimited && (!Number.isFinite(limit) || (limit as number) < 1)) {
+      return NextResponse.json({ error: "AI_FREE_QUESTIONS must be a positive number or 'unlimited'." }, { status: 500 });
+    }
+
+    let used = 0;
+    if (!unlimited) {
+      used = await prisma.aiPrediction.count({ where: { email } });
+      if (used >= (limit as number)) return NextResponse.json({ error: "You have used your free AI predictions.", limitReached: true, used, limit }, { status: 429 });
+    }
+
     const apiKey = process.env.GROQ_API_KEY;
     const model = process.env.GROQ_MODEL ?? "openai/gpt-oss-20b";
     if (!apiKey) return NextResponse.json({ error: "Groq AI service is not configured." }, { status: 500 });
@@ -197,7 +210,7 @@ ${chartSummary}`;
     if (!answer) return NextResponse.json({ error: "No prediction was generated. Please try again." }, { status: 502 });
 
     await prisma.aiPrediction.create({ data: { email, name: name || null, birthDate, birthTime, birthPlace, question, answer, model } });
-    return NextResponse.json({ success: true, answer, chart, used: used + 1, remaining: Math.max(0, limit - used - 1) });
+    return NextResponse.json({ success: true, answer, chart, used: unlimited ? null : used + 1, remaining: unlimited ? null : Math.max(0, (limit as number) - used - 1) });
   } catch (error) {
     console.error("AI_PREDICTION_ERROR", error);
     const message = error instanceof Error ? error.message : "Unable to generate your prediction.";
