@@ -70,7 +70,6 @@ function renderMarkdown(markdown: string) {
 function timeOptions() {
   const options: { value: string; label: string }[] = [];
   for (let hour = 0; hour < 24; hour += 1) {
-    // Offer every minute so the user can enter the exact recorded birth time.
     for (let minute = 0; minute < 60; minute += 1) {
       const value = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
       const displayHour = hour % 12 || 12;
