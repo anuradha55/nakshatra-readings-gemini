@@ -82,6 +82,12 @@ function timeOptions() {
 
 const TIME_OPTIONS = timeOptions();
 
+const RETRYABLE_STATUS = new Set([500, 502, 503, 504]);
+
+function wait(ms: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
 export default function AiPrediction() {
   const [loading, setLoading] = useState(false);
   const [answer, setAnswer] = useState("");
@@ -126,13 +132,36 @@ export default function AiPrediction() {
     e.preventDefault();
     setLoading(true); setAnswer(""); setChart(null); setMessage("");
     const form = new FormData(e.currentTarget);
+    const payload = JSON.stringify({ name: form.get("name"), email: form.get("email"), birthDate: form.get("birthDate"), birthTime: form.get("birthTime"), birthPlace: form.get("birthPlace"), question: form.get("question") });
+
     try {
-      const res = await fetch("/api/ai-prediction", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: form.get("name"), email: form.get("email"), birthDate: form.get("birthDate"), birthTime: form.get("birthTime"), birthPlace: form.get("birthPlace"), question: form.get("question") }) });
-      const data = await res.json();
-      if (!res.ok) { setMessage(data.limitReached ? "Your free AI predictions are used. You can book a detailed human consultation for ₹500." : (data.error ?? "Could not generate a prediction.")); return; }
-      setAnswer(data.answer); setChart(data.chart ?? null); setRemaining(data.remaining);
-    } catch { setMessage("Something went wrong. Please try again."); }
-    finally { setLoading(false); }
+      let lastError = "Could not generate a prediction.";
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        try {
+          const res = await fetch("/api/ai-prediction", { method: "POST", headers: { "Content-Type": "application/json" }, body: payload });
+          let data: any = null;
+          try { data = await res.json(); } catch { data = null; }
+
+          if (res.ok) {
+            setAnswer(data?.answer ?? "");
+            setChart(data?.chart ?? null);
+            setRemaining(data?.remaining ?? null);
+            return;
+          }
+
+          lastError = data?.error ?? `Prediction service returned ${res.status}.`;
+          if (!RETRYABLE_STATUS.has(res.status) || attempt === 2) break;
+        } catch (error) {
+          lastError = error instanceof Error ? error.message : "Network error while generating the prediction.";
+          if (attempt === 2) break;
+        }
+        await wait(700 * (attempt + 1));
+      }
+
+      setMessage(lastError || "Could not generate a prediction. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
