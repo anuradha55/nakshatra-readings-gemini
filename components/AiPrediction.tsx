@@ -74,10 +74,13 @@ function renderMarkdown(markdown: string) {
       continue;
     }
 
-    if (/^\d+\.\s+/.test(line)) {
+    // Support both Markdown ordered-list formats: "1." and "1)".
+    // AI responses may mix the two formats, but both should render as one
+    // continuous ordered list with automatically generated 1, 2, 3... numbers.
+    if (/^\d+[.)]\s+/.test(line)) {
       const items: string[] = [];
-      while (i < lines.length && /^\d+\.\s+/.test(lines[i].trim())) {
-        items.push(lines[i].trim().replace(/^\d+\.\s+/, ""));
+      while (i < lines.length && /^\d+[.)]\s+/.test(lines[i].trim())) {
+        items.push(lines[i].trim().replace(/^\d+[.)]\s+/, ""));
         i += 1;
       }
       blocks.push(<ol className="ai-md-list" key={`ol-${i}`}>{items.map((item, j) => <li key={j}>{renderInline(item)}</li>)}</ol>);
@@ -88,7 +91,7 @@ function renderMarkdown(markdown: string) {
     i += 1;
     while (i < lines.length) {
       const next = lines[i].trim();
-      if (!next || /^(#{1,6})\s+/.test(next) || /^(---+|___+|\*\*\*+)$/.test(next) || /^[-*+]\s+/.test(next) || /^\d+\.\s+/.test(next) || next.startsWith("|")) break;
+      if (!next || /^(#{1,6})\s+/.test(next) || /^(---+|___+|\*\*\*+)$/.test(next) || /^[-*+]\s+/.test(next) || /^\d+[.)]\s+/.test(next) || next.startsWith("|")) break;
       paragraph.push(next);
       i += 1;
     }
