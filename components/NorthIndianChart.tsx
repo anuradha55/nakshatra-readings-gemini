@@ -33,7 +33,9 @@ function shortPlanet(name: string) {
   } as Record<string, string>)[name] ?? name.slice(0, 2);
 }
 
-function degreeText(p: Planet) {
+type DegreeValue = { degree: number };
+
+function degreeText(p: DegreeValue) {
   return `${Math.round(p.degree)}°`;
 }
 
