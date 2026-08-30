@@ -20,27 +20,22 @@ type Props = {
 
 const VEDIC_PLANETS = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"];
 
-/*
- * Visual centers of the 12 individual regions in the traditional
- * North-Indian chart used by the SVG below.
- *
- * The old coordinates put some labels too close to the diagonals/borders,
- * especially houses 1, 6 and 7. These are the actual visual centers of the
- * regions, not the centers of the surrounding square.
- */
+/* Exact visual centroids of the 12 regions created by the North-Indian
+ * square + diamond + diagonal layout. Using the polygon centroids keeps
+ * house number, sign number and planet text inside the correct region. */
 const HOUSE_CENTERS: Record<number, [number, number]> = {
-  1: [291, 142],
-  2: [150, 92],
-  3: [91, 191],
+  1: [291, 150],
+  2: [150, 56],
+  3: [56, 150],
   4: [150, 291],
-  5: [91, 391],
-  6: [150, 490],
-  7: [291, 440],
-  8: [432, 490],
-  9: [491, 391],
+  5: [56, 432],
+  6: [150, 526],
+  7: [291, 432],
+  8: [432, 526],
+  9: [526, 432],
   10: [432, 291],
-  11: [491, 191],
-  12: [432, 92],
+  11: [526, 150],
+  12: [432, 56],
 };
 
 function shortPlanet(name: string) {
@@ -86,21 +81,16 @@ export default function NorthIndianChart({ ascendant, houses }: Props) {
               const house = byHouse.get(number);
               const [x, y] = HOUSE_CENTERS[number];
               const planets = (house?.planets ?? []).filter((p) => VEDIC_PLANETS.includes(p.name));
+              const planetStart = y + (planets.length > 1 ? 5 : 14);
 
               return (
                 <g key={number}>
-                  {/*
-                   * Keep every row on one x-coordinate. The y positions are
-                   * intentionally compact so all content remains inside the
-                   * house even when two planets are present.
-                   */}
-                  <text x={x} y={y - 28} className="kundli-house">{number}</text>
+                  <text x={x} y={y - 27} className="kundli-house">{number}</text>
                   <text x={x} y={y - 7} className="kundli-sign">{house?.sign ?? ""}</text>
-
                   {planets.length === 0 ? (
                     <text x={x} y={y + 18} className="kundli-empty">—</text>
                   ) : (
-                    <text x={x} y={y + 18} className="kundli-planets">
+                    <text x={x} y={planetStart} className="kundli-planets">
                       {planets.map((p, i) => (
                         <tspan key={p.name} x={x} dy={i === 0 ? 0 : 16}>
                           {shortPlanet(p.name)} {degreeText(p)}
