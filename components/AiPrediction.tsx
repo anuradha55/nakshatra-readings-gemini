@@ -75,13 +75,22 @@ function renderMarkdown(markdown: string) {
     }
 
     // Support both Markdown ordered-list formats: "1." and "1)".
-    // AI responses may mix the two formats, but both should render as one
-    // continuous ordered list with automatically generated 1, 2, 3... numbers.
+    // Blank lines between numbered items are ignored so that AI output such
+    // as "1.", blank line, "1)", blank line, "1." becomes ONE ordered list.
     if (/^\d+[.)]\s+/.test(line)) {
       const items: string[] = [];
-      while (i < lines.length && /^\d+[.)]\s+/.test(lines[i].trim())) {
-        items.push(lines[i].trim().replace(/^\d+[.)]\s+/, ""));
-        i += 1;
+      while (i < lines.length) {
+        const current = lines[i].trim();
+        if (/^\d+[.)]\s+/.test(current)) {
+          items.push(current.replace(/^\d+[.)]\s+/, ""));
+          i += 1;
+          continue;
+        }
+        if (!current && i + 1 < lines.length && /^\d+[.)]\s+/.test(lines[i + 1].trim())) {
+          i += 1;
+          continue;
+        }
+        break;
       }
       blocks.push(<ol className="ai-md-list" key={`ol-${i}`}>{items.map((item, j) => <li key={j}>{renderInline(item)}</li>)}</ol>);
       continue;
