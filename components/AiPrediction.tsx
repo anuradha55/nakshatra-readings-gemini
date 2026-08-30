@@ -6,8 +6,9 @@ type ChartData = React.ComponentProps<typeof NorthIndianChart>;
 type PlaceSuggestion = { name: string; admin1?: string; country?: string; latitude: number; longitude: number; timezone?: string };
 
 function renderInline(text: string) {
-  const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g);
+  const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`|<br\s*\/?\s*>)/gi);
   return parts.map((part, index) => {
+    if (/^<br\s*\/?\s*>$/i.test(part)) return <br key={index} />;
     if (part.startsWith("**") && part.endsWith("**")) return <strong key={index}>{part.slice(2, -2)}</strong>;
     if (part.startsWith("*") && part.endsWith("*")) return <em key={index}>{part.slice(1, -1)}</em>;
     if (part.startsWith("`") && part.endsWith("`")) return <code key={index}>{part.slice(1, -1)}</code>;
@@ -190,7 +191,7 @@ export default function AiPrediction() {
             {message && <p className="status-msg status-err">{message}</p>}
           </form>
         </div>
-        {answer && <div className="ai-result"><div className="ai-result-head"><div><h3>Your AI astrology reading</h3><span>Chart calculated · AI interpreted</span></div></div>{chart && <NorthIndianChart {...chart} />}<div className="ai-answer">{renderMarkdown(answer)}</div><div className="ai-cta"><div><strong>Want a deeper reading?</strong><p>Discuss your complete chart with a human astrologer for 30–45 minutes.</p></div><a href="#booking" className="btn-primary">Book for ₹500</a></div></div>}
+        {answer && <div className="ai-result"><div className="ai-result-head"><div><h3>Your AI astrology reading</h3><span>Chart calculated · AI interpreted</span></div></div>{chart && <NorthIndianChart {...chart} />}<div className="ai-answer" style={{ maxHeight: "80vh", overflowY: "auto", overflowX: "hidden", paddingBottom: "32px" }}>{renderMarkdown(answer)}</div><div className="ai-cta"><div><strong>Want a deeper reading?</strong><p>Discuss your complete chart with a human astrologer for 30–45 minutes.</p></div><a href="#booking" className="btn-primary">Book for ₹500</a></div></div>}
         <p className="ai-disclaimer">AI-generated astrology guidance is for personal reflection and is not a scientific prediction, guarantee of future events, or professional advice.</p>
       </div>
     </section>
