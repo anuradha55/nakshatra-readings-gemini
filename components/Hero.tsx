@@ -19,8 +19,8 @@ export default function Hero() {
             <a href="#booking" className="btn-primary">
               Book your session — ₹500
             </a>
-            <a href="#services" className="btn-ghost">
-              See what&apos;s included
+            <a href="#free-prediction" className="btn-ghost">
+              Get 1 Free AI Prediction
             </a>
           </div>
         </div>
