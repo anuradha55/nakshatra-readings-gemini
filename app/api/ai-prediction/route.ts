@@ -157,7 +157,11 @@ export async function POST(request: Request) {
     const kundli = getKundli(birthInstantUtc, observer, { houseSystem: "whole_sign", ayanamsa: "lahiri" });
     const chartSummary = buildChartSummary(kundli);
     const chart = buildChartData(kundli);
-    const groq = new Groq({ apiKey });
+
+    // Groq's SDK retries 429 responses twice by default. For a customer-facing
+    // route, disable those automatic retries so a daily/token quota error does
+    // not waste additional attempts or leave the customer waiting unnecessarily.
+    const groq = new Groq({ apiKey, maxRetries: 0 });
 
     const systemPrompt = `You are the AI assistant for Nakshatra Readings, a Vedic-astrology consultation website.
 
@@ -205,7 +209,44 @@ Question: ${question}
 CALCULATED VEDIC CHART
 ${chartSummary}`;
 
-    const response = await groq.chat.completions.create({ model, messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userMessage }], max_tokens: 2200, temperature: 0.35 });
+    let response;
+    try {
+      response = await groq.chat.completions.create({
+        model,
+        messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userMessage }],
+        max_tokens: 2200,
+        temperature: 0.35,
+      });
+    } catch (error) {
+      // Groq returns HTTP 429 when an organization/model rate limit is reached.
+      // Return a safe, customer-friendly response and preserve the Retry-After
+      // value when Groq provides one. Never expose the raw provider error.
+      if (error instanceof Groq.APIError && error.status === 429) {
+        const retryAfterHeader = error.headers?.get("retry-after");
+        const retryAfterSeconds = retryAfterHeader ? Number(retryAfterHeader) : NaN;
+        const headers = new Headers({ "Cache-Control": "no-store" });
+        if (Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0) {
+          headers.set("Retry-After", String(Math.ceil(retryAfterSeconds)));
+        }
+
+        return NextResponse.json(
+          {
+            error: "AI prediction is temporarily unavailable because our AI service has reached its usage limit. Please try again later.",
+            code: "AI_RATE_LIMITED",
+            retryAfterSeconds: Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0 ? Math.ceil(retryAfterSeconds) : null,
+          },
+          { status: 429, headers },
+        );
+      }
+
+      if (error instanceof Groq.APIError) {
+        console.error("GROQ_API_ERROR", { status: error.status, name: error.name, message: error.message });
+        return NextResponse.json({ error: "The AI service could not generate your prediction right now. Please try again later." }, { status: 502, headers: { "Cache-Control": "no-store" } });
+      }
+
+      throw error;
+    }
+
     const answer = response.choices[0]?.message?.content?.trim();
     if (!answer) return NextResponse.json({ error: "No prediction was generated. Please try again." }, { status: 502 });
 
