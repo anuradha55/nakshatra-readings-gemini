@@ -20,23 +20,27 @@ type Props = {
 
 const VEDIC_PLANETS = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"];
 
-// Centers are deliberately placed inside the usable area of each
-// traditional North-Indian diamond/triangle house.  Keeping all three
-// text rows on the same x-coordinate makes the house number, sign and
-// planet labels visually centered even when a house has two planets.
+/*
+ * Visual centers of the 12 individual regions in the traditional
+ * North-Indian chart used by the SVG below.
+ *
+ * The old coordinates put some labels too close to the diagonals/borders,
+ * especially houses 1, 6 and 7. These are the actual visual centers of the
+ * regions, not the centers of the surrounding square.
+ */
 const HOUSE_CENTERS: Record<number, [number, number]> = {
-  1: [291, 126],
-  2: [145, 84],
-  3: [88, 196],
-  4: [145, 291],
-  5: [88, 386],
-  6: [145, 496],
-  7: [291, 456],
-  8: [437, 496],
-  9: [494, 386],
-  10: [437, 291],
-  11: [494, 196],
-  12: [437, 84],
+  1: [291, 142],
+  2: [150, 92],
+  3: [91, 191],
+  4: [150, 291],
+  5: [91, 391],
+  6: [150, 490],
+  7: [291, 440],
+  8: [432, 490],
+  9: [491, 391],
+  10: [432, 291],
+  11: [491, 191],
+  12: [432, 92],
 };
 
 function shortPlanet(name: string) {
@@ -85,16 +89,20 @@ export default function NorthIndianChart({ ascendant, houses }: Props) {
 
               return (
                 <g key={number}>
-                  {/* Every item uses the exact same x coordinate so it stays centered. */}
-                  <text x={x} y={y - 34} className="kundli-house">{number}</text>
-                  <text x={x} y={y - 12} className="kundli-sign">{house?.sign ?? ""}</text>
+                  {/*
+                   * Keep every row on one x-coordinate. The y positions are
+                   * intentionally compact so all content remains inside the
+                   * house even when two planets are present.
+                   */}
+                  <text x={x} y={y - 28} className="kundli-house">{number}</text>
+                  <text x={x} y={y - 7} className="kundli-sign">{house?.sign ?? ""}</text>
 
                   {planets.length === 0 ? (
-                    <text x={x} y={y + 14} className="kundli-empty">—</text>
+                    <text x={x} y={y + 18} className="kundli-empty">—</text>
                   ) : (
-                    <text x={x} y={y + 12} className="kundli-planets">
+                    <text x={x} y={y + 18} className="kundli-planets">
                       {planets.map((p, i) => (
-                        <tspan key={p.name} x={x} dy={i === 0 ? 0 : 17}>
+                        <tspan key={p.name} x={x} dy={i === 0 ? 0 : 16}>
                           {shortPlanet(p.name)} {degreeText(p)}
                         </tspan>
                       ))}
