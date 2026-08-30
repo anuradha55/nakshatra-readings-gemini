@@ -1,8 +1,102 @@
 "use client";
-import { FormEvent, useState } from "react";
+import React, { FormEvent, useState } from "react";
 import NorthIndianChart from "@/components/NorthIndianChart";
 
 type ChartData = React.ComponentProps<typeof NorthIndianChart>;
+
+function renderInline(text: string) {
+  const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g);
+  return parts.map((part, index) => {
+    if (part.startsWith("**") && part.endsWith("**")) return <strong key={index}>{part.slice(2, -2)}</strong>;
+    if (part.startsWith("*") && part.endsWith("*")) return <em key={index}>{part.slice(1, -1)}</em>;
+    if (part.startsWith("`") && part.endsWith("`")) return <code key={index}>{part.slice(1, -1)}</code>;
+    return <React.Fragment key={index}>{part}</React.Fragment>;
+  });
+}
+
+/* Render the Markdown returned by the AI as real HTML instead of displaying
+ * Markdown characters such as ** and --- as plain text. */
+function renderMarkdown(markdown: string) {
+  const lines = markdown.replace(/\r\n/g, "\n").split("\n");
+  const blocks: React.ReactNode[] = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i].trim();
+    if (!line) { i += 1; continue; }
+
+    if (/^(---+|___+|\*\*\*+)$/.test(line)) {
+      blocks.push(<hr key={`hr-${i}`} />);
+      i += 1;
+      continue;
+    }
+
+    const heading = line.match(/^(#{1,6})\s+(.+)$/);
+    if (heading) {
+      const level = Math.min(heading[1].length + 2, 6);
+      const Tag = `h${level}` as React.ElementType;
+      blocks.push(<Tag key={`h-${i}`}>{renderInline(heading[2])}</Tag>);
+      i += 1;
+      continue;
+    }
+
+    // Markdown table: header row followed by the separator row.
+    if (line.startsWith("|") && i + 1 < lines.length && /^\s*\|?\s*:?-{3,}/.test(lines[i + 1])) {
+      const header = line.split("|").slice(1, -1).map((cell) => cell.trim());
+      i += 2;
+      const rows: string[][] = [];
+      while (i < lines.length && lines[i].trim().startsWith("|")) {
+        rows.push(lines[i].trim().split("|").slice(1, -1).map((cell) => cell.trim()));
+        i += 1;
+      }
+      blocks.push(
+        <div className="ai-table-wrap" key={`table-${i}`}>
+          <table className="ai-table">
+            <thead><tr>{header.map((cell, j) => <th key={j}>{renderInline(cell)}</th>)}</tr></thead>
+            <tbody>
+              {rows.map((row, r) => (
+                <tr key={r}>{header.map((_, j) => <td key={j}>{renderInline(row[j] ?? "")}</td>)}</tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+      continue;
+    }
+
+    if (/^[-*+]\s+/.test(line)) {
+      const items: string[] = [];
+      while (i < lines.length && /^[-*+]\s+/.test(lines[i].trim())) {
+        items.push(lines[i].trim().replace(/^[-*+]\s+/, ""));
+        i += 1;
+      }
+      blocks.push(<ul className="ai-md-list" key={`ul-${i}`}>{items.map((item, j) => <li key={j}>{renderInline(item)}</li>)}</ul>);
+      continue;
+    }
+
+    if (/^\d+\.\s+/.test(line)) {
+      const items: string[] = [];
+      while (i < lines.length && /^\d+\.\s+/.test(lines[i].trim())) {
+        items.push(lines[i].trim().replace(/^\d+\.\s+/, ""));
+        i += 1;
+      }
+      blocks.push(<ol className="ai-md-list" key={`ol-${i}`}>{items.map((item, j) => <li key={j}>{renderInline(item)}</li>)}</ol>);
+      continue;
+    }
+
+    const paragraph: string[] = [line];
+    i += 1;
+    while (i < lines.length) {
+      const next = lines[i].trim();
+      if (!next || /^(#{1,6})\s+/.test(next) || /^(---+|___+|\*\*\*+)$/.test(next) || /^[-*+]\s+/.test(next) || /^\d+\.\s+/.test(next) || next.startsWith("|")) break;
+      paragraph.push(next);
+      i += 1;
+    }
+    blocks.push(<p key={`p-${i}`}>{renderInline(paragraph.join(" "))}</p>);
+  }
+
+  return blocks;
+}
 
 export default function AiPrediction() {
   const [loading, setLoading] = useState(false);
@@ -59,7 +153,7 @@ export default function AiPrediction() {
           <div className="ai-result">
             <div className="ai-result-head"><div><h3>Your AI astrology reading</h3><span>Chart calculated · AI interpreted</span></div></div>
             {chart && <NorthIndianChart {...chart} />}
-            <div className="ai-answer">{answer}</div>
+            <div className="ai-answer">{renderMarkdown(answer)}</div>
             <div className="ai-cta"><div><strong>Want a deeper reading?</strong><p>Discuss your complete chart with a human astrologer for 30–45 minutes.</p></div><a href="#booking" className="btn-primary">Book for ₹500</a></div>
           </div>
         )}
