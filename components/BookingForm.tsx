@@ -239,7 +239,14 @@ export default function BookingForm() {
             </div>
             <div className="field">
               <label htmlFor="email">Email</label>
-              <input name="email" id="email" type="email" required />
+              <input
+                name="email"
+                id="email"
+                type="email"
+                required
+                pattern="^[^\s@]+@[^\s@]+\.[^\s@]{2,}$"
+                title="Please enter a valid email address, for example name@example.com"
+              />
             </div>
             <div className="field">
               <label htmlFor="service">What would you like to focus on?</label>
