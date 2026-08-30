@@ -18,12 +18,13 @@ type Props = {
   houses: ChartHouse[];
 };
 
-// Fixed regions of a North-Indian style chart. The houses do not move;
-// the signs and planets inside them change according to the Lagna.
+const VEDIC_PLANETS = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"];
+
+// Fixed regions for the traditional North-Indian diamond chart.
 const HOUSE_CENTERS: Record<number, [number, number]> = {
-  1: [291, 142], 2: [116, 103], 3: [83, 214], 4: [142, 291],
-  5: [83, 368], 6: [116, 479], 7: [291, 440], 8: [466, 479],
-  9: [499, 368], 10: [440, 291], 11: [499, 214], 12: [466, 103],
+  1: [291, 132], 2: [145, 86], 3: [76, 190], 4: [145, 291],
+  5: [76, 392], 6: [145, 496], 7: [291, 450], 8: [437, 496],
+  9: [506, 392], 10: [437, 291], 11: [506, 190], 12: [437, 86],
 };
 
 function shortPlanet(name: string) {
@@ -52,7 +53,7 @@ export default function NorthIndianChart({ ascendant, houses }: Props) {
         <div className="kundli-lagna">
           <span>Lagna</span>
           <strong>{ascendant.sign}</strong>
-          <small>{degreeText(ascendant)} {ascendant.minute}'</small>
+          <small>{degreeText(ascendant)} {ascendant.minute}' {ascendant.second}&quot;</small>
         </div>
       </div>
 
@@ -68,17 +69,20 @@ export default function NorthIndianChart({ ascendant, houses }: Props) {
               const number = index + 1;
               const house = byHouse.get(number);
               const [x, y] = HOUSE_CENTERS[number];
-              const planets = house?.planets ?? [];
+              const planets = (house?.planets ?? []).filter((p) => VEDIC_PLANETS.includes(p.name));
               return (
                 <g key={number}>
-                  <text x={x} y={y - 25} className="kundli-house">{number}</text>
-                  <text x={x} y={y - 7} className="kundli-sign">{house?.sign ?? ""}</text>
-                  <text x={x} y={y + 15} className="kundli-planets">
-                    {planets.map((p) => shortPlanet(p.name)).join("  ") || "—"}
-                  </text>
-                  {planets.length > 0 && (
-                    <text x={x} y={y + 34} className="kundli-degrees">
-                      {planets.map((p) => `${shortPlanet(p.name)} ${degreeText(p)}`).join("  ")}
+                  <text x={x} y={y - 34} className="kundli-house">{number}</text>
+                  <text x={x} y={y - 12} className="kundli-sign">{house?.sign ?? ""}</text>
+                  {planets.length === 0 ? (
+                    <text x={x} y={y + 15} className="kundli-empty">—</text>
+                  ) : (
+                    <text x={x} y={y + 14} className="kundli-planets">
+                      {planets.map((p, i) => (
+                        <tspan key={p.name} x={x} dy={i === 0 ? 0 : 18}>
+                          {shortPlanet(p.name)} {degreeText(p)}
+                        </tspan>
+                      ))}
                     </text>
                   )}
                 </g>
@@ -91,7 +95,7 @@ export default function NorthIndianChart({ ascendant, houses }: Props) {
           <p><strong>Planet abbreviations</strong></p>
           <p>Su Sun · Mo Moon · Ma Mars · Me Mercury · Ju Jupiter</p>
           <p>Ve Venus · Sa Saturn · Ra Rahu · Ke Ketu</p>
-          <p className="kundli-note">Houses are numbered from Lagna. Planet placement is taken directly from the calculated Lahiri sidereal, whole-sign D1 chart.</p>
+          <p className="kundli-note">Only the nine Vedic planets are shown. Houses are numbered from Lagna, and placement comes directly from the calculated Lahiri sidereal, whole-sign D1 chart.</p>
         </div>
       </div>
     </div>
