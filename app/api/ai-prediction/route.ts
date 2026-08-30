@@ -209,7 +209,14 @@ ${chartSummary}`;
     const answer = response.choices[0]?.message?.content?.trim();
     if (!answer) return NextResponse.json({ error: "No prediction was generated. Please try again." }, { status: 502 });
 
-    await prisma.aiPrediction.create({ data: { email, name: name || null, birthDate, birthTime, birthPlace, question, answer, model } });
+    // Do not make a successful AI reading fail just because persistence has a transient DB problem.
+    // The reading has already been generated and can safely be returned to the customer.
+    try {
+      await prisma.aiPrediction.create({ data: { email, name: name || null, birthDate, birthTime, birthPlace, question, answer, model } });
+    } catch (databaseError) {
+      console.error("AI_PREDICTION_SAVE_ERROR", databaseError);
+    }
+
     return NextResponse.json({ success: true, answer, chart, used: unlimited ? null : used + 1, remaining: unlimited ? null : Math.max(0, (limit as number) - used - 1) });
   } catch (error) {
     console.error("AI_PREDICTION_ERROR", error);
