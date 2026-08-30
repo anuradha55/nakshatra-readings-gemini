@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 
 declare global {
   interface Window {
@@ -21,10 +21,86 @@ type Booking = {
   birthdetails: string;
 };
 
+type PlaceSuggestion = {
+  name: string;
+  admin1?: string;
+  country?: string;
+  latitude: number;
+  longitude: number;
+  timezone?: string;
+};
+
+function timeOptions() {
+  const options: { value: string; label: string }[] = [];
+  for (let hour = 0; hour < 24; hour += 1) {
+    for (let minute = 0; minute < 60; minute += 1) {
+      const value = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+      const displayHour = hour % 12 || 12;
+      const period = hour < 12 ? "AM" : "PM";
+      options.push({
+        value,
+        label: `${displayHour}:${String(minute).padStart(2, "0")} ${period}`,
+      });
+    }
+  }
+  return options;
+}
+
+const TIME_OPTIONS = timeOptions();
+
 export default function BookingForm() {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState("");
   const [ok, setOk] = useState(false);
+  const [birthTime, setBirthTime] = useState("");
+  const [birthPlace, setBirthPlace] = useState("");
+  const [placeSuggestions, setPlaceSuggestions] = useState<PlaceSuggestion[]>([]);
+  const [showPlaces, setShowPlaces] = useState(false);
+  const [placeLoading, setPlaceLoading] = useState(false);
+
+  useEffect(() => {
+    const query = birthPlace.trim();
+    if (query.length < 2) {
+      setPlaceSuggestions([]);
+      setShowPlaces(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      try {
+        setPlaceLoading(true);
+        const url = new URL("https://geocoding-api.open-meteo.com/v1/search");
+        url.searchParams.set("name", query);
+        url.searchParams.set("count", "6");
+        url.searchParams.set("language", "en");
+        url.searchParams.set("format", "json");
+
+        const res = await fetch(url.toString(), { signal: controller.signal });
+        const data = await res.json();
+        setPlaceSuggestions(data?.results ?? []);
+        setShowPlaces(Boolean(data?.results?.length));
+      } catch (error) {
+        if ((error as Error).name !== "AbortError") {
+          setPlaceSuggestions([]);
+        }
+      } finally {
+        setPlaceLoading(false);
+      }
+    }, 350);
+
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [birthPlace]);
+
+  function selectPlace(place: PlaceSuggestion) {
+    setBirthPlace(
+      [place.name, place.admin1, place.country].filter(Boolean).join(", ")
+    );
+    setShowPlaces(false);
+  }
 
   async function loadRazorpay() {
     if (window.Razorpay) return true;
@@ -45,12 +121,14 @@ export default function BookingForm() {
     setStatus("");
 
     const form = new FormData(e.currentTarget);
+    const birthDate = String(form.get("birthDate") ?? "").trim();
+
     const booking: Booking = {
       name: String(form.get("name") ?? "").trim(),
       phone: String(form.get("phone") ?? "").trim(),
       email: String(form.get("email") ?? "").trim(),
       service: String(form.get("service") ?? ""),
-      birthdetails: String(form.get("birthdetails") ?? "").trim(),
+      birthdetails: `${birthDate}, ${birthTime}, ${birthPlace}`,
     };
 
     try {
@@ -171,15 +249,71 @@ export default function BookingForm() {
                 <option>General life reading</option>
               </select>
             </div>
-            <div className="field">
-              <label htmlFor="birthdetails">Birth date, time & place</label>
-              <textarea
-                name="birthdetails"
-                id="birthdetails"
-                rows={2}
-                placeholder="e.g. 14 Aug 1994, 6:45 AM, Pune"
-              />
+
+            <div className="ai-two">
+              <div className="field">
+                <label htmlFor="booking-birth-date">Birth date</label>
+                <input
+                  name="birthDate"
+                  id="booking-birth-date"
+                  type="date"
+                  required
+                />
+              </div>
+              <div className="field">
+                <label htmlFor="booking-birth-time">Birth time</label>
+                <select
+                  id="booking-birth-time"
+                  name="birthTime"
+                  value={birthTime}
+                  onChange={(e) => setBirthTime(e.target.value)}
+                  required
+                >
+                  <option value="">Select time</option>
+                  {TIME_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
+
+            <div className="field place-field">
+              <label htmlFor="booking-birth-place">Birth place</label>
+              <div className="place-input-wrap">
+                <input
+                  id="booking-birth-place"
+                  name="birthPlace"
+                  value={birthPlace}
+                  onChange={(e) => setBirthPlace(e.target.value)}
+                  onFocus={() => placeSuggestions.length && setShowPlaces(true)}
+                  placeholder="Start typing a city or town"
+                  autoComplete="off"
+                  required
+                />
+                {placeLoading && <span className="place-loading">Searching…</span>}
+              </div>
+              {showPlaces && placeSuggestions.length > 0 && (
+                <div className="place-suggestions">
+                  {placeSuggestions.map((place, index) => (
+                    <button
+                      type="button"
+                      className="place-option"
+                      key={`${place.name}-${place.latitude}-${index}`}
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => selectPlace(place)}
+                    >
+                      <strong>{place.name}</strong>
+                      <span>
+                        {[place.admin1, place.country].filter(Boolean).join(", ")}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <div className="price-line">
               <span>Session fee</span>
               <span className="amt">₹500</span>
