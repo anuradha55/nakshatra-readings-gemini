@@ -9,17 +9,7 @@ function clean(value: unknown, max = 500) {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
 }
 
-const PLANET_ORDER = [
-  "Sun",
-  "Moon",
-  "Mars",
-  "Mercury",
-  "Jupiter",
-  "Venus",
-  "Saturn",
-  "Rahu",
-  "Ketu",
-];
+const PLANET_ORDER = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"];
 
 function formatDate(value: unknown) {
   if (!value) return "Unknown";
@@ -42,20 +32,11 @@ async function geocodeBirthPlace(place: string) {
   url.searchParams.set("count", "1");
   url.searchParams.set("language", "en");
   url.searchParams.set("format", "json");
-
-  const response = await fetch(url.toString(), {
-    headers: { "User-Agent": "NakshatraReadings/1.0" },
-    cache: "no-store",
-  });
-
+  const response = await fetch(url.toString(), { headers: { "User-Agent": "NakshatraReadings/1.0" }, cache: "no-store" });
   if (!response.ok) throw new Error("Unable to locate the birth place.");
-
   const data = await response.json();
   const result = data?.results?.[0];
-  if (!result?.latitude || !result?.longitude) {
-    throw new Error(`Birth place could not be located: ${place}`);
-  }
-
+  if (result?.latitude == null || result?.longitude == null) throw new Error(`Birth place could not be located: ${place}`);
   return {
     latitude: Number(result.latitude),
     longitude: Number(result.longitude),
@@ -64,61 +45,28 @@ async function geocodeBirthPlace(place: string) {
   };
 }
 
-/** Convert a local wall-clock birth time in an IANA timezone into a UTC Date. */
 function localTimeToUtc(dateText: string, timeText: string, timeZone: string) {
   const [year, month, day] = dateText.split("-").map(Number);
   const [hour, minute] = timeText.split(":").map(Number);
-
-  if (![year, month, day, hour, minute].every(Number.isFinite)) {
-    throw new Error("Invalid birth date or birth time.");
-  }
-
+  if (![year, month, day, hour, minute].every(Number.isFinite)) throw new Error("Invalid birth date or birth time.");
   const naiveUtc = Date.UTC(year, month - 1, day, hour, minute, 0);
-  const formatter = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    hour12: false,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
-
-  const parts = Object.fromEntries(
-    formatter.formatToParts(new Date(naiveUtc)).map((part) => [part.type, part.value]),
-  );
-
-  const asUtc = Date.UTC(
-    Number(parts.year),
-    Number(parts.month) - 1,
-    Number(parts.day),
-    Number(parts.hour),
-    Number(parts.minute),
-    Number(parts.second),
-  );
-
-  const offsetMs = asUtc - naiveUtc;
-  return new Date(naiveUtc - offsetMs);
+  const formatter = new Intl.DateTimeFormat("en-US", { timeZone, hour12: false, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  const parts = Object.fromEntries(formatter.formatToParts(new Date(naiveUtc)).map((part) => [part.type, part.value]));
+  const asUtc = Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day), Number(parts.hour), Number(parts.minute), Number(parts.second));
+  return new Date(naiveUtc - (asUtc - naiveUtc));
 }
 
 function buildChartSummary(kundli: any) {
   const planets = PLANET_ORDER.map((name) => {
     const p = kundli.planets?.[name];
     if (!p) return `${name}: unavailable`;
-
     const house = kundli.houses?.find((h: any) => h.planets?.includes(name))?.number ?? "?";
     return `${name}: ${p.rashiName} ${formatDegree(p.degree, p.minute, p.second)}, House ${house}, Nakshatra ${p.nakshatra} Pada ${p.pada}, Lord ${p.nakshatraLord}, ${p.isRetrograde ? "retrograde" : "direct"}`;
   }).join("\n");
-
-  const houses = (kundli.houses ?? [])
-    .map((h: any) => `House ${h.number}: ${h.planets?.length ? h.planets.join(", ") : "empty"}`)
-    .join("\n");
-
+  const houses = (kundli.houses ?? []).map((h: any) => `House ${h.number}: ${h.planets?.length ? h.planets.join(", ") : "empty"}`).join("\n");
   const currentMaha = kundli.dasha?.currentMahadasha;
   const currentAntar = kundli.dasha?.currentAntar;
   const currentPratyantar = kundli.dasha?.currentPratyantar;
-
   return `
 ASCENDANT
 ${kundli.ascendant.rashiName} ${formatDegree(kundli.ascendant.degree, kundli.ascendant.minute, kundli.ascendant.second)}; Nakshatra ${kundli.ascendant.nakshatra}, Pada ${kundli.ascendant.pada}; Ascendant Lord ${kundli.ascendant.rashiLord}
@@ -143,6 +91,34 @@ ${(kundli.dasha?.mahadashas ?? []).slice(0, 12).map((d: any) => `${d.planet}: ${
 `;
 }
 
+function buildChartData(kundli: any) {
+  return {
+    ascendant: {
+      sign: String(kundli.ascendant?.rashiName ?? "Unknown"),
+      degree: Number(kundli.ascendant?.degree ?? 0),
+      minute: Number(kundli.ascendant?.minute ?? 0),
+      second: Number(kundli.ascendant?.second ?? 0),
+    },
+    houses: (kundli.houses ?? []).map((h: any) => ({
+      number: Number(h.number),
+      sign: String(h.rashiName ?? h.signName ?? h.rashi ?? ""),
+      planets: (h.planets ?? []).map((planetName: string) => {
+        const p = kundli.planets?.[planetName];
+        return {
+          name: planetName,
+          sign: String(p?.rashiName ?? ""),
+          degree: Number(p?.degree ?? 0),
+          minute: Number(p?.minute ?? 0),
+          second: Number(p?.second ?? 0),
+          nakshatra: p?.nakshatra,
+          pada: p?.pada,
+          retrograde: Boolean(p?.isRetrograde),
+        };
+      }),
+    })),
+  };
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -152,40 +128,22 @@ export async function POST(request: Request) {
     const birthTime = clean(body.birthTime, 30);
     const birthPlace = clean(body.birthPlace, 150);
     const question = clean(body.question, 500);
-
     if (!email || !email.includes("@") || !birthDate || !birthTime || !birthPlace || !question) {
-      return NextResponse.json(
-        { error: "Please provide your email, birth date, birth time, birth place and question." },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Please provide your email, birth date, birth time, birth place and question." }, { status: 400 });
     }
-
     const limit = Number(process.env.AI_FREE_QUESTIONS ?? 2);
     const used = await prisma.aiPrediction.count({ where: { email } });
-
-    if (used >= limit) {
-      return NextResponse.json(
-        { error: "You have used your free AI predictions.", limitReached: true, used, limit },
-        { status: 429 },
-      );
-    }
-
+    if (used >= limit) return NextResponse.json({ error: "You have used your free AI predictions.", limitReached: true, used, limit }, { status: 429 });
     const apiKey = process.env.GROQ_API_KEY;
     const model = process.env.GROQ_MODEL ?? "openai/gpt-oss-20b";
+    if (!apiKey) return NextResponse.json({ error: "Groq AI service is not configured." }, { status: 500 });
 
-    if (!apiKey) {
-      return NextResponse.json({ error: "Groq AI service is not configured." }, { status: 500 });
-    }
-
-    // Resolve the customer's birth place so the astronomical calculation uses the actual coordinates and timezone.
     const location = await geocodeBirthPlace(birthPlace);
     const birthInstantUtc = localTimeToUtc(birthDate, birthTime, location.timezone);
     const observer = new Observer(location.latitude, location.longitude, 0);
-
-    // @prisri/jyotish calculates a sidereal Vedic Kundli, including Lagna, planets, houses and Vimshottari Dasha.
     const kundli = getKundli(birthInstantUtc, observer, { houseSystem: "whole_sign", ayanamsa: "lahiri" });
     const chartSummary = buildChartSummary(kundli);
-
+    const chart = buildChartData(kundli);
     const groq = new Groq({ apiKey });
 
     const systemPrompt = `You are the AI assistant for Nakshatra Readings, a Vedic-astrology consultation website.
@@ -234,40 +192,12 @@ Question: ${question}
 CALCULATED VEDIC CHART
 ${chartSummary}`;
 
-    const response = await groq.chat.completions.create({
-      model,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userMessage },
-      ],
-      max_tokens: 2200,
-      temperature: 0.35,
-    });
-
+    const response = await groq.chat.completions.create({ model, messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userMessage }], max_tokens: 2200, temperature: 0.35 });
     const answer = response.choices[0]?.message?.content?.trim();
-    if (!answer) {
-      return NextResponse.json({ error: "No prediction was generated. Please try again." }, { status: 502 });
-    }
+    if (!answer) return NextResponse.json({ error: "No prediction was generated. Please try again." }, { status: 502 });
 
-    await prisma.aiPrediction.create({
-      data: {
-        email,
-        name: name || null,
-        birthDate,
-        birthTime,
-        birthPlace,
-        question,
-        answer,
-        model,
-      },
-    });
-
-    return NextResponse.json({
-      success: true,
-      answer,
-      used: used + 1,
-      remaining: Math.max(0, limit - used - 1),
-    });
+    await prisma.aiPrediction.create({ data: { email, name: name || null, birthDate, birthTime, birthPlace, question, answer, model } });
+    return NextResponse.json({ success: true, answer, chart, used: used + 1, remaining: Math.max(0, limit - used - 1) });
   } catch (error) {
     console.error("AI_PREDICTION_ERROR", error);
     const message = error instanceof Error ? error.message : "Unable to generate your prediction.";
