@@ -244,7 +244,8 @@ export default function BookingForm() {
                 id="email"
                 type="email"
                 required
-                pattern="^[^\s@]+@[^\s@]+\.[^\s@]{2,}$"
+                autoComplete="email"
+                placeholder="name@example.com"
                 title="Please enter a valid email address, for example name@example.com"
               />
             </div>
