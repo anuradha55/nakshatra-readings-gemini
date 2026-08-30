@@ -20,11 +20,23 @@ type Props = {
 
 const VEDIC_PLANETS = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"];
 
-// Fixed regions for the traditional North-Indian diamond chart.
+// Centers are deliberately placed inside the usable area of each
+// traditional North-Indian diamond/triangle house.  Keeping all three
+// text rows on the same x-coordinate makes the house number, sign and
+// planet labels visually centered even when a house has two planets.
 const HOUSE_CENTERS: Record<number, [number, number]> = {
-  1: [291, 132], 2: [145, 86], 3: [76, 190], 4: [145, 291],
-  5: [76, 392], 6: [145, 496], 7: [291, 450], 8: [437, 496],
-  9: [506, 392], 10: [437, 291], 11: [506, 190], 12: [437, 86],
+  1: [291, 126],
+  2: [145, 84],
+  3: [88, 196],
+  4: [145, 291],
+  5: [88, 386],
+  6: [145, 496],
+  7: [291, 456],
+  8: [437, 496],
+  9: [494, 386],
+  10: [437, 291],
+  11: [494, 196],
+  12: [437, 84],
 };
 
 function shortPlanet(name: string) {
@@ -70,16 +82,19 @@ export default function NorthIndianChart({ ascendant, houses }: Props) {
               const house = byHouse.get(number);
               const [x, y] = HOUSE_CENTERS[number];
               const planets = (house?.planets ?? []).filter((p) => VEDIC_PLANETS.includes(p.name));
+
               return (
                 <g key={number}>
+                  {/* Every item uses the exact same x coordinate so it stays centered. */}
                   <text x={x} y={y - 34} className="kundli-house">{number}</text>
                   <text x={x} y={y - 12} className="kundli-sign">{house?.sign ?? ""}</text>
+
                   {planets.length === 0 ? (
-                    <text x={x} y={y + 15} className="kundli-empty">—</text>
+                    <text x={x} y={y + 14} className="kundli-empty">—</text>
                   ) : (
-                    <text x={x} y={y + 14} className="kundli-planets">
+                    <text x={x} y={y + 12} className="kundli-planets">
                       {planets.map((p, i) => (
-                        <tspan key={p.name} x={x} dy={i === 0 ? 0 : 18}>
+                        <tspan key={p.name} x={x} dy={i === 0 ? 0 : 17}>
                           {shortPlanet(p.name)} {degreeText(p)}
                         </tspan>
                       ))}
