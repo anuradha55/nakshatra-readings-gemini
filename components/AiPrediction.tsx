@@ -5,6 +5,8 @@ import NorthIndianChart from "@/components/NorthIndianChart";
 type ChartData = React.ComponentProps<typeof NorthIndianChart>;
 type PlaceSuggestion = { name: string; admin1?: string; country?: string; latitude: number; longitude: number; timezone?: string };
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
+
 function renderInline(text: string) {
   const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`|<br\s*\/?\s*>)/gi);
   return parts.map((part, index) => {
@@ -82,7 +84,6 @@ function timeOptions() {
 }
 
 const TIME_OPTIONS = timeOptions();
-
 const RETRYABLE_STATUS = new Set([500, 502, 503, 504]);
 
 function wait(ms: number) {
@@ -94,6 +95,7 @@ export default function AiPrediction() {
   const [answer, setAnswer] = useState("");
   const [chart, setChart] = useState<ChartData | null>(null);
   const [message, setMessage] = useState("");
+  const [emailStatus, setEmailStatus] = useState("");
   const [remaining, setRemaining] = useState<number | null>(null);
   const [birthTime, setBirthTime] = useState("12:00");
   const [birthPlace, setBirthPlace] = useState("");
@@ -131,9 +133,16 @@ export default function AiPrediction() {
 
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setLoading(true); setAnswer(""); setChart(null); setMessage("");
     const form = new FormData(e.currentTarget);
-    const payload = JSON.stringify({ name: form.get("name"), email: form.get("email"), birthDate: form.get("birthDate"), birthTime: form.get("birthTime"), birthPlace: form.get("birthPlace"), question: form.get("question") });
+    const email = String(form.get("email") ?? "").trim().toLowerCase();
+    if (!EMAIL_PATTERN.test(email)) {
+      setMessage("Please enter a valid email address, for example name@example.com.");
+      setEmailStatus("");
+      return;
+    }
+
+    setLoading(true); setAnswer(""); setChart(null); setMessage(""); setEmailStatus("");
+    const payload = JSON.stringify({ name: form.get("name"), email, birthDate: form.get("birthDate"), birthTime: form.get("birthTime"), birthPlace: form.get("birthPlace"), question: form.get("question") });
 
     try {
       let lastError = "Could not generate a prediction.";
@@ -144,9 +153,22 @@ export default function AiPrediction() {
           try { data = await res.json(); } catch { data = null; }
 
           if (res.ok) {
-            setAnswer(data?.answer ?? "");
+            const generatedAnswer = data?.answer ?? "";
+            setAnswer(generatedAnswer);
             setChart(data?.chart ?? null);
             setRemaining(data?.remaining ?? null);
+
+            try {
+              const emailRes = await fetch("/api/send-prediction-email", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name: form.get("name"), email, answer: generatedAnswer }),
+              });
+              const emailData = await emailRes.json().catch(() => null);
+              setEmailStatus(emailRes.ok ? "A copy of your AI prediction has been sent to your email." : (emailData?.error ?? "Prediction generated, but the email could not be sent."));
+            } catch {
+              setEmailStatus("Prediction generated, but the email could not be sent.");
+            }
             return;
           }
 
@@ -158,7 +180,6 @@ export default function AiPrediction() {
         }
         await wait(700 * (attempt + 1));
       }
-
       setMessage(lastError || "Could not generate a prediction. Please try again.");
     } finally {
       setLoading(false);
@@ -177,7 +198,7 @@ export default function AiPrediction() {
           </div>
           <form className="ai-form" onSubmit={submit}>
             <div className="field"><label htmlFor="ai-name">Your name</label><input id="ai-name" name="name" /></div>
-            <div className="field"><label htmlFor="ai-email">Email</label><input id="ai-email" name="email" type="email" required /></div>
+            <div className="field"><label htmlFor="ai-email">Email</label><input id="ai-email" name="email" type="email" required pattern="[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}" title="Enter a valid email address, for example name@example.com" /></div>
             <div className="ai-two">
               <div className="field"><label htmlFor="ai-date">Birth date</label><input id="ai-date" name="birthDate" type="date" required /></div>
               <div className="field"><label htmlFor="ai-time">Birth time</label><select id="ai-time" name="birthTime" value={birthTime} onChange={(e) => setBirthTime(e.target.value)} required><option value="">Select time</option>{TIME_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></div>
@@ -189,9 +210,10 @@ export default function AiPrediction() {
             <button className="btn-primary ai-btn" type="submit" disabled={loading}>{loading ? "Calculating your chart…" : "Get my free prediction"}</button>
             {remaining !== null && <p className="ai-remaining">{remaining} free prediction{remaining === 1 ? "" : "s"} remaining</p>}
             {message && <p className="status-msg status-err">{message}</p>}
+            {emailStatus && <p className="status-msg status-ok">{emailStatus}</p>}
           </form>
         </div>
-        {answer && <div className="ai-result"><div className="ai-result-head"><div><h3>Your AI astrology reading</h3><span>Chart calculated · AI interpreted</span></div></div>{chart && <NorthIndianChart {...chart} />}<div className="ai-answer" style={{ maxHeight: "80vh", overflowY: "auto", overflowX: "hidden", paddingBottom: "32px" }}>{renderMarkdown(answer)}</div><div className="ai-cta"><div><strong>Want a deeper reading?</strong><p>Discuss your complete chart with a human astrologer for 30–45 minutes.</p></div><a href="#booking" className="btn-primary">Book for ₹500</a></div></div>}
+        {answer && <div className="ai-result"><div className="ai-result-head"><div><h3>Your AI astrology reading</h3><span>Chart calculated · AI interpreted</span></div></div>{chart && <NorthIndianChart {...chart} />}<div className="ai-answer" style={{ maxHeight: "none", overflowY: "visible", overflowX: "visible", paddingRight: "0", paddingBottom: "32px" }}>{renderMarkdown(answer)}</div><div className="ai-cta"><div><strong>Want a deeper reading?</strong><p>Discuss your complete chart with a human astrologer for 30–45 minutes.</p></div><a href="#booking" className="btn-primary">Book for ₹500</a></div></div>}
         <p className="ai-disclaimer">AI-generated astrology guidance is for personal reflection and is not a scientific prediction, guarantee of future events, or professional advice.</p>
       </div>
     </section>
