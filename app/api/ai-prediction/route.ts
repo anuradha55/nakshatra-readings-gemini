@@ -132,8 +132,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Please provide your email, birth date, birth time, birth place and question." }, { status: 400 });
     }
 
-    // Testing mode: leave AI_FREE_QUESTIONS unset, empty, or set to "unlimited" to allow unlimited predictions.
-    // To enable a production limit later, set AI_FREE_QUESTIONS to a positive integer.
     const limitSetting = String(process.env.AI_FREE_QUESTIONS ?? "unlimited").trim().toLowerCase();
     const unlimited = limitSetting === "" || limitSetting === "unlimited" || limitSetting === "0";
     const limit = unlimited ? null : Number(limitSetting);
@@ -158,9 +156,6 @@ export async function POST(request: Request) {
     const chartSummary = buildChartSummary(kundli);
     const chart = buildChartData(kundli);
 
-    // Groq's SDK retries 429 responses twice by default. For a customer-facing
-    // route, disable those automatic retries so a daily/token quota error does
-    // not waste additional attempts or leave the customer waiting unnecessarily.
     const groq = new Groq({ apiKey, maxRetries: 0 });
 
     const systemPrompt = `You are the AI assistant for Nakshatra Readings, a Vedic-astrology consultation website.
@@ -196,7 +191,8 @@ RULES:
 - Do not create fear, curses, death predictions or supernatural threats.
 - Do not say a paid consultation is required to prevent a bad outcome.
 - The reading is an AI-generated astrology interpretation and is not a scientific prediction or guarantee.
-- Aim for approximately 600-900 words so the customer can see enough actual chart information to understand why the interpretation was made.`;
+- Return the COMPLETE reading. Do not stop after the first few sections and do not omit the planetary table, Dasha, analysis, practical outlook or conclusion.
+- Aim for approximately 800-1200 words. Prioritize completeness over brevity.`;
 
     const userMessage = `CUSTOMER
 Name: ${name || "Not provided"}
@@ -214,44 +210,27 @@ ${chartSummary}`;
       response = await groq.chat.completions.create({
         model,
         messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userMessage }],
-        max_tokens: 2200,
+        max_tokens: 4000,
         temperature: 0.35,
       });
     } catch (error) {
-      // Groq returns HTTP 429 when an organization/model rate limit is reached.
-      // Return a safe, customer-friendly response and preserve the Retry-After
-      // value when Groq provides one. Never expose the raw provider error.
       if (error instanceof Groq.APIError && error.status === 429) {
         const retryAfterHeader = error.headers?.get("retry-after");
         const retryAfterSeconds = retryAfterHeader ? Number(retryAfterHeader) : NaN;
         const headers = new Headers({ "Cache-Control": "no-store" });
-        if (Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0) {
-          headers.set("Retry-After", String(Math.ceil(retryAfterSeconds)));
-        }
-
-        return NextResponse.json(
-          {
-            error: "AI prediction is temporarily unavailable because our AI service has reached its usage limit. Please try again later.",
-            code: "AI_RATE_LIMITED",
-            retryAfterSeconds: Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0 ? Math.ceil(retryAfterSeconds) : null,
-          },
-          { status: 429, headers },
-        );
+        if (Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0) headers.set("Retry-After", String(Math.ceil(retryAfterSeconds)));
+        return NextResponse.json({ error: "AI prediction is temporarily unavailable because our AI service has reached its usage limit. Please try again later.", code: "AI_RATE_LIMITED", retryAfterSeconds: Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0 ? Math.ceil(retryAfterSeconds) : null }, { status: 429, headers });
       }
-
       if (error instanceof Groq.APIError) {
         console.error("GROQ_API_ERROR", { status: error.status, name: error.name, message: error.message });
         return NextResponse.json({ error: "The AI service could not generate your prediction right now. Please try again later." }, { status: 502, headers: { "Cache-Control": "no-store" } });
       }
-
       throw error;
     }
 
     const answer = response.choices[0]?.message?.content?.trim();
     if (!answer) return NextResponse.json({ error: "No prediction was generated. Please try again." }, { status: 502 });
 
-    // Do not make a successful AI reading fail just because persistence has a transient DB problem.
-    // The reading has already been generated and can safely be returned to the customer.
     try {
       await prisma.aiPrediction.create({ data: { email, name: name || null, birthDate, birthTime, birthPlace, question, answer, model } });
     } catch (databaseError) {
