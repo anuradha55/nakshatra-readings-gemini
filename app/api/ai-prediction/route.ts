@@ -192,7 +192,8 @@ RULES:
 - Do not say a paid consultation is required to prevent a bad outcome.
 - The reading is an AI-generated astrology interpretation and is not a scientific prediction or guarantee.
 - Return the COMPLETE reading. Do not stop after the first few sections and do not omit the planetary table, Dasha, analysis, practical outlook or conclusion.
-- Aim for approximately 800-1200 words. Prioritize completeness over brevity.`;
+- Aim for approximately 800-1200 words. Prioritize completeness over brevity.
+- End the response only after writing the full Conclusion section.`;
 
     const userMessage = `CUSTOMER
 Name: ${name || "Not provided"}
@@ -210,7 +211,11 @@ ${chartSummary}`;
       response = await groq.chat.completions.create({
         model,
         messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userMessage }],
-        max_tokens: 4000,
+        // GPT-OSS uses part of the completion budget for reasoning. Use the
+        // current Groq parameter name and give the visible answer enough room
+        // to finish all six required sections.
+        max_completion_tokens: 6000,
+        reasoning_effort: "low",
         temperature: 0.35,
       });
     } catch (error) {
@@ -228,8 +233,17 @@ ${chartSummary}`;
       throw error;
     }
 
-    const answer = response.choices[0]?.message?.content?.trim();
+    const choice = response.choices[0];
+    const answer = choice?.message?.content?.trim();
     if (!answer) return NextResponse.json({ error: "No prediction was generated. Please try again." }, { status: 502 });
+
+    if (choice?.finish_reason === "length") {
+      console.warn("AI_PREDICTION_TRUNCATED", {
+        finishReason: choice.finish_reason,
+        completionTokens: response.usage?.completion_tokens,
+        model,
+      });
+    }
 
     try {
       await prisma.aiPrediction.create({ data: { email, name: name || null, birthDate, birthTime, birthPlace, question, answer, model } });
