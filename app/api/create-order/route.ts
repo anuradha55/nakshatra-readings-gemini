@@ -23,6 +23,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid BOOKING_AMOUNT configuration." }, { status: 500 });
     }
 
+    const platformPercent = Number(process.env.PLATFORM_SHARE_PERCENT ?? "20");
+    const astrologerPercent = Number(process.env.ASTROLOGER_SHARE_PERCENT ?? "80");
+    if (
+      !Number.isFinite(platformPercent) ||
+      !Number.isFinite(astrologerPercent) ||
+      platformPercent < 0 ||
+      astrologerPercent < 0 ||
+      platformPercent + astrologerPercent !== 100
+    ) {
+      return NextResponse.json({ error: "Invalid revenue split configuration." }, { status: 500 });
+    }
+
+    // All payment amounts are stored in paise to avoid floating-point money calculations.
+    const platformShare = Math.floor((configuredAmount * platformPercent) / 100);
+    const astrologerShare = configuredAmount - platformShare;
+
     const razorpay = new Razorpay({ key_id: keyId, key_secret: keySecret });
     const receipt = `nr_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
 
@@ -43,6 +59,9 @@ export async function POST(request: Request) {
         amount: Number(order.amount),
         currency: order.currency,
         razorpayOrderId: order.id,
+        platformShare,
+        astrologerShare,
+        payoutStatus: "PENDING",
       },
     });
 
