@@ -14,6 +14,15 @@ enum BookingStatus {
   REFUNDED
 }
 
+enum PayoutStatus {
+  NOT_REQUIRED
+  PENDING
+  PROCESSING
+  PAID
+  FAILED
+  CANCELLED
+}
+
 model Booking {
   id                  String        @id @default(cuid())
   name                String
@@ -27,14 +36,44 @@ model Booking {
   razorpayOrderId     String        @unique
   razorpayPaymentId   String?       @unique
   paymentVerifiedAt   DateTime?
-  createdAt           DateTime      @default(now())
-  updatedAt           DateTime      @updatedAt
+
+  // Revenue split, stored in paise.
+  platformShare       Int           @default(0)
+  astrologerShare     Int           @default(0)
+  payoutStatus        PayoutStatus  @default(NOT_REQUIRED)
+
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  payout               AstrologerPayout?
 
   @@index([email])
   @@index([status])
+  @@index([payoutStatus])
   @@index([createdAt])
 }
 
+model AstrologerPayout {
+  id              String       @id @default(cuid())
+  bookingId       String       @unique
+  booking         Booking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  astrologerName  String
+  astrologerEmail String
+  grossAmount     Int
+  platformAmount  Int
+  payoutAmount    Int
+  status          PayoutStatus @default(PENDING)
+  payoutId        String?
+  reference       String?
+  failureReason   String?
+  notificationSentAt DateTime?
+  createdAt       DateTime     @default(now())
+  paidAt          DateTime?
+
+  @@index([status])
+  @@index([createdAt])
+}
 
 model AiPrediction {
   id           String   @id @default(cuid())
