@@ -245,8 +245,12 @@ export default function BookingForm() {
         throw new Error(`Razorpay popup could not open: ${error instanceof Error ? error.message : "Unknown error"}`);
       }
     } catch (error) {
+      const message = error instanceof Error ? error.message : "Something went wrong.";
+      console.error("[Payment diagnostic] Payment flow failed:", error);
       setOk(false);
-      setStatus(error instanceof Error ? error.message : "Something went wrong.");
+      setStatus(`Payment error: ${message}`);
+      // Temporary visible diagnostic: this cannot be hidden by CSS or layout.
+      window.alert(`Payment diagnostic error:\n${message}`);
       setLoading(false);
     }
   }
