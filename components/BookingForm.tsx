@@ -161,7 +161,35 @@ export default function BookingForm() {
         throw new Error(`Order API returned an invalid response (HTTP ${orderRes.status}).`);
       }
       if (!orderRes.ok) {
-        throw new Error(typeof order.error === "string" ? order.error : `Could not start payment (HTTP ${orderRes.status}).`);
+        const diagnostic =
+          order.diagnostic && typeof order.diagnostic === "object"
+            ? (order.diagnostic as {
+                message?: unknown;
+                statusCode?: unknown;
+                razorpayCode?: unknown;
+                razorpayDescription?: unknown;
+                razorpayReason?: unknown;
+              })
+            : null;
+
+        const details = diagnostic
+          ? [
+              typeof diagnostic.message === "string" ? diagnostic.message : "",
+              diagnostic.statusCode ? "HTTP/Razorpay status: " + diagnostic.statusCode : "",
+              typeof diagnostic.razorpayCode === "string" ? "Razorpay code: " + diagnostic.razorpayCode : "",
+              typeof diagnostic.razorpayDescription === "string" ? diagnostic.razorpayDescription : "",
+              typeof diagnostic.razorpayReason === "string" ? diagnostic.razorpayReason : "",
+            ]
+              .filter(Boolean)
+              .join("\n")
+          : "";
+
+        const baseError =
+          typeof order.error === "string"
+            ? order.error
+            : "Could not start payment (HTTP " + orderRes.status + ").";
+
+        throw new Error(baseError + (details ? "\n\nDiagnostic:\n" + details : ""));
       }
       if (!order.id || !order.amount || !order.currency || !order.bookingId) {
         throw new Error("Order was created but the website received incomplete payment details.");
