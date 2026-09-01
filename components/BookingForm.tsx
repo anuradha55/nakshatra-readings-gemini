@@ -267,7 +267,13 @@ export default function BookingForm() {
             </div>
           </div>
 
-          <form\n            onSubmit={handleSubmit}\n            onInvalidCapture={(event) => {\n              const target = event.target as HTMLInputElement | HTMLSelectElement;\n              setStatus(`Form validation: please complete the required field "${target.name || target.id || "unknown"}".`);\n            }}\n          >
+          <form
+            onSubmit={handleSubmit}
+            onInvalidCapture={(event) => {
+              const target = event.target as HTMLInputElement | HTMLSelectElement;
+              setStatus(`Form validation: please complete the required field "${target.name || target.id || "unknown"}".`);
+            }}
+          >
             <div className="field">
               <label htmlFor="name">Your name</label>
               <input name="name" id="name" type="text" required />
