@@ -73,6 +73,25 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("CREATE_ORDER_ERROR", error);
-    return NextResponse.json({ error: "Unable to create payment order." }, { status: 500 });
+
+    const message = error instanceof Error ? error.message : String(error);
+    const razorpayError = error as {
+      statusCode?: number;
+      error?: { description?: string; reason?: string; code?: string };
+    };
+
+    return NextResponse.json(
+      {
+        error: "Unable to create payment order.",
+        diagnostic: {
+          message,
+          statusCode: razorpayError.statusCode ?? null,
+          razorpayCode: razorpayError.error?.code ?? null,
+          razorpayDescription: razorpayError.error?.description ?? null,
+          razorpayReason: razorpayError.error?.reason ?? null,
+        },
+      },
+      { status: 500 }
+    );
   }
 }
