@@ -102,12 +102,20 @@ export default function BookingForm() {
     setShowPlaces(false);
   }
 
+  function setDiagnostic(message: string) {
+    console.info(`[Payment diagnostic] ${message}`);
+    setStatus(message);
+  }
+
   async function loadRazorpay() {
     if (window.Razorpay) return true;
     await new Promise<void>((resolve, reject) => {
       const script = document.createElement("script");
       script.src = "https://checkout.razorpay.com/v1/checkout.js";
-      script.onload = () => resolve();
+      script.onload = () => {
+        if (window.Razorpay) resolve();
+        else reject(new Error("Razorpay script loaded, but Checkout is not available."));
+      };
       script.onerror = () => reject(new Error("Could not load Razorpay Checkout."));
       document.body.appendChild(script);
     });
@@ -118,7 +126,7 @@ export default function BookingForm() {
     e.preventDefault();
     setLoading(true);
     setOk(false);
-    setStatus("");
+    setStatus("Starting payment...");
 
     const form = new FormData(e.currentTarget);
     const birthDate = String(form.get("birthDate") ?? "").trim();
@@ -136,7 +144,9 @@ export default function BookingForm() {
         throw new Error("Razorpay Key ID is not configured.");
       }
 
+      setDiagnostic("Step 1/4: Loading Razorpay Checkout...");
       await loadRazorpay();
+      setDiagnostic("Step 2/4: Razorpay Checkout loaded. Creating payment order...");
 
       const orderRes = await fetch("/api/create-order", {
         method: "POST",
@@ -144,10 +154,28 @@ export default function BookingForm() {
         body: JSON.stringify({ booking }),
       });
 
-      const order = await orderRes.json();
-      if (!orderRes.ok) throw new Error(order.error ?? "Could not start payment.");
+      let order: Record<string, unknown>;
+      try {
+        order = await orderRes.json();
+      } catch {
+        throw new Error(`Order API returned an invalid response (HTTP ${orderRes.status}).`);
+      }
+      if (!orderRes.ok) {
+        throw new Error(typeof order.error === "string" ? order.error : `Could not start payment (HTTP ${orderRes.status}).`);
+      }
+      if (!order.id || !order.amount || !order.currency || !order.bookingId) {
+        throw new Error("Order was created but the website received incomplete payment details.");
+      }
 
-      const rzp = new window.Razorpay({
+      setDiagnostic("Step 3/4: Payment order created. Initializing Razorpay popup...");
+
+      if (!window.Razorpay) {
+        throw new Error("Razorpay Checkout is not available after loading the script.");
+      }
+
+      let rzp;
+      try {
+        rzp = new window.Razorpay({
         key: RAZORPAY_KEY_ID,
         amount: order.amount,
         currency: order.currency,
@@ -196,7 +224,10 @@ export default function BookingForm() {
             );
           }
         },
-      });
+        });
+      } catch (error) {
+        throw new Error(`Razorpay popup initialization failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+      }
 
       rzp.on("payment.failed", () => {
         setOk(false);
@@ -204,7 +235,15 @@ export default function BookingForm() {
         setLoading(false);
       });
 
-      rzp.open();
+      setDiagnostic("Step 4/4: Opening secure Razorpay payment window...");
+      try {
+        rzp.open();
+        window.setTimeout(() => {
+          setStatus((current) => current === "Step 4/4: Opening secure Razorpay payment window..." ? "Payment window was requested. If no popup is visible, please check the browser console for Razorpay errors." : current);
+        }, 1500);
+      } catch (error) {
+        throw new Error(`Razorpay popup could not open: ${error instanceof Error ? error.message : "Unknown error"}`);
+      }
     } catch (error) {
       setOk(false);
       setStatus(error instanceof Error ? error.message : "Something went wrong.");
