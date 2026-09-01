@@ -371,7 +371,17 @@ export default function BookingForm() {
               <span>Session fee</span>
               <span className="amt">₹500</span>
             </div>
-            <button\n              type="submit"\n              className="btn-primary pay-btn"\n              disabled={loading || ok}\n              onClick={() => {\n                console.info("[Payment diagnostic] Pay button clicked", { loading, ok });\n                if (!loading && !ok) setStatus("Pay button clicked. Checking form and starting payment...");\n              }}\n            >
+            <button
+              type="submit"
+              className="btn-primary pay-btn"
+              disabled={loading || ok}
+              onClick={() => {
+                console.info("[Payment diagnostic] Pay button clicked", { loading, ok });
+                if (!loading && !ok) {
+                  setStatus("Pay button clicked. Checking form and starting payment...");
+                }
+              }}
+            >
               {ok ? "Payment confirmed ✓" : loading ? "Preparing payment…" : "Pay ₹500 & book session"}
             </button>
             <p className="note">
