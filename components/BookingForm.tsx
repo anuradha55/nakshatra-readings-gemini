@@ -267,7 +267,7 @@ export default function BookingForm() {
             </div>
           </div>
 
-          <form onSubmit={handleSubmit}>
+          <form\n            onSubmit={handleSubmit}\n            onInvalidCapture={(event) => {\n              const target = event.target as HTMLInputElement | HTMLSelectElement;\n              setStatus(`Form validation: please complete the required field "${target.name || target.id || "unknown"}".`);\n            }}\n          >
             <div className="field">
               <label htmlFor="name">Your name</label>
               <input name="name" id="name" type="text" required />
@@ -365,7 +365,7 @@ export default function BookingForm() {
               <span>Session fee</span>
               <span className="amt">₹500</span>
             </div>
-            <button type="submit" className="btn-primary pay-btn" disabled={loading || ok}>
+            <button\n              type="submit"\n              className="btn-primary pay-btn"\n              disabled={loading || ok}\n              onClick={() => {\n                console.info("[Payment diagnostic] Pay button clicked", { loading, ok });\n                if (!loading && !ok) setStatus("Pay button clicked. Checking form and starting payment...");\n              }}\n            >
               {ok ? "Payment confirmed ✓" : loading ? "Preparing payment…" : "Pay ₹500 & book session"}
             </button>
             <p className="note">
