@@ -87,3 +87,36 @@ The partner split/settlement should also be implemented server-side after paymen
 ## Free AI Prediction
 
 The site includes a free AI prediction feature with two questions per email by default. Predictions are stored in PostgreSQL. Configure `OPENAI_API_KEY`, `OPENAI_MODEL` (default `gpt-5.6-luna`) and `AI_FREE_QUESTIONS`. The server calls the Gemini API; the API key is never exposed to the browser. The feature deliberately does not claim that the language model has calculated an exact Kundli. For exact Vedic chart calculations, add a dedicated ephemeris/astrology calculation engine and pass its calculated chart data to the AI for interpretation.
+
+
+## WhatsApp booking notifications
+
+Booking confirmations are sent through the WhatsApp Business Platform (Cloud API) after the server verifies a Razorpay payment. Configure these server-side environment variables:
+
+```env
+WHATSAPP_GRAPH_API_VERSION=vXX.X
+WHATSAPP_PHONE_NUMBER_ID=your_meta_phone_number_id
+WHATSAPP_ACCESS_TOKEN=your_meta_access_token
+WHATSAPP_TEMPLATE_LANGUAGE=en
+WHATSAPP_BOOKING_TEMPLATE_NAME=booking_confirmation
+WHATSAPP_ASTROLOGER_TEMPLATE_NAME=astrologer_new_booking
+ASTROLOGER_WHATSAPP_NUMBER=919999999999
+```
+
+Create and obtain approval for the two WhatsApp templates in Meta before testing.
+
+The `booking_confirmation` template must contain four body variables in this order:
+
+1. Customer name
+2. Service
+3. Amount paid
+4. Booking ID
+
+The `astrologer_new_booking` template must contain four body variables in this order:
+
+1. Astrologer name
+2. Booking ID
+3. Total customer payment
+4. Astrologer's payout share
+
+WhatsApp notification delivery is intentionally non-fatal. A verified Razorpay payment remains successful even if WhatsApp is temporarily unavailable.
