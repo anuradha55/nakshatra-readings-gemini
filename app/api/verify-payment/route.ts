@@ -1,10 +1,8 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
-import { sendCustomerBookingSms } from "@/lib/twilio";
 
 export const runtime = "nodejs";
-
 
 export async function POST(request: Request) {
   try {
@@ -66,31 +64,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Booking is already associated with a different payment." }, { status: 409 });
     }
 
-    // Notification delivery is intentionally non-fatal: a successful Razorpay
-    // payment must never be shown as failed just because SMS delivery fails.
-    const customerSmsResult =
-      updated.count > 0
-        ? await sendCustomerBookingSms({
-            id: latest.id,
-            name: latest.name,
-            phone: latest.phone,
-            service: latest.service,
-            amount: latest.amount,
-          })
-        : { sent: true };
-
-    console.log("PAID_BOOKING", {
-      bookingId,
-      phone: latest.phone,
-      razorpayOrderId: latest.razorpayOrderId,
-      razorpayPaymentId: razorpay_payment_id,
-      customerSmsSent: customerSmsResult.sent,
-    });
-
+    // Notifications are deliberately not sent here. Razorpay's webhook is the
+    // single authoritative trigger for customer and astrologer SMS delivery.
     return NextResponse.json({
       success: true,
       alreadyProcessed: updated.count === 0,
-      customerSmsSent: customerSmsResult.sent,
     });
   } catch (error) {
     console.error("VERIFY_PAYMENT_ERROR", error);
