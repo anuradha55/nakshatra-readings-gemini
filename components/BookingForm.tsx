@@ -251,11 +251,9 @@ export default function BookingForm() {
 
             if (verifyRes.ok && result.success) {
               setOk(true);
-              setStatus(
-                result.customerSmsSent === false
-                  ? "Payment confirmed! Your booking is secure. We’ll reach out shortly to schedule your call. We could not send the SMS confirmation yet."
-                  : "Payment confirmed! Your booking is secure. We’ll reach out shortly to schedule your call. An SMS confirmation has been sent."
-              );
+              setStatus("Payment confirmed! Opening your booking confirmation…");
+              window.location.assign("/booking-success?booking=" + encodeURIComponent(String(order.bookingId)));
+              return;
             } else {
               // Never encourage another payment after Razorpay has already
               // returned a successful payment response.
