@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
-import { sendWhatsAppTemplate } from "@/lib/whatsapp";
+import { sendAstrologerBookingSms, sendCustomerBookingSms } from "@/lib/twilio";
 
 export const runtime = "nodejs";
 
@@ -14,48 +14,6 @@ function verifyWebhookSignature(rawBody: string, signature: string, secret: stri
   );
 }
 
-async function notifyAstrologer(payout: {
-  id: string;
-  bookingId: string;
-  astrologerName: string;
-  grossAmount: number;
-  payoutAmount: number;
-}) {
-  const phone = process.env.ASTROLOGER_WHATSAPP_NUMBER;
-  const templateName = process.env.WHATSAPP_ASTROLOGER_TEMPLATE_NAME;
-
-  if (!phone || !templateName) {
-    console.warn("ASTROLOGER_WHATSAPP_NOT_CONFIGURED", {
-      hasPhone: Boolean(phone),
-      hasTemplateName: Boolean(templateName),
-    });
-    return false;
-  }
-
-  const gross = (payout.grossAmount / 100).toFixed(2);
-  const share = (payout.payoutAmount / 100).toFixed(2);
-
-  const result = await sendWhatsAppTemplate({
-    to: phone,
-    templateName,
-    bodyParameters: [
-      payout.astrologerName || "Astrologer",
-      payout.bookingId,
-      `₹${gross}`,
-      `₹${share}`,
-    ],
-  });
-
-  if (!result.sent) {
-    console.error("ASTROLOGER_WHATSAPP_ERROR", {
-      payoutId: payout.id,
-      bookingId: payout.bookingId,
-      error: result.error ?? null,
-    });
-  }
-
-  return result.sent;
-}
 
 export async function POST(request: Request) {
   const rawBody = await request.text();
@@ -151,7 +109,15 @@ export async function POST(request: Request) {
     });
 
     if (payout && !payout.notificationSentAt) {
-      const sent = await notifyAstrologer(payout);
+      const sent = (await sendAstrologerBookingSms({
+        id: booking.id,
+        name: booking.name,
+        phone: booking.phone,
+        email: booking.email,
+        service: booking.service,
+        birthDetails: booking.birthDetails,
+        amount: booking.amount,
+      })).sent;
       if (sent) {
         await prisma.astrologerPayout.update({
           where: { id: payout.id },
@@ -161,26 +127,20 @@ export async function POST(request: Request) {
     }
 
     if (newlyMarkedPaid) {
-      const customerTemplate = process.env.WHATSAPP_BOOKING_TEMPLATE_NAME;
-      if (customerTemplate) {
-        const customerResult = await sendWhatsAppTemplate({
-          to: booking.phone,
-          templateName: customerTemplate,
-          bodyParameters: [
-            booking.name || "Customer",
-            booking.service,
-            `₹${(booking.amount / 100).toFixed(2)}`,
-            booking.id,
-          ],
-        });
+      const customerResult = await sendCustomerBookingSms({
+        id: booking.id,
+        name: booking.name,
+        phone: booking.phone,
+        service: booking.service,
+        amount: booking.amount,
+      });
 
-        if (!customerResult.sent) {
-          console.error("CUSTOMER_WHATSAPP_ERROR", {
-            bookingId: booking.id,
-            phone: booking.phone,
-            error: customerResult.error ?? null,
-          });
-        }
+      if (!customerResult.sent) {
+        console.error("CUSTOMER_SMS_ERROR", {
+          bookingId: booking.id,
+          phone: booking.phone,
+          error: customerResult.error ?? null,
+        });
       }
     }
 
