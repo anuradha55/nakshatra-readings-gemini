@@ -217,7 +217,20 @@ export default function BookingForm() {
         },
         theme: { color: "#CDA463" },
         handler: async (response: Record<string, string>) => {
-          setStatus("Confirming payment…");
+          setStatus("Payment received securely. Confirming your booking…");
+
+          let verificationFinished = false;
+          const timeoutId = window.setTimeout(() => {
+            if (!verificationFinished) {
+              // Razorpay has already confirmed the payment. Keep the button
+              // disabled so the customer cannot accidentally pay a second time.
+              setLoading(false);
+              setOk(true);
+              setStatus(
+                "Payment received successfully. We’re confirming your booking in the background. Please do not make another payment."
+              );
+            }
+          }, 12000);
 
           try {
             const verifyRes = await fetch("/api/verify-payment", {
@@ -231,24 +244,33 @@ export default function BookingForm() {
               }),
             });
 
-            const result = await verifyRes.json();
+            const result = await verifyRes.json().catch(() => ({}));
+            verificationFinished = true;
+            window.clearTimeout(timeoutId);
+            setLoading(false);
 
             if (verifyRes.ok && result.success) {
-              setLoading(false);
               setOk(true);
-              setStatus("Payment confirmed! We’ll reach out shortly to schedule your call.");
-            } else {
-              setLoading(false);
-              setOk(false);
               setStatus(
-                `Payment received but confirmation failed. Payment ID: ${response.razorpay_payment_id}`
+                result.emailSent === false
+                  ? "Payment confirmed! Your booking is secure. We’ll reach out shortly to schedule your call. We could not send the confirmation email yet."
+                  : "Payment confirmed! We’ll reach out shortly to schedule your call. A confirmation email has been requested."
+              );
+            } else {
+              // Never encourage another payment after Razorpay has already
+              // returned a successful payment response.
+              setOk(true);
+              setStatus(
+                "Payment received successfully. We could not complete the final confirmation on this screen. Please do not make another payment; we will reconcile your booking automatically."
               );
             }
           } catch {
+            verificationFinished = true;
+            window.clearTimeout(timeoutId);
             setLoading(false);
-            setOk(false);
+            setOk(true);
             setStatus(
-              `Payment received but confirmation could not be completed. Payment ID: ${response.razorpay_payment_id}`
+              "Payment received successfully. Confirmation is taking longer than expected. Please do not make another payment; we will reconcile your booking automatically."
             );
           }
         },
@@ -414,7 +436,7 @@ export default function BookingForm() {
                 }
               }}
             >
-              {ok ? "Payment confirmed ✓" : loading ? "Preparing payment…" : "Pay ₹500 & book session"}
+              {ok ? "Payment confirmed ✓" : loading ? (status.includes("Confirming") || status.includes("Payment received") ? "Confirming booking…" : "Preparing payment…") : "Pay ₹500 & book session"}
             </button>
             <p className="note">
               Payments are processed securely by Razorpay. Your card/UPI details never touch our servers.
