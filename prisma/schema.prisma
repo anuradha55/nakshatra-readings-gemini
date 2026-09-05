@@ -23,6 +23,19 @@ enum PayoutStatus {
   CANCELLED
 }
 
+enum BookingNotificationType {
+  CUSTOMER_PAYMENT_CONFIRMATION
+  ASTROLOGER_NEW_BOOKING
+}
+
+enum BookingNotificationStatus {
+  PENDING
+  PROCESSING
+  SENT
+  DELIVERED
+  FAILED
+}
+
 model Booking {
   id                  String        @id @default(cuid())
   name                String
@@ -37,7 +50,6 @@ model Booking {
   razorpayPaymentId   String?       @unique
   paymentVerifiedAt   DateTime?
 
-  // Revenue split, stored in paise.
   platformShare       Int           @default(0)
   astrologerShare     Int           @default(0)
   payoutStatus        PayoutStatus  @default(NOT_REQUIRED)
@@ -46,10 +58,31 @@ model Booking {
   updatedAt            DateTime      @updatedAt
 
   payout               AstrologerPayout?
+  notifications        BookingNotification[]
 
   @@index([email])
   @@index([status])
   @@index([payoutStatus])
+  @@index([createdAt])
+}
+
+model BookingNotification {
+  id             String                     @id @default(cuid())
+  bookingId      String
+  type           BookingNotificationType
+  status         BookingNotificationStatus @default(PENDING)
+  twilioSid      String?                    @unique
+  attempts       Int                        @default(0)
+  lastError      String?
+  sentAt         DateTime?
+  deliveredAt    DateTime?
+  createdAt      DateTime                   @default(now())
+  updatedAt      DateTime                   @updatedAt
+
+  booking        Booking                    @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@unique([bookingId, type])
+  @@index([status])
   @@index([createdAt])
 }
 
