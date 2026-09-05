@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
+import { sendWhatsAppTemplate } from "@/lib/whatsapp";
 
 export const runtime = "nodejs";
 
@@ -17,18 +18,16 @@ async function notifyAstrologer(payout: {
   id: string;
   bookingId: string;
   astrologerName: string;
-  astrologerEmail: string;
   grossAmount: number;
   payoutAmount: number;
 }) {
-  const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.RESEND_FROM_EMAIL;
+  const phone = process.env.ASTROLOGER_WHATSAPP_NUMBER;
+  const templateName = process.env.WHATSAPP_ASTROLOGER_TEMPLATE_NAME;
 
-  if (!apiKey || !from || !payout.astrologerEmail) {
-    console.warn("ASTROLOGER_EMAIL_NOT_CONFIGURED", {
-      hasResendKey: Boolean(apiKey),
-      hasFromEmail: Boolean(from),
-      hasAstrologerEmail: Boolean(payout.astrologerEmail),
+  if (!phone || !templateName) {
+    console.warn("ASTROLOGER_WHATSAPP_NOT_CONFIGURED", {
+      hasPhone: Boolean(phone),
+      hasTemplateName: Boolean(templateName),
     });
     return false;
   }
@@ -36,39 +35,26 @@ async function notifyAstrologer(payout: {
   const gross = (payout.grossAmount / 100).toFixed(2);
   const share = (payout.payoutAmount / 100).toFixed(2);
 
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from,
-      to: [payout.astrologerEmail],
-      subject: "New Nakshatra consultation - payment received",
-      html: `
-        <div style="font-family:Arial,sans-serif;line-height:1.6">
-          <h2>🔮 New Nakshatra Consultation</h2>
-          <p>Hello ${payout.astrologerName || "Astrologer"},</p>
-          <p>A customer has successfully paid for a human astrology consultation.</p>
-          <p><strong>Booking ID:</strong> ${payout.bookingId}</p>
-          <p><strong>Total customer payment:</strong> ₹${gross}</p>
-          <p><strong>Your 80% share:</strong> ₹${share}</p>
-          <p><strong>Payout status:</strong> Pending manual transfer</p>
-          <p>Please complete the consultation as agreed. The payout can be marked paid after the transfer is made.</p>
-          <p>— Nakshatra Readings</p>
-        </div>
-      `,
-    }),
+  const result = await sendWhatsAppTemplate({
+    to: phone,
+    templateName,
+    bodyParameters: [
+      payout.astrologerName || "Astrologer",
+      payout.bookingId,
+      `₹${gross}`,
+      `₹${share}`,
+    ],
   });
 
-  if (!response.ok) {
-    const details = await response.text();
-    console.error("ASTROLOGER_EMAIL_ERROR", response.status, details);
-    return false;
+  if (!result.sent) {
+    console.error("ASTROLOGER_WHATSAPP_ERROR", {
+      payoutId: payout.id,
+      bookingId: payout.bookingId,
+      error: result.error ?? null,
+    });
   }
 
-  return true;
+  return result.sent;
 }
 
 export async function POST(request: Request) {
