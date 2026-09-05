@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
+import { sendWhatsAppTemplate } from "@/lib/whatsapp";
 
 export const runtime = "nodejs";
 
@@ -129,6 +130,30 @@ export async function POST(request: Request) {
         paymentVerifiedAt: booking.paymentVerifiedAt ?? new Date(),
       },
     });
+
+    const templateName = process.env.WHATSAPP_BOOKING_TEMPLATE_NAME;
+    if (templateName) {
+      const whatsappResult = await sendWhatsAppTemplate({
+        to: booking.phone,
+        templateName,
+        bodyParameters: [
+          booking.name || "Customer",
+          booking.service,
+          `₹${(booking.amount / 100).toFixed(2)}`,
+          booking.id,
+        ],
+      });
+
+      if (!whatsappResult.sent) {
+        console.error("RAZORPAY_WEBHOOK_WHATSAPP_NOT_SENT", {
+          bookingId: booking.id,
+          phone: booking.phone,
+          error: whatsappResult.error ?? null,
+        });
+      }
+    } else {
+      console.error("RAZORPAY_WEBHOOK_WHATSAPP_TEMPLATE_NOT_CONFIGURED");
+    }
 
     console.log("RAZORPAY_WEBHOOK_BOOKING_PAID", {
       bookingId: booking.id,
