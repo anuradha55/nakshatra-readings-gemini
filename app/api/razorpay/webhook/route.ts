@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
-import { sendWhatsAppTemplate } from "@/lib/whatsapp";
+import { sendCustomerBookingSms } from "@/lib/twilio";
 
 export const runtime = "nodejs";
 
@@ -131,28 +131,20 @@ export async function POST(request: Request) {
       },
     });
 
-    const templateName = process.env.WHATSAPP_BOOKING_TEMPLATE_NAME;
-    if (templateName) {
-      const whatsappResult = await sendWhatsAppTemplate({
-        to: booking.phone,
-        templateName,
-        bodyParameters: [
-          booking.name || "Customer",
-          booking.service,
-          `₹${(booking.amount / 100).toFixed(2)}`,
-          booking.id,
-        ],
-      });
+    const smsResult = await sendCustomerBookingSms({
+      id: booking.id,
+      name: booking.name,
+      phone: booking.phone,
+      service: booking.service,
+      amount: booking.amount,
+    });
 
-      if (!whatsappResult.sent) {
-        console.error("RAZORPAY_WEBHOOK_WHATSAPP_NOT_SENT", {
-          bookingId: booking.id,
-          phone: booking.phone,
-          error: whatsappResult.error ?? null,
-        });
-      }
-    } else {
-      console.error("RAZORPAY_WEBHOOK_WHATSAPP_TEMPLATE_NOT_CONFIGURED");
+    if (!smsResult.sent) {
+      console.error("RAZORPAY_WEBHOOK_SMS_NOT_SENT", {
+        bookingId: booking.id,
+        phone: booking.phone,
+        error: smsResult.error ?? null,
+      });
     }
 
     console.log("RAZORPAY_WEBHOOK_BOOKING_PAID", {
