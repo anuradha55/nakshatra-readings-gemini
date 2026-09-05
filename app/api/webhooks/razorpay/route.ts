@@ -101,9 +101,10 @@ export async function POST(request: Request) {
     }
 
     // Idempotent processing: repeated Razorpay deliveries must never create a second payout.
+    let newlyMarkedPaid = false;
     if (booking.status !== "PAID") {
       await prisma.$transaction(async (tx) => {
-        await tx.booking.updateMany({
+        const paymentUpdate = await tx.booking.updateMany({
           where: {
             id: booking.id,
             status: { not: "PAID" },
@@ -115,6 +116,7 @@ export async function POST(request: Request) {
             payoutStatus: "PENDING",
           },
         });
+        newlyMarkedPaid = paymentUpdate.count > 0;
 
         await tx.astrologerPayout.upsert({
           where: { bookingId: booking.id },
@@ -155,6 +157,30 @@ export async function POST(request: Request) {
           where: { id: payout.id },
           data: { notificationSentAt: new Date() },
         });
+      }
+    }
+
+    if (newlyMarkedPaid) {
+      const customerTemplate = process.env.WHATSAPP_BOOKING_TEMPLATE_NAME;
+      if (customerTemplate) {
+        const customerResult = await sendWhatsAppTemplate({
+          to: booking.phone,
+          templateName: customerTemplate,
+          bodyParameters: [
+            booking.name || "Customer",
+            booking.service,
+            `₹${(booking.amount / 100).toFixed(2)}`,
+            booking.id,
+          ],
+        });
+
+        if (!customerResult.sent) {
+          console.error("CUSTOMER_WHATSAPP_ERROR", {
+            bookingId: booking.id,
+            phone: booking.phone,
+            error: customerResult.error ?? null,
+          });
+        }
       }
     }
 
