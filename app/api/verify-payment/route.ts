@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
-import { sendAstrologerBookingSms, sendCustomerBookingSms } from "@/lib/twilio";
+import { sendCustomerBookingSms } from "@/lib/twilio";
 
 export const runtime = "nodejs";
 
@@ -68,29 +68,16 @@ export async function POST(request: Request) {
 
     // Notification delivery is intentionally non-fatal: a successful Razorpay
     // payment must never be shown as failed just because SMS delivery fails.
-    const notificationResults =
+    const customerSmsResult =
       updated.count > 0
-        ? await Promise.all([
-            sendCustomerBookingSms({
-              id: latest.id,
-              name: latest.name,
-              phone: latest.phone,
-              service: latest.service,
-              amount: latest.amount,
-            }),
-            sendAstrologerBookingSms({
-              id: latest.id,
-              name: latest.name,
-              phone: latest.phone,
-              email: latest.email,
-              service: latest.service,
-              birthDetails: latest.birthDetails,
-              amount: latest.amount,
-            }),
-          ])
-        : [{ sent: true }, { sent: true }];
-
-    const [customerSmsResult, astrologerSmsResult] = notificationResults;
+        ? await sendCustomerBookingSms({
+            id: latest.id,
+            name: latest.name,
+            phone: latest.phone,
+            service: latest.service,
+            amount: latest.amount,
+          })
+        : { sent: true };
 
     console.log("PAID_BOOKING", {
       bookingId,
@@ -98,14 +85,12 @@ export async function POST(request: Request) {
       razorpayOrderId: latest.razorpayOrderId,
       razorpayPaymentId: razorpay_payment_id,
       customerSmsSent: customerSmsResult.sent,
-      astrologerSmsSent: astrologerSmsResult.sent,
     });
 
     return NextResponse.json({
       success: true,
       alreadyProcessed: updated.count === 0,
       customerSmsSent: customerSmsResult.sent,
-      astrologerSmsSent: astrologerSmsResult.sent,
     });
   } catch (error) {
     console.error("VERIFY_PAYMENT_ERROR", error);
