@@ -252,9 +252,9 @@ export default function BookingForm() {
             if (verifyRes.ok && result.success) {
               setOk(true);
               setStatus(
-                result.whatsappSent === false
-                  ? "Payment confirmed! Your booking is secure. We’ll reach out shortly to schedule your call. We could not send the WhatsApp confirmation yet."
-                  : "Payment confirmed! We’ll reach out shortly to schedule your call. A WhatsApp confirmation has been requested."
+                result.customerSmsSent === false
+                  ? "Payment confirmed! Your booking is secure. We’ll reach out shortly to schedule your call. We could not send the SMS confirmation yet."
+                  : "Payment confirmed! Your booking is secure. We’ll reach out shortly to schedule your call. An SMS confirmation has been sent."
               );
             } else {
               // Never encourage another payment after Razorpay has already
