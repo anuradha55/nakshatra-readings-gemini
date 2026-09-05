@@ -7,13 +7,18 @@ type SendSmsResult = {
 function normalizePhoneNumber(value: string) {
   const trimmed = value.trim();
   if (!trimmed) return "";
-  if (trimmed.startsWith("+")) return trimmed;
-  // Booking numbers on this India-focused site may be entered as 10 digits.
-  // Keep other country numbers unchanged if they already include a country code.
+
   const digits = trimmed.replace(/\D/g, "");
-  if (digits.length === 10) return `+91${digits}`;
-  if (digits.startsWith("91") && digits.length === 12) return `+${digits}`;
-  return `+${digits}`;
+  if (trimmed.startsWith("+")) {
+    return /^\+[1-9]\d{7,14}$/.test(trimmed) ? trimmed : "";
+  }
+  if (/^\d{10}$/.test(digits)) return `+91${digits}`;
+  if (/^91\d{10}$/.test(digits)) return `+${digits}`;
+  return "";
+}
+
+export function isValidPhoneNumber(value: string) {
+  return Boolean(normalizePhoneNumber(value));
 }
 
 export async function sendSms({
@@ -26,6 +31,7 @@ export async function sendSms({
   const accountSid = process.env.TWILIO_ACCOUNT_SID;
   const authToken = process.env.TWILIO_AUTH_TOKEN;
   const from = process.env.TWILIO_FROM_NUMBER;
+  const statusCallback = process.env.TWILIO_STATUS_CALLBACK_URL;
 
   if (!accountSid || !authToken || !from) {
     console.error("TWILIO_SMS_CONFIG_ERROR", {
@@ -37,18 +43,24 @@ export async function sendSms({
   }
 
   const destination = normalizePhoneNumber(to);
+  const normalizedFrom = normalizePhoneNumber(from);
   if (!destination) {
-    return { sent: false, error: "Recipient phone number is missing." };
+    return { sent: false, error: "Recipient phone number is invalid." };
+  }
+  if (!normalizedFrom) {
+    return { sent: false, error: "Twilio sender phone number is invalid." };
   }
 
   try {
     const credentials = Buffer.from(`${accountSid}:${authToken}`).toString("base64");
-    const form = new URLSearchParams({
+    const formValues: Record<string, string> = {
       To: destination,
-      From: from,
+      From: normalizedFrom,
       Body: body,
-    });
+    };
+    if (statusCallback) formValues.StatusCallback = statusCallback;
 
+    const form = new URLSearchParams(formValues);
     const response = await fetch(
       `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
       {
@@ -59,6 +71,7 @@ export async function sendSms({
         },
         body: form.toString(),
         cache: "no-store",
+        signal: AbortSignal.timeout(10000),
       }
     );
 
@@ -76,6 +89,10 @@ export async function sendSms({
         error,
       });
       return { sent: false, error };
+    }
+
+    if (!payload.sid) {
+      return { sent: false, error: "Twilio accepted the request without returning a message SID." };
     }
 
     return { sent: true, sid: payload.sid };
