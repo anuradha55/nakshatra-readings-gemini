@@ -1,20 +1,23 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 type Confirmation = { booking:{ id:string;name:string;service:string;amount:number;currency:string;status:string;createdAt:string }; astrologer:{ name:string;phone:string } };
 
-export default function BookingSuccessPage({ searchParams }:{ searchParams:{ booking?:string } }) {
+export default function BookingSuccessPage() {
+  const searchParams = useSearchParams();
+  const bookingId = searchParams.get("booking");
   const [data,setData]=useState<Confirmation|null>(null);
   const [error,setError]=useState("");
 
   useEffect(()=>{
-    const bookingId=searchParams.booking;
+    const bookingId=searchParams.get("booking");
     if(!bookingId){setError("Booking reference is missing.");return;}
     fetch("/api/bookings/"+encodeURIComponent(bookingId))
       .then(async res=>{const body=await res.json();if(!res.ok) throw new Error(body.error||"Unable to load booking.");setData(body);})
       .catch(err=>setError(err instanceof Error?err.message:"Unable to load booking."));
-  },[searchParams.booking]);
+  },[searchParams]);
 
   if(error) return <main className="confirmation-page"><div className="confirmation-card"><h1>Booking confirmation unavailable</h1><p>{error}</p><a className="btn-primary" href="/">Back to home</a></div></main>;
   if(!data) return <main className="confirmation-page"><div className="confirmation-card"><p>Loading your secure booking confirmation…</p></div></main>;
