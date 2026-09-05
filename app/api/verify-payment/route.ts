@@ -1,48 +1,10 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
-import { sendWhatsAppTemplate } from "@/lib/whatsapp";
+import { sendAstrologerBookingSms, sendCustomerBookingSms } from "@/lib/twilio";
 
 export const runtime = "nodejs";
 
-async function sendBookingConfirmationWhatsApp(booking: {
-  id: string;
-  name: string;
-  phone: string;
-  service: string;
-  amount: number;
-  razorpayPaymentId: string | null;
-}) {
-  const templateName = process.env.WHATSAPP_BOOKING_TEMPLATE_NAME;
-
-  if (!templateName) {
-    console.error("BOOKING_WHATSAPP_CONFIG_ERROR: WHATSAPP_BOOKING_TEMPLATE_NAME is missing");
-    return { sent: false };
-  }
-
-  const amount = (booking.amount / 100).toFixed(2);
-
-  const result = await sendWhatsAppTemplate({
-    to: booking.phone,
-    templateName,
-    bodyParameters: [
-      booking.name || "Customer",
-      booking.service,
-      `₹${amount}`,
-      booking.id,
-    ],
-  });
-
-  if (!result.sent) {
-    console.error("BOOKING_WHATSAPP_NOT_SENT", {
-      bookingId: booking.id,
-      phone: booking.phone,
-      error: result.error ?? null,
-    });
-  }
-
-  return result;
-}
 
 export async function POST(request: Request) {
   try {
@@ -105,31 +67,45 @@ export async function POST(request: Request) {
     }
 
     // Notification delivery is intentionally non-fatal: a successful Razorpay
-    // payment must never be shown as failed just because WhatsApp is unavailable.
-    const whatsappResult =
+    // payment must never be shown as failed just because SMS delivery fails.
+    const notificationResults =
       updated.count > 0
-        ? await sendBookingConfirmationWhatsApp({
-            id: latest.id,
-            name: latest.name,
-            phone: latest.phone,
-            service: latest.service,
-            amount: latest.amount,
-            razorpayPaymentId: razorpay_payment_id,
-          })
-        : { sent: true };
+        ? await Promise.all([
+            sendCustomerBookingSms({
+              id: latest.id,
+              name: latest.name,
+              phone: latest.phone,
+              service: latest.service,
+              amount: latest.amount,
+            }),
+            sendAstrologerBookingSms({
+              id: latest.id,
+              name: latest.name,
+              phone: latest.phone,
+              email: latest.email,
+              service: latest.service,
+              birthDetails: latest.birthDetails,
+              amount: latest.amount,
+            }),
+          ])
+        : [{ sent: true }, { sent: true }];
+
+    const [customerSmsResult, astrologerSmsResult] = notificationResults;
 
     console.log("PAID_BOOKING", {
       bookingId,
       phone: latest.phone,
       razorpayOrderId: latest.razorpayOrderId,
       razorpayPaymentId: razorpay_payment_id,
-      whatsappSent: whatsappResult.sent,
+      customerSmsSent: customerSmsResult.sent,
+      astrologerSmsSent: astrologerSmsResult.sent,
     });
 
     return NextResponse.json({
       success: true,
       alreadyProcessed: updated.count === 0,
-      whatsappSent: whatsappResult.sent,
+      customerSmsSent: customerSmsResult.sent,
+      astrologerSmsSent: astrologerSmsResult.sent,
     });
   } catch (error) {
     console.error("VERIFY_PAYMENT_ERROR", error);
