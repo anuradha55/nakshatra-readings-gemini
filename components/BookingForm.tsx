@@ -287,7 +287,7 @@ export default function BookingForm() {
       try {
         rzp.open();
         window.setTimeout(() => {
-          setStatus((current) => current === "Step 4/4: Opening secure Razorpay payment window..." ? "Payment window was requested. If no popup is visible, please check the browser console for Razorpay errors." : current);
+          setStatus((current) => current === "Step 4/4: Opening secure Razorpay payment window..." ? "" : current);
         }, 1500);
       } catch (error) {
         throw new Error(`Razorpay popup could not open: ${error instanceof Error ? error.message : "Unknown error"}`);
