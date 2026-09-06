@@ -128,6 +128,7 @@ export async function POST(request: Request) {
     const birthTime = clean(body.birthTime, 30);
     const birthPlace = clean(body.birthPlace, 150);
     const question = clean(body.question, 500);
+    const paidPaymentId = clean(body.paidPaymentId, 100);
     if (!email || !email.includes("@") || !birthDate || !birthTime || !birthPlace || !question) {
       return NextResponse.json({ error: "Please provide your email, birth date, birth time, birth place and question." }, { status: 400 });
     }
@@ -153,15 +154,26 @@ export async function POST(request: Request) {
       select: { id: true },
     });
 
+    let paidPrediction = false;
     if (existingFreeClaim) {
-      return NextResponse.json(
-        {
-          error: "A free AI prediction has already been used for these birth details. You can get additional AI predictions for ₹10 each.",
-          freePredictionUsed: true,
-          paidPrice: 10,
-        },
-        { status: 429, headers: { "Cache-Control": "no-store" } }
-      );
+      if (!paidPaymentId) {
+        return NextResponse.json(
+          {
+            error: "A free AI prediction has already been used for these birth details. You can get additional AI predictions for ₹10 each.",
+            freePredictionUsed: true,
+            paidPrice: 10,
+          },
+          { status: 429, headers: { "Cache-Control": "no-store" } }
+        );
+      }
+
+      const payment = await prisma.aiPredictionPayment.findUnique({ where: { id: paidPaymentId } });
+      if (!payment || payment.status !== "PAID" || payment.birthDate !== birthDate || payment.birthTime !== birthTime || payment.birthPlaceKey !== birthPlaceKey) {
+        return NextResponse.json({ error: "A valid ₹10 AI prediction payment is required." }, { status: 402 });
+      }
+
+      await prisma.aiPredictionPayment.delete({ where: { id: payment.id } });
+      paidPrediction = true;
     }
 
     const birthInstantUtc = localTimeToUtc(birthDate, birthTime, location.timezone);
@@ -260,14 +272,20 @@ ${chartSummary}`;
     }
 
     try {
-      await prisma.$transaction([
-        prisma.aiFreePredictionClaim.create({
-          data: { birthDate, birthTime, birthPlaceKey },
-        }),
-        prisma.aiPrediction.create({
+      if (paidPrediction) {
+        await prisma.aiPrediction.create({
           data: { email, name: name || null, birthDate, birthTime, birthPlace, question, answer, model },
-        }),
-      ]);
+        });
+      } else {
+        await prisma.$transaction([
+          prisma.aiFreePredictionClaim.create({
+            data: { birthDate, birthTime, birthPlaceKey },
+          }),
+          prisma.aiPrediction.create({
+            data: { email, name: name || null, birthDate, birthTime, birthPlace, question, answer, model },
+          }),
+        ]);
+      }
     } catch (databaseError) {
       const code = (databaseError as { code?: string }).code;
       if (code === "P2002") {
@@ -284,7 +302,7 @@ ${chartSummary}`;
       return NextResponse.json({ error: "Unable to securely save your free prediction. Please try again." }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, answer, chart, remaining: 0, freePredictionUsed: true, paidPrice: 10 });
+    return NextResponse.json({ success: true, answer, chart, remaining: 0, freePredictionUsed: true, paidPrice: 10, paidPrediction });
   } catch (error) {
     console.error("AI_PREDICTION_ERROR", error);
     const message = error instanceof Error ? error.message : "Unable to generate your prediction.";
