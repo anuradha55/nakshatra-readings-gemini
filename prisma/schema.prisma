@@ -122,3 +122,15 @@ model AiPrediction {
 
   @@index([email, createdAt])
 }
+
+
+model AiFreePredictionClaim {
+  id            String   @id @default(cuid())
+  birthDate     String
+  birthTime     String
+  birthPlaceKey String
+  createdAt     DateTime @default(now())
+
+  @@unique([birthDate, birthTime, birthPlaceKey])
+  @@index([createdAt])
+}
