@@ -134,3 +134,21 @@ model AiFreePredictionClaim {
   @@unique([birthDate, birthTime, birthPlaceKey])
   @@index([createdAt])
 }
+
+model AiPredictionPayment {
+  id               String   @id @default(cuid())
+  birthDate        String
+  birthTime        String
+  birthPlaceKey    String
+  amount           Int
+  currency         String   @default("INR")
+  status           String   @default("PENDING")
+  razorpayOrderId  String   @unique
+  razorpayPaymentId String? @unique
+  paidAt           DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([birthDate, birthTime, birthPlaceKey])
+  @@index([status])
+}
