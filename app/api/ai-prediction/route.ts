@@ -132,24 +132,38 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Please provide your email, birth date, birth time, birth place and question." }, { status: 400 });
     }
 
-    const limitSetting = String(process.env.AI_FREE_QUESTIONS ?? "unlimited").trim().toLowerCase();
-    const unlimited = limitSetting === "" || limitSetting === "unlimited" || limitSetting === "0";
-    const limit = unlimited ? null : Number(limitSetting);
-    if (!unlimited && (!Number.isFinite(limit) || (limit as number) < 1)) {
-      return NextResponse.json({ error: "AI_FREE_QUESTIONS must be a positive number or 'unlimited'." }, { status: 500 });
-    }
-
-    let used = 0;
-    if (!unlimited) {
-      used = await prisma.aiPrediction.count({ where: { email } });
-      if (used >= (limit as number)) return NextResponse.json({ error: "You have used your free AI predictions.", limitReached: true, used, limit }, { status: 429 });
-    }
-
     const apiKey = process.env.GROQ_API_KEY;
     const model = process.env.GROQ_MODEL ?? "openai/gpt-oss-20b";
     if (!apiKey) return NextResponse.json({ error: "Groq AI service is not configured." }, { status: 500 });
 
     const location = await geocodeBirthPlace(birthPlace);
+
+    // The free prediction is tied to the actual birth details, not the
+    // customer's name or email. The geocoded coordinates prevent small
+    // spelling variations in the same birth place from bypassing the limit.
+    const birthPlaceKey = `${location.latitude.toFixed(4)}:${location.longitude.toFixed(4)}`;
+    const existingFreeClaim = await prisma.aiFreePredictionClaim.findUnique({
+      where: {
+        birthDate_birthTime_birthPlaceKey: {
+          birthDate,
+          birthTime,
+          birthPlaceKey,
+        },
+      },
+      select: { id: true },
+    });
+
+    if (existingFreeClaim) {
+      return NextResponse.json(
+        {
+          error: "A free AI prediction has already been used for these birth details. You can get additional AI predictions for ₹10 each.",
+          freePredictionUsed: true,
+          paidPrice: 10,
+        },
+        { status: 429, headers: { "Cache-Control": "no-store" } }
+      );
+    }
+
     const birthInstantUtc = localTimeToUtc(birthDate, birthTime, location.timezone);
     const observer = new Observer(location.latitude, location.longitude, 0);
     const kundli = getKundli(birthInstantUtc, observer, { houseSystem: "whole_sign", ayanamsa: "lahiri" });
@@ -246,12 +260,31 @@ ${chartSummary}`;
     }
 
     try {
-      await prisma.aiPrediction.create({ data: { email, name: name || null, birthDate, birthTime, birthPlace, question, answer, model } });
+      await prisma.$transaction([
+        prisma.aiFreePredictionClaim.create({
+          data: { birthDate, birthTime, birthPlaceKey },
+        }),
+        prisma.aiPrediction.create({
+          data: { email, name: name || null, birthDate, birthTime, birthPlace, question, answer, model },
+        }),
+      ]);
     } catch (databaseError) {
+      const code = (databaseError as { code?: string }).code;
+      if (code === "P2002") {
+        return NextResponse.json(
+          {
+            error: "A free AI prediction has already been used for these birth details. You can get additional AI predictions for ₹10 each.",
+            freePredictionUsed: true,
+            paidPrice: 10,
+          },
+          { status: 429, headers: { "Cache-Control": "no-store" } }
+        );
+      }
       console.error("AI_PREDICTION_SAVE_ERROR", databaseError);
+      return NextResponse.json({ error: "Unable to securely save your free prediction. Please try again." }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, answer, chart, used: unlimited ? null : used + 1, remaining: unlimited ? null : Math.max(0, (limit as number) - used - 1) });
+    return NextResponse.json({ success: true, answer, chart, remaining: 0, freePredictionUsed: true, paidPrice: 10 });
   } catch (error) {
     console.error("AI_PREDICTION_ERROR", error);
     const message = error instanceof Error ? error.message : "Unable to generate your prediction.";
