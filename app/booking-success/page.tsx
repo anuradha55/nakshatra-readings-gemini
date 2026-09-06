@@ -190,12 +190,18 @@ function BookingSuccessContent() {
             </div>
           </div>
 
+          <div className="astrologer-contact">
+            <p className="confirmation-eyebrow">YOUR ASTROLOGER</p>
+            <h2>{data.astrologer.name}</h2>
+            <p className="astrologer-phone">{data.astrologer.phone}</p>
+          </div>
+
           <div className="share-instruction">
             <p className="confirmation-eyebrow">NEXT STEP</p>
             <h2>Share your booking confirmation with the astrologer</h2>
             <p>
               Download this confirmation as a PDF or PNG and share it with the astrologer
-              through WhatsApp or any other convenient method.
+              using the contact number shown above, through WhatsApp or any other convenient method.
             </p>
           </div>
 
