@@ -146,6 +146,7 @@ model AiPredictionPayment {
   razorpayOrderId  String   @unique
   razorpayPaymentId String? @unique
   paidAt           DateTime?
+  consumedAt       DateTime?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
