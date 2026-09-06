@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 type Confirmation = { booking:{ id:string;name:string;service:string;amount:number;currency:string;status:string;createdAt:string }; astrologer:{ name:string;phone:string } };
 
-export default function BookingSuccessPage() {
+function BookingSuccessContent() {
   const searchParams = useSearchParams();
   const bookingId = searchParams.get("booking");
   const [data,setData]=useState<Confirmation|null>(null);
@@ -47,4 +47,12 @@ export default function BookingSuccessPage() {
     </div>
     <p className="confirmation-note">Please keep your booking reference for your records.</p>
   </div></main>;
+}
+
+export default function BookingSuccessPage() {
+  return (
+    <Suspense fallback={<main className="confirmation-page"><div className="confirmation-card"><p>Loading your secure booking confirmation…</p></div></main>}>
+      <BookingSuccessContent />
+    </Suspense>
+  );
 }
