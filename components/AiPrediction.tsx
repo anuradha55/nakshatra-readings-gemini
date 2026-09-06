@@ -2,11 +2,6 @@
 import React, { FormEvent, useEffect, useState } from "react";
 import NorthIndianChart from "@/components/NorthIndianChart";
 
-declare global {
-  interface Window {
-    Razorpay?: new (options: Record<string, unknown>) => { open: () => void; on: (event: string, handler: () => void) => void };
-  }
-}
 
 const RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ?? "";
 
