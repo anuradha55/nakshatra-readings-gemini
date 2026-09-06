@@ -11,3 +11,13 @@ footer{position:relative;z-index:2;border-top:1px solid var(--line);padding:34px
 .booking-receipt{padding:2px}.share-instruction{margin-top:30px;padding:26px;border:1px solid rgba(205,164,99,.35);border-radius:18px;background:rgba(15,12,36,.22)}.share-instruction h2{margin:8px 0;font-size:1.35rem}.share-instruction>p:not(.confirmation-eyebrow){color:var(--text-dim);font-size:.9rem;line-height:1.6;margin:10px auto 0}.download-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:26px}.download-actions button{min-width:180px;cursor:pointer}.download-actions button:disabled{opacity:.65;cursor:wait}.download-actions .btn-primary,.download-actions .btn-ghost{border:none;font:inherit}
 
 .astrologer-contact .astrologer-phone{font-family:'JetBrains Mono',monospace;color:var(--gold-soft);font-size:1.05rem;font-weight:600;margin:12px 0 0}.booking-receipt .astrologer-contact{margin-top:30px}
+
+
+/* Booking receipt customer information and download controls */
+.customer-details-section,.booking-details-section{margin-top:26px}
+.customer-details-section .confirmation-eyebrow,.booking-details-section .confirmation-eyebrow{text-align:left;margin-bottom:10px}
+.confirmation-details.customer-details{margin-top:10px}
+.confirmation-details .full-width{grid-column:1 / -1}
+.download-actions .btn-ghost{background:rgba(15,12,36,.45);color:var(--text);border:1px solid var(--gold);font-weight:600;box-shadow:0 8px 30px -8px rgba(0,0,0,.35)}
+.download-actions .btn-ghost:hover{background:rgba(205,164,99,.14);border-color:var(--gold-soft)}
+@media(max-width:560px){.confirmation-details .full-width{grid-column:auto}}
