@@ -7,6 +7,9 @@ type Confirmation = {
   booking: {
     id: string;
     name: string;
+    phone: string;
+    email: string;
+    birthDetails: string | null;
     service: string;
     amount: number;
     currency: string;
@@ -167,7 +170,27 @@ function BookingSuccessContent() {
             Thank you, {data.booking.name}. Your payment has been verified successfully.
           </p>
 
-          <div className="confirmation-details">
+          <section className="customer-details-section">
+            <p className="confirmation-eyebrow">CUSTOMER DETAILS</p>
+            <div className="confirmation-details customer-details">
+              <div>
+                <span>Customer name</span>
+                <strong>{data.booking.name}</strong>
+              </div>
+              <div>
+                <span>Mobile number</span>
+                <strong>{data.booking.phone}</strong>
+              </div>
+              <div className="full-width">
+                <span>Birth details</span>
+                <strong>{data.booking.birthDetails || "Not provided"}</strong>
+              </div>
+            </div>
+          </section>
+
+          <section className="booking-details-section">
+            <p className="confirmation-eyebrow">BOOKING DETAILS</p>
+            <div className="confirmation-details">
             <div>
               <span>Booking reference</span>
               <strong>{data.booking.id}</strong>
@@ -188,7 +211,8 @@ function BookingSuccessContent() {
               <span>Status</span>
               <strong className="confirmed">Confirmed</strong>
             </div>
-          </div>
+            </div>
+          </section>
 
           <div className="astrologer-contact">
             <p className="confirmation-eyebrow">YOUR ASTROLOGER</p>
