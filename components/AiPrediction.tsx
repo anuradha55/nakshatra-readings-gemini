@@ -2,6 +2,14 @@
 import React, { FormEvent, useEffect, useState } from "react";
 import NorthIndianChart from "@/components/NorthIndianChart";
 
+declare global {
+  interface Window {
+    Razorpay?: new (options: Record<string, unknown>) => { open: () => void; on: (event: string, handler: () => void) => void };
+  }
+}
+
+const RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ?? "";
+
 type ChartData = React.ComponentProps<typeof NorthIndianChart>;
 type PlaceSuggestion = { name: string; admin1?: string; country?: string; latitude: number; longitude: number; timezone?: string };
 
@@ -97,6 +105,7 @@ export default function AiPrediction() {
   const [remaining, setRemaining] = useState<number | null>(null);
   const [freePredictionUsed, setFreePredictionUsed] = useState(false);
   const [paidPrice, setPaidPrice] = useState(10);
+  const [paidPaymentId, setPaidPaymentId] = useState("");
   const [birthTime, setBirthTime] = useState("12:00");
   const [birthPlace, setBirthPlace] = useState("");
   const [placeSuggestions, setPlaceSuggestions] = useState<PlaceSuggestion[]>([]);
@@ -131,13 +140,97 @@ export default function AiPrediction() {
     setShowPlaces(false);
   }
 
+  async function loadRazorpay() {
+    if (window.Razorpay) return;
+    await new Promise<void>((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => window.Razorpay ? resolve() : reject(new Error("Razorpay Checkout did not load."));
+      script.onerror = () => reject(new Error("Could not load Razorpay Checkout."));
+      document.body.appendChild(script);
+    });
+  }
+
+  async function startPaidPredictionPayment(form: FormData) {
+    if (!RAZORPAY_KEY_ID) throw new Error("Razorpay Key ID is not configured.");
+    await loadRazorpay();
+
+    const birthDate = String(form.get("birthDate") ?? "").trim();
+    const birthTimeValue = String(form.get("birthTime") ?? "").trim();
+    const birthPlaceValue = String(form.get("birthPlace") ?? "").trim();
+
+    const orderRes = await fetch("/api/ai-prediction/create-order", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ birthDate, birthTime: birthTimeValue, birthPlace: birthPlaceValue }),
+    });
+    const order = await orderRes.json().catch(() => null);
+    if (!orderRes.ok || !order?.id || !order?.paymentId) {
+      throw new Error(order?.error ?? "Unable to create the ₹10 AI prediction payment.");
+    }
+    if (!window.Razorpay) throw new Error("Razorpay Checkout is not available.");
+
+    const rzp = new window.Razorpay({
+      key: RAZORPAY_KEY_ID,
+      amount: order.amount,
+      currency: order.currency,
+      name: "Nakshatra Readings",
+      description: "AI Astrology Prediction",
+      order_id: order.id,
+      prefill: {
+        name: String(form.get("name") ?? ""),
+        email: String(form.get("email") ?? ""),
+      },
+      theme: { color: "#CDA463" },
+      handler: async (response: Record<string, string>) => {
+        try {
+          const verifyRes = await fetch("/api/ai-prediction/verify-payment", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              paymentId: order.paymentId,
+            }),
+          });
+          const verified = await verifyRes.json().catch(() => null);
+          if (!verifyRes.ok || !verified?.success) throw new Error(verified?.error ?? "Payment verification failed.");
+
+          setPaidPaymentId(String(order.paymentId));
+          setMessage("Payment confirmed. Your ₹10 AI prediction is ready—click the button once more to generate it.");
+        } catch (error) {
+          setMessage(error instanceof Error ? error.message : "Payment was received but could not be verified on the website.");
+        } finally {
+          setLoading(false);
+        }
+      },
+    });
+
+    rzp.on("payment.failed", () => {
+      setLoading(false);
+      setMessage("Payment was not completed. You have not been charged for the prediction.");
+    });
+    rzp.open();
+  }
+
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
     const email = String(form.get("email") ?? "").trim().toLowerCase();
 
     setLoading(true); setAnswer(""); setChart(null); setMessage(""); setEmailStatus("");
-    const payload = JSON.stringify({ name: form.get("name"), email, birthDate: form.get("birthDate"), birthTime: form.get("birthTime"), birthPlace: form.get("birthPlace"), question: form.get("question") });
+
+    if (freePredictionUsed && !paidPaymentId) {
+      try {
+        await startPaidPredictionPayment(form);
+      } catch (error) {
+        setLoading(false);
+        setMessage(error instanceof Error ? error.message : "Unable to start the ₹10 payment.");
+      }
+      return;
+    }
+
+    const payload = JSON.stringify({ name: form.get("name"), email, birthDate: form.get("birthDate"), birthTime: form.get("birthTime"), birthPlace: form.get("birthPlace"), question: form.get("question"), paidPaymentId: paidPaymentId || undefined });
 
     try {
       let lastError = "Could not generate a prediction.";
@@ -150,6 +243,7 @@ export default function AiPrediction() {
           if (res.ok) {
             const generatedAnswer = data?.answer ?? "";
             setAnswer(generatedAnswer);
+            setPaidPaymentId("");
             setChart(data?.chart ?? null);
             setRemaining(data?.remaining ?? null);
             if (data?.freePredictionUsed) {
@@ -202,7 +296,7 @@ export default function AiPrediction() {
             <p>Get one free chart-based Vedic astrology interpretation for each unique set of birth details. Additional predictions can be offered for ₹10.</p>
             <div className="ai-benefits"><span>✦ Ascendant</span><span>✦ Planetary positions</span><span>✦ Mahadasha & Antardasha</span><span>✦ Question analysis</span></div>
           </div>
-          <form className="ai-form" onSubmit={submit} onInput={() => setFreePredictionUsed(false)}>
+          <form className="ai-form" onSubmit={submit} onInput={() => { setFreePredictionUsed(false); setPaidPaymentId(""); }}>
             <div className="field"><label htmlFor="ai-name">Your name</label><input id="ai-name" name="name" /></div>
             <div className="field"><label htmlFor="ai-email">Email</label><input id="ai-email" name="email" type="email" required autoComplete="email" placeholder="name@example.com" title="Enter a valid email address, for example name@example.com" /></div>
             <div className="ai-two">
@@ -220,7 +314,7 @@ export default function AiPrediction() {
                   ? `Get an AI prediction for ₹${paidPrice}`
                   : "Get 1 free AI prediction"}
             </button>
-            {freePredictionUsed && <p className="ai-paid-note">These birth details have already used their free prediction. Additional AI predictions are ₹{paidPrice} each.</p>}
+{freePredictionUsed && <p className="ai-paid-note">{paidPaymentId ? "Payment confirmed. Click the button to generate your AI prediction." : `These birth details have already used their free prediction. Additional AI predictions are ₹${paidPrice} each.`}</p>}
             {remaining !== null && <p className="ai-remaining">{remaining} free prediction{remaining === 1 ? "" : "s"} remaining</p>}
             {message && <p className="status-msg status-err">{message}</p>}
             {emailStatus && <p className="status-msg status-ok">{emailStatus}</p>}
