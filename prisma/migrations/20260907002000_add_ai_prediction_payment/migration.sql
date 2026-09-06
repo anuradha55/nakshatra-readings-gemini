@@ -10,6 +10,7 @@ CREATE TABLE "AiPredictionPayment" (
     "razorpayOrderId" TEXT NOT NULL,
     "razorpayPaymentId" TEXT,
     "paidAt" TIMESTAMP(3),
+    "consumedAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
