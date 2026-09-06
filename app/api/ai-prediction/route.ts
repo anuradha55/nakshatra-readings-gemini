@@ -168,11 +168,10 @@ export async function POST(request: Request) {
       }
 
       const payment = await prisma.aiPredictionPayment.findUnique({ where: { id: paidPaymentId } });
-      if (!payment || payment.status !== "PAID" || payment.birthDate !== birthDate || payment.birthTime !== birthTime || payment.birthPlaceKey !== birthPlaceKey) {
+      if (!payment || payment.status !== "PAID" || payment.consumedAt || payment.birthDate !== birthDate || payment.birthTime !== birthTime || payment.birthPlaceKey !== birthPlaceKey) {
         return NextResponse.json({ error: "A valid ₹10 AI prediction payment is required." }, { status: 402 });
       }
 
-      await prisma.aiPredictionPayment.delete({ where: { id: payment.id } });
       paidPrediction = true;
     }
 
@@ -273,9 +272,20 @@ ${chartSummary}`;
 
     try {
       if (paidPrediction) {
-        await prisma.aiPrediction.create({
-          data: { email, name: name || null, birthDate, birthTime, birthPlace, question, answer, model },
+        const consumed = await prisma.$transaction(async (tx) => {
+          const result = await tx.aiPredictionPayment.updateMany({
+            where: { id: paidPaymentId, status: "PAID", consumedAt: null },
+            data: { consumedAt: new Date() },
+          });
+          if (result.count !== 1) return false;
+          await tx.aiPrediction.create({
+            data: { email, name: name || null, birthDate, birthTime, birthPlace, question, answer, model },
+          });
+          return true;
         });
+        if (!consumed) {
+          return NextResponse.json({ error: "This AI prediction payment has already been used." }, { status: 409 });
+        }
       } else {
         await prisma.$transaction([
           prisma.aiFreePredictionClaim.create({
