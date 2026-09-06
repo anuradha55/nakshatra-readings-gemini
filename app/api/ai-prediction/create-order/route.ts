@@ -6,10 +6,22 @@ export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   try {
-    const { birthDate, birthTime, birthPlaceKey } = await request.json();
-    if (!birthDate || !birthTime || !birthPlaceKey) {
+    const { birthDate, birthTime, birthPlace } = await request.json();
+    if (!birthDate || !birthTime || !birthPlace) {
       return NextResponse.json({ error: "Birth details are required." }, { status: 400 });
     }
+
+    const geoUrl = new URL("https://geocoding-api.open-meteo.com/v1/search");
+    geoUrl.searchParams.set("name", String(birthPlace));
+    geoUrl.searchParams.set("count", "1");
+    geoUrl.searchParams.set("format", "json");
+    const geoResponse = await fetch(geoUrl, { cache: "no-store" });
+    const geoData = await geoResponse.json();
+    const place = geoData?.results?.[0];
+    if (!place || !Number.isFinite(place.latitude) || !Number.isFinite(place.longitude)) {
+      return NextResponse.json({ error: "Unable to validate the birth place." }, { status: 400 });
+    }
+    const birthPlaceKey = Number(place.latitude).toFixed(4) + ":" + Number(place.longitude).toFixed(4);
 
     const keyId = process.env.RAZORPAY_KEY_ID;
     const keySecret = process.env.RAZORPAY_KEY_SECRET;
