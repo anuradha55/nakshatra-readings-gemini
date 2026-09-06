@@ -21,3 +21,32 @@ footer{position:relative;z-index:2;border-top:1px solid var(--line);padding:34px
 .download-actions .btn-ghost{background:rgba(15,12,36,.45);color:var(--text);border:1px solid var(--gold);font-weight:600;box-shadow:0 8px 30px -8px rgba(0,0,0,.35)}
 .download-actions .btn-ghost:hover{background:rgba(205,164,99,.14);border-color:var(--gold-soft)}
 @media(max-width:560px){.confirmation-details .full-width{grid-column:auto}}
+
+
+/* Compact booking confirmation */
+.confirmation-page{padding:28px 18px;align-items:flex-start}
+.confirmation-card{width:min(640px,100%);padding:30px 32px;border-radius:20px;margin:0 auto}
+.confirmation-card h1{font-size:1.8rem;margin:6px 0 8px}
+.confirmation-card h2{font-size:1.25rem}
+.confirmation-icon{width:48px;height:48px;font-size:1.55rem;margin-bottom:10px}
+.confirmation-intro{margin-bottom:18px}
+.customer-details-section,.booking-details-section{margin-top:18px}
+.confirmation-details{gap:9px;margin:12px 0}
+.confirmation-details>div{padding:10px 12px;border-radius:10px}
+.astrologer-contact{margin-top:18px;padding:16px;border-radius:14px}
+.booking-receipt .astrologer-contact{margin-top:18px}
+.astrologer-contact .astrologer-phone{margin:7px 0 0}
+.share-instruction{margin-top:18px;padding:16px;border-radius:14px}
+.share-instruction h2{font-size:1.15rem}
+.share-instruction>p:not(.confirmation-eyebrow){font-size:.84rem;margin-top:6px}
+.confirmation-note{margin-top:16px}
+.download-actions{margin-top:18px;gap:10px}
+.download-actions button{min-width:155px;padding:11px 18px}
+.btn-back-home{display:inline-flex;align-items:center;justify-content:center;margin:14px auto 0;padding:8px 16px;color:var(--text-dim);font-size:.85rem;text-decoration:none}
+.btn-back-home:hover{color:var(--gold-soft)}
+@media(max-width:560px){
+  .confirmation-page{padding:18px 12px}
+  .confirmation-card{padding:24px 16px}
+  .confirmation-card h1{font-size:1.55rem}
+  .download-actions button{min-width:140px}
+}
