@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 export async function GET(_request: Request,{ params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const booking = await prisma.booking.findUnique({ where: { id }, select: { id:true,name:true,service:true,amount:true,currency:true,status:true,createdAt:true } });
+    const booking = await prisma.booking.findUnique({ where: { id }, select: { id:true,name:true,phone:true,email:true,birthDetails:true,service:true,amount:true,currency:true,status:true,createdAt:true } });
     if (!booking) return NextResponse.json({ error:"Booking not found." },{ status:404 });
     if (booking.status !== "PAID") return NextResponse.json({ error:"This booking has not been confirmed yet." },{ status:403 });
 
@@ -20,7 +20,7 @@ export async function GET(_request: Request,{ params }: { params: Promise<{ id: 
     const normalizedPhone = digits.startsWith("91") ? "+" + digits : "+91" + digits;
 
     return NextResponse.json({
-      booking:{ id:booking.id,name:booking.name,service:booking.service,amount:booking.amount/100,currency:booking.currency,status:booking.status,createdAt:booking.createdAt },
+      booking:{ id:booking.id,name:booking.name,phone:booking.phone,email:booking.email,birthDetails:booking.birthDetails,service:booking.service,amount:booking.amount/100,currency:booking.currency,status:booking.status,createdAt:booking.createdAt },
       astrologer:{ name:astrologerName,phone:normalizedPhone }
     });
   } catch (error) {
