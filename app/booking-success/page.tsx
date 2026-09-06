@@ -251,6 +251,9 @@ function BookingSuccessContent() {
           >
             {downloading === "png" ? "Preparing PNG…" : "Download PNG"}
           </button>
+          <a className="btn-back-home" href="/">
+            ← Back to home
+          </a>
         </div>
       </div>
     </main>
