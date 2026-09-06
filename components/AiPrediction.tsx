@@ -95,6 +95,8 @@ export default function AiPrediction() {
   const [message, setMessage] = useState("");
   const [emailStatus, setEmailStatus] = useState("");
   const [remaining, setRemaining] = useState<number | null>(null);
+  const [freePredictionUsed, setFreePredictionUsed] = useState(false);
+  const [paidPrice, setPaidPrice] = useState(10);
   const [birthTime, setBirthTime] = useState("12:00");
   const [birthPlace, setBirthPlace] = useState("");
   const [placeSuggestions, setPlaceSuggestions] = useState<PlaceSuggestion[]>([]);
@@ -150,6 +152,10 @@ export default function AiPrediction() {
             setAnswer(generatedAnswer);
             setChart(data?.chart ?? null);
             setRemaining(data?.remaining ?? null);
+            if (data?.freePredictionUsed) {
+              setFreePredictionUsed(true);
+              setPaidPrice(Number(data?.paidPrice ?? 10));
+            }
 
             try {
               const emailRes = await fetch("/api/send-prediction-email", {
@@ -162,6 +168,13 @@ export default function AiPrediction() {
             } catch {
               setEmailStatus("Prediction generated, but the email could not be sent.");
             }
+            return;
+          }
+
+          if (data?.freePredictionUsed) {
+            setFreePredictionUsed(true);
+            setPaidPrice(Number(data?.paidPrice ?? 10));
+            setMessage(data?.error ?? "A free AI prediction has already been used for these birth details.");
             return;
           }
 
@@ -184,12 +197,12 @@ export default function AiPrediction() {
       <div className="wrap">
         <div className="ai-panel">
           <div className="ai-copy">
-            <div className="eyebrow">Free AI astrology</div>
+            <div className="eyebrow">AI astrology</div>
             <h2>Ask your chart a question.</h2>
-            <p>Get a chart-based Vedic astrology interpretation using your birth details, planetary positions and current Vimshottari Dasha.</p>
+            <p>Get one free chart-based Vedic astrology interpretation for each unique set of birth details. Additional predictions can be offered for ₹10.</p>
             <div className="ai-benefits"><span>✦ Ascendant</span><span>✦ Planetary positions</span><span>✦ Mahadasha & Antardasha</span><span>✦ Question analysis</span></div>
           </div>
-          <form className="ai-form" onSubmit={submit}>
+          <form className="ai-form" onSubmit={submit} onInput={() => setFreePredictionUsed(false)}>
             <div className="field"><label htmlFor="ai-name">Your name</label><input id="ai-name" name="name" /></div>
             <div className="field"><label htmlFor="ai-email">Email</label><input id="ai-email" name="email" type="email" required autoComplete="email" placeholder="name@example.com" title="Enter a valid email address, for example name@example.com" /></div>
             <div className="ai-two">
@@ -200,7 +213,14 @@ export default function AiPrediction() {
               {showPlaces && placeSuggestions.length > 0 && <div className="place-suggestions">{placeSuggestions.map((place, index) => <button type="button" className="place-option" key={`${place.name}-${place.latitude}-${index}`} onMouseDown={(event) => event.preventDefault()} onClick={() => selectPlace(place)}><strong>{place.name}</strong><span>{[place.admin1, place.country].filter(Boolean).join(", ")}</span></button>)}</div>}
             </div>
             <div className="field"><label htmlFor="ai-question">Your question</label><textarea id="ai-question" name="question" rows={4} maxLength={500} placeholder="e.g. What does the coming period look like for my career?" required /></div>
-            <button className="btn-primary ai-btn" type="submit" disabled={loading}>{loading ? "Calculating your chart…" : "Get my free prediction"}</button>
+            <button className="btn-primary ai-btn" type="submit" disabled={loading}>
+              {loading
+                ? "Calculating your chart…"
+                : freePredictionUsed
+                  ? `Get an AI prediction for ₹${paidPrice}`
+                  : "Get 1 free AI prediction"}
+            </button>
+            {freePredictionUsed && <p className="ai-paid-note">These birth details have already used their free prediction. Additional AI predictions are ₹{paidPrice} each.</p>}
             {remaining !== null && <p className="ai-remaining">{remaining} free prediction{remaining === 1 ? "" : "s"} remaining</p>}
             {message && <p className="status-msg status-err">{message}</p>}
             {emailStatus && <p className="status-msg status-ok">{emailStatus}</p>}
