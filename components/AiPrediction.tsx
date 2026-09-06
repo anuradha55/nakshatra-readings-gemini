@@ -197,7 +197,9 @@ export default function AiPrediction() {
           if (!verifyRes.ok || !verified?.success) throw new Error(verified?.error ?? "Payment verification failed.");
 
           setPaidPaymentId(String(order.paymentId));
-          setMessage("Payment confirmed. Your ₹10 AI prediction is ready—click the button once more to generate it.");
+          setMessage("Payment confirmed. Generating your AI prediction…");
+          setLoading(false);
+          window.setTimeout(() => document.getElementById("ai-paid-prediction-submit")?.click(), 150);
         } catch (error) {
           setMessage(error instanceof Error ? error.message : "Payment was received but could not be verified on the website.");
         } finally {
@@ -307,14 +309,14 @@ export default function AiPrediction() {
               {showPlaces && placeSuggestions.length > 0 && <div className="place-suggestions">{placeSuggestions.map((place, index) => <button type="button" className="place-option" key={`${place.name}-${place.latitude}-${index}`} onMouseDown={(event) => event.preventDefault()} onClick={() => selectPlace(place)}><strong>{place.name}</strong><span>{[place.admin1, place.country].filter(Boolean).join(", ")}</span></button>)}</div>}
             </div>
             <div className="field"><label htmlFor="ai-question">Your question</label><textarea id="ai-question" name="question" rows={4} maxLength={500} placeholder="e.g. What does the coming period look like for my career?" required /></div>
-            <button className="btn-primary ai-btn" type="submit" disabled={loading}>
+            <button id="ai-paid-prediction-submit" className="btn-primary ai-btn" type="submit" disabled={loading}>
               {loading
                 ? "Calculating your chart…"
                 : freePredictionUsed
                   ? `Get an AI prediction for ₹${paidPrice}`
                   : "Get 1 free AI prediction"}
             </button>
-{freePredictionUsed && <p className="ai-paid-note">{paidPaymentId ? "Payment confirmed. Click the button to generate your AI prediction." : `These birth details have already used their free prediction. Additional AI predictions are ₹${paidPrice} each.`}</p>}
+{freePredictionUsed && <p className="ai-paid-note">{paidPaymentId ? "Payment confirmed. Generating your AI prediction…" : `These birth details have already used their free prediction. Additional AI predictions are ₹${paidPrice} each.`}</p>}
             {remaining !== null && <p className="ai-remaining">{remaining} free prediction{remaining === 1 ? "" : "s"} remaining</p>}
             {message && <p className="status-msg status-err">{message}</p>}
             {emailStatus && <p className="status-msg status-ok">{emailStatus}</p>}
