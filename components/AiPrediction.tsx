@@ -255,9 +255,9 @@ export default function AiPrediction() {
                 body: JSON.stringify({ name: form.get("name"), email, answer: generatedAnswer }),
               });
               const emailData = await emailRes.json().catch(() => null);
-              setEmailStatus(emailRes.ok ? "A copy of your AI prediction has been sent to your email." : (emailData?.error ?? "Prediction generated, but the email could not be sent."));
+              setEmailStatus(emailRes.ok ? "A copy of your AI prediction has been sent to your email." : "");
             } catch {
-              setEmailStatus("Prediction generated, but the email could not be sent.");
+              setEmailStatus("");
             }
             return;
           }
