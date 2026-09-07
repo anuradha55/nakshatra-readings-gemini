@@ -75,9 +75,14 @@ function renderMarkdown(markdown: string) {
 const RETRYABLE_STATUS = new Set([500, 502, 503, 504]);
 
 function extractConclusion(markdown: string) {
-  const match = markdown.match(/(?:^|\\n)##\\s*(?:6\\.\\s*)?(?:Conclusion|निष्कर्ष|निष्कर्ष:)\\s*\\n([\\s\\S]*?)(?=\\n##\\s*|$)/i);
-  if (!match) return "";
+  const match = markdown.match(/(?:^|\n)#{1,6}\s*(?:\d+\.\s*)?(?:Conclusion|निष्कर्ष)\s*:?\s*\n([\s\S]*?)(?=\n#{1,6}\s+|$)/i);
   return (match?.[1] ?? "").trim();
+}
+
+function extractDetailedReport(markdown: string) {
+  const conclusionBlock = /(?:^|\n)#{1,6}\s*(?:\d+\.\s*)?(?:Conclusion|निष्कर्ष)\s*:?\s*\n[\s\S]*?(?=\n#{1,6}\s+|$)/i;
+  const withoutConclusion = markdown.replace(conclusionBlock, "").trim();
+  return withoutConclusion || markdown;
 }
 
 function wait(ms: number) {
@@ -298,18 +303,18 @@ export default function AiPrediction({ language }: { language: Language }) {
             <div className="field"><label htmlFor="ai-email">{t.email}</label><input id="ai-email" name="email" type="email" required autoComplete="email" placeholder="name@example.com" title="Enter a valid email address, for example name@example.com" /></div>
             <div className="ai-two">
               <div className="field"><label htmlFor="ai-date">{t.birthDate}</label><input id="ai-date" name="birthDate" type="date" required /></div>
-              <div className="field"><label htmlFor="ai-time">{t.birthTime}</label><input id="ai-time" name="birthTime" type="time" value={birthTime} onChange={(e) => setBirthTime(e.target.value)} step="60" required /><small className="field-hint">Select the exact hour and minute.</small></div>
+              <div className="field"><label htmlFor="ai-time">{t.birthTime}</label><input id="ai-time" name="birthTime" type="time" value={birthTime} onChange={(e) => setBirthTime(e.target.value)} step="60" required /><small className="field-hint">{language === "hi" ? "सटीक घंटा और मिनट चुनें। " : language === "mr" ? "अचूक तास आणि मिनिट निवडा." : "Select the exact hour and minute."}</small></div>
             </div>
             <div className="field place-field"><label htmlFor="ai-place">{t.birthPlace}</label><div className="place-input-wrap"><input id="ai-place" name="birthPlace" value={birthPlace} onChange={(e) => { setSelectedPlace(""); setBirthPlace(e.target.value); }} onFocus={() => !selectedPlace && placeSuggestions.length && setShowPlaces(true)} placeholder={t.placePlaceholder} autoComplete="off" required />{placeLoading && <span className="place-loading">{t.searching}</span>}</div>
               {showPlaces && placeSuggestions.length > 0 && <div className="place-suggestions">{placeSuggestions.map((place, index) => <button type="button" className="place-option" key={`${place.name}-${place.latitude}-${index}`} onMouseDown={(event) => event.preventDefault()} onClick={() => selectPlace(place)}><strong>{place.name}</strong><span>{[place.admin1, place.country].filter(Boolean).join(", ")}</span></button>)}</div>}
             </div>
-            <div className="field"><label htmlFor="ai-question">{t.question}</label><textarea id="ai-question" name="question" rows={4} maxLength={500} placeholder="e.g. What does the coming period look like for my career?" required /></div>
+            <div className="field"><label htmlFor="ai-question">{t.question}</label><textarea id="ai-question" name="question" rows={4} maxLength={500} placeholder={language === "hi" ? "उदाहरण: मेरे करियर के लिए आने वाला समय कैसा रहेगा?" : language === "mr" ? "उदा. माझ्या करिअरसाठी येणारा काळ कसा असेल?" : "e.g. What does the coming period look like for my career?"} required /></div>
             <button id="ai-paid-prediction-submit" className="btn-primary ai-btn" type="submit" disabled={loading}>
               {loading
-                ? "Calculating your chart…"
+                ? (language === "hi" ? "आपकी कुंडली की गणना हो रही है…" : language === "mr" ? "तुमच्या कुंडलीची गणना होत आहे…" : "Calculating your chart…")
                 : freePredictionUsed
-                  ? `Get an AI prediction for ₹${paidPrice}`
-                  : "Get 1 free AI prediction"}
+                  ? (language === "hi" ? `₹${paidPrice} में AI भविष्यवाणी प्राप्त करें` : language === "mr" ? `₹${paidPrice} मध्ये AI भविष्यवाणी मिळवा` : `Get an AI prediction for ₹${paidPrice}`)
+                  : (language === "hi" ? "1 मुफ्त AI भविष्यवाणी प्राप्त करें" : language === "mr" ? "1 मोफत AI भविष्यवाणी मिळवा" : "Get 1 free AI prediction")}
             </button>
 {freePredictionUsed && <p className="ai-paid-note">{paidPaymentId ? "Payment confirmed. Generating your AI prediction…" : `The free AI prediction has already been used. Additional AI predictions are ₹${paidPrice} each.`}</p>}
             {remaining !== null && <p className="ai-remaining">{remaining} free prediction{remaining === 1 ? "" : "s"} remaining</p>}
@@ -318,9 +323,9 @@ export default function AiPrediction({ language }: { language: Language }) {
           </form>
         </div>
         {answer && <div className="ai-result"><div className="ai-result-head"><div><h3>{language === "hi" ? "आपकी AI ज्योतिषीय भविष्यवाणी" : language === "mr" ? "तुमचे AI ज्योतिषीय वाचन" : "Your AI astrology reading"}</h3><span>{language === "hi" ? "चार्ट गणना · AI व्याख्या" : language === "mr" ? "कुंडली गणना · AI विश्लेषण" : "Chart calculated · AI interpreted"}</span></div></div>
-          <div className="ai-conclusion"><div className="ai-conclusion-label">{t.conclusion}</div>{renderMarkdown(extractConclusion(answer) || answer)}</div>
+          <div className="ai-conclusion"><div className="ai-conclusion-label">{t.conclusion}</div>{renderMarkdown(extractConclusion(answer) || (language === "hi" ? "आपकी भविष्यवाणी तैयार है। विस्तृत जानकारी देखने के लिए नीचे दिए गए बटन पर क्लिक करें।" : language === "mr" ? "तुमचे वाचन तयार आहे. सविस्तर माहिती पाहण्यासाठी खालील बटणावर क्लिक करा." : "Your reading is ready. Click below to view the detailed report."))}</div>
           <button type="button" className="btn-ghost ai-detail-btn" onClick={() => setShowDetailedReport((value) => !value)}>{showDetailedReport ? t.hideDetailed : t.detailed}</button>
-          {showDetailedReport && <div className="ai-detailed-report">{chart && <NorthIndianChart {...chart} />}<div className="ai-answer" style={{ maxHeight: "none", overflowY: "visible", overflowX: "visible", paddingRight: "0", paddingBottom: "32px" }}>{renderMarkdown(answer)}</div></div>}
+          {showDetailedReport && <div className="ai-detailed-report">{chart && <NorthIndianChart {...chart} />}<div className="ai-answer" style={{ maxHeight: "none", overflowY: "visible", overflowX: "visible", paddingRight: "0", paddingBottom: "32px" }}>{renderMarkdown(extractDetailedReport(answer))}</div></div>}
           <div className="ai-cta"><div><strong>{language === "hi" ? "गहराई से पढ़ना चाहते हैं?" : language === "mr" ? "सखोल वाचन हवे आहे?" : "Want a deeper reading?"}</strong><p>{language === "hi" ? "अपने पूरे चार्ट पर मानव ज्योतिषी से चर्चा करें।" : language === "mr" ? "तुमच्या संपूर्ण कुंडलीवर मानवी ज्योतिषासोबत चर्चा करा." : "Discuss your complete chart with a human astrologer for 30–45 minutes."}</p></div><a href="#booking" className="btn-primary">{language === "hi" ? "₹500 में बुक करें" : language === "mr" ? "₹500 मध्ये बुक करा" : "Book for ₹500"}</a></div></div>}
         <p className="ai-disclaimer">AI-generated astrology guidance is for personal reflection and is not a scientific prediction, guarantee of future events, or professional advice.</p>
       </div>
