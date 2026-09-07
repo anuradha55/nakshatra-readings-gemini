@@ -106,10 +106,11 @@ export default function AiPrediction() {
   const [placeSuggestions, setPlaceSuggestions] = useState<PlaceSuggestion[]>([]);
   const [showPlaces, setShowPlaces] = useState(false);
   const [placeLoading, setPlaceLoading] = useState(false);
+  const [selectedPlace, setSelectedPlace] = useState("");
 
   useEffect(() => {
     const query = birthPlace.trim();
-    if (query.length < 2) { setPlaceSuggestions([]); setShowPlaces(false); return; }
+    if (query.length < 2 || query === selectedPlace) { setPlaceSuggestions([]); setShowPlaces(false); return; }
     const controller = new AbortController();
     const timer = window.setTimeout(async () => {
       try {
@@ -128,10 +129,13 @@ export default function AiPrediction() {
       } finally { setPlaceLoading(false); }
     }, 350);
     return () => { window.clearTimeout(timer); controller.abort(); };
-  }, [birthPlace]);
+  }, [birthPlace, selectedPlace]);
 
   function selectPlace(place: PlaceSuggestion) {
-    setBirthPlace([place.name, place.admin1, place.country].filter(Boolean).join(", "));
+    const fullPlace = [place.name, place.admin1, place.country].filter(Boolean).join(", ");
+    setSelectedPlace(fullPlace);
+    setBirthPlace(fullPlace);
+    setPlaceSuggestions([]);
     setShowPlaces(false);
   }
 
@@ -300,7 +304,7 @@ export default function AiPrediction() {
               <div className="field"><label htmlFor="ai-date">Birth date</label><input id="ai-date" name="birthDate" type="date" required /></div>
               <div className="field"><label htmlFor="ai-time">Birth time</label><select id="ai-time" name="birthTime" value={birthTime} onChange={(e) => setBirthTime(e.target.value)} required><option value="">Select time</option>{TIME_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></div>
             </div>
-            <div className="field place-field"><label htmlFor="ai-place">Birth place</label><div className="place-input-wrap"><input id="ai-place" name="birthPlace" value={birthPlace} onChange={(e) => setBirthPlace(e.target.value)} onFocus={() => placeSuggestions.length && setShowPlaces(true)} placeholder="Start typing a city or town" autoComplete="off" required />{placeLoading && <span className="place-loading">Searching…</span>}</div>
+            <div className="field place-field"><label htmlFor="ai-place">Birth place</label><div className="place-input-wrap"><input id="ai-place" name="birthPlace" value={birthPlace} onChange={(e) => { setSelectedPlace(""); setBirthPlace(e.target.value); }} onFocus={() => !selectedPlace && placeSuggestions.length && setShowPlaces(true)} placeholder="Start typing a city or town" autoComplete="off" required />{placeLoading && <span className="place-loading">Searching…</span>}</div>
               {showPlaces && placeSuggestions.length > 0 && <div className="place-suggestions">{placeSuggestions.map((place, index) => <button type="button" className="place-option" key={`${place.name}-${place.latitude}-${index}`} onMouseDown={(event) => event.preventDefault()} onClick={() => selectPlace(place)}><strong>{place.name}</strong><span>{[place.admin1, place.country].filter(Boolean).join(", ")}</span></button>)}</div>}
             </div>
             <div className="field"><label htmlFor="ai-question">Your question</label><textarea id="ai-question" name="question" rows={4} maxLength={500} placeholder="e.g. What does the coming period look like for my career?" required /></div>
