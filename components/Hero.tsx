@@ -1,31 +1,3 @@
 import ZodiacWheel from "./ZodiacWheel";
-
-export default function Hero() {
-  return (
-    <section className="hero">
-      <div className="wrap hero-inner">
-        <div>
-          <div className="eyebrow">Vedic &amp; birth chart astrology</div>
-          <h1>
-            Your birth chart is <span className="accent">a map.</span>
-            <br />We help you read it.
-          </h1>
-          <p className="lede">
-            One-on-one voice call consultations on career, relationships,
-            and timing — grounded in your actual birth chart, not generic
-            horoscopes.
-          </p>
-          <div className="hero-ctas">
-            <a href="#booking" className="btn-primary">
-              Book your session — ₹500
-            </a>
-            <a href="#free-prediction" className="btn-primary">
-              Get 1 Free AI Prediction
-            </a>
-          </div>
-        </div>
-        <ZodiacWheel />
-      </div>
-    </section>
-  );
-}
+import { Language,tr } from "@/lib/i18n";
+export default function Hero({language}:{language:Language}) { const t=tr(language); return <section className="hero"><div className="wrap hero-inner"><div><div className="eyebrow">{t.vedic}</div><h1>{t.heroTitle} <span className="accent">{t.heroAccent}</span><br />{t.heroTitle2}</h1><p className="lede">{t.heroText}</p><div className="hero-ctas"><a href="#booking" className="btn-primary">{t.bookSession}</a><a href="#free-prediction" className="btn-primary">{t.free}</a></div></div><ZodiacWheel /></div></section>;}
