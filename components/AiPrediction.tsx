@@ -315,7 +315,7 @@ export default function AiPrediction() {
                   ? `Get an AI prediction for ₹${paidPrice}`
                   : "Get 1 free AI prediction"}
             </button>
-{freePredictionUsed && <p className="ai-paid-note">{paidPaymentId ? "Payment confirmed. Generating your AI prediction…" : `These birth details have already used their free prediction. Additional AI predictions are ₹${paidPrice} each.`}</p>}
+{freePredictionUsed && <p className="ai-paid-note">{paidPaymentId ? "Payment confirmed. Generating your AI prediction…" : `The free AI prediction has already been used. Additional AI predictions are ₹${paidPrice} each.`}</p>}
             {remaining !== null && <p className="ai-remaining">{remaining} free prediction{remaining === 1 ? "" : "s"} remaining</p>}
             {message && <p className="status-msg status-err">{message}</p>}
             {emailStatus && <p className="status-msg status-ok">{emailStatus}</p>}
