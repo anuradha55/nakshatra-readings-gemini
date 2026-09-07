@@ -269,7 +269,7 @@ export default function AiPrediction() {
           if (data?.freePredictionUsed) {
             setFreePredictionUsed(true);
             setPaidPrice(Number(data?.paidPrice ?? 10));
-            setMessage(data?.error ?? "A free AI prediction has already been used for these birth details.");
+            setMessage(data?.error ?? "The free AI prediction has already been used.");
             return;
           }
 
