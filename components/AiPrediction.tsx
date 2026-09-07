@@ -1,6 +1,7 @@
 "use client";
 import React, { FormEvent, useEffect, useState } from "react";
 import NorthIndianChart from "@/components/NorthIndianChart";
+import { Language, tr } from "@/lib/i18n";
 
 
 const RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ?? "";
@@ -83,9 +84,9 @@ function wait(ms: number) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
-export default function AiPrediction() {
+export default function AiPrediction({ language }: { language: Language }) {
+  const t = tr(language);
   const [loading, setLoading] = useState(false);
-  const [language, setLanguage] = useState<"en" | "hi" | "mr">("en");
   const [showDetailedReport, setShowDetailedReport] = useState(false);
   const [answer, setAnswer] = useState("");
   const [chart, setChart] = useState<ChartData | null>(null);
@@ -286,23 +287,23 @@ export default function AiPrediction() {
       <div className="wrap">
         <div className="ai-panel">
           <div className="ai-copy">
-            <div className="eyebrow">AI astrology</div>
-            <h2>Ask your chart a question.</h2>
-            <p>Get one free chart-based Vedic astrology interpretation for each unique set of birth details. Additional predictions can be offered for ₹10.</p>
-            <div className="ai-benefits"><span>✦ Ascendant</span><span>✦ Planetary positions</span><span>✦ Mahadasha & Antardasha</span><span>✦ Question analysis</span></div>
+            <div className="eyebrow">{t.aiEyebrow}</div>
+            <h2>{t.aiTitle}</h2>
+            <p>{t.aiText}</p>
+            <div className="ai-benefits">{t.aiBenefits.map((benefit) => <span key={benefit}>✦ {benefit}</span>)}</div>
           </div>
           <form className="ai-form" onSubmit={submit} onInput={() => { setFreePredictionUsed(false); setPaidPaymentId(""); }}>
-            <div className="field"><label htmlFor="ai-language">Language / भाषा / भाषा</label><select id="ai-language" value={language} onChange={(e) => setLanguage(e.target.value as "en" | "hi" | "mr")}><option value="en">English</option><option value="hi">हिंदी</option><option value="mr">मराठी</option></select></div>
-            <div className="field"><label htmlFor="ai-name">Your name</label><input id="ai-name" name="name" /></div>
-            <div className="field"><label htmlFor="ai-email">Email</label><input id="ai-email" name="email" type="email" required autoComplete="email" placeholder="name@example.com" title="Enter a valid email address, for example name@example.com" /></div>
+            
+            <div className="field"><label htmlFor="ai-name">{t.aiName}</label><input id="ai-name" name="name" /></div>
+            <div className="field"><label htmlFor="ai-email">{t.email}</label><input id="ai-email" name="email" type="email" required autoComplete="email" placeholder="name@example.com" title="Enter a valid email address, for example name@example.com" /></div>
             <div className="ai-two">
-              <div className="field"><label htmlFor="ai-date">Birth date</label><input id="ai-date" name="birthDate" type="date" required /></div>
-              <div className="field"><label htmlFor="ai-time">Birth time</label><input id="ai-time" name="birthTime" type="time" value={birthTime} onChange={(e) => setBirthTime(e.target.value)} step="60" required /><small className="field-hint">Select the exact hour and minute.</small></div>
+              <div className="field"><label htmlFor="ai-date">{t.birthDate}</label><input id="ai-date" name="birthDate" type="date" required /></div>
+              <div className="field"><label htmlFor="ai-time">{t.birthTime}</label><input id="ai-time" name="birthTime" type="time" value={birthTime} onChange={(e) => setBirthTime(e.target.value)} step="60" required /><small className="field-hint">Select the exact hour and minute.</small></div>
             </div>
-            <div className="field place-field"><label htmlFor="ai-place">Birth place</label><div className="place-input-wrap"><input id="ai-place" name="birthPlace" value={birthPlace} onChange={(e) => { setSelectedPlace(""); setBirthPlace(e.target.value); }} onFocus={() => !selectedPlace && placeSuggestions.length && setShowPlaces(true)} placeholder="Start typing a city or town" autoComplete="off" required />{placeLoading && <span className="place-loading">Searching…</span>}</div>
+            <div className="field place-field"><label htmlFor="ai-place">{t.birthPlace}</label><div className="place-input-wrap"><input id="ai-place" name="birthPlace" value={birthPlace} onChange={(e) => { setSelectedPlace(""); setBirthPlace(e.target.value); }} onFocus={() => !selectedPlace && placeSuggestions.length && setShowPlaces(true)} placeholder={t.placePlaceholder} autoComplete="off" required />{placeLoading && <span className="place-loading">{t.searching}</span>}</div>
               {showPlaces && placeSuggestions.length > 0 && <div className="place-suggestions">{placeSuggestions.map((place, index) => <button type="button" className="place-option" key={`${place.name}-${place.latitude}-${index}`} onMouseDown={(event) => event.preventDefault()} onClick={() => selectPlace(place)}><strong>{place.name}</strong><span>{[place.admin1, place.country].filter(Boolean).join(", ")}</span></button>)}</div>}
             </div>
-            <div className="field"><label htmlFor="ai-question">Your question</label><textarea id="ai-question" name="question" rows={4} maxLength={500} placeholder="e.g. What does the coming period look like for my career?" required /></div>
+            <div className="field"><label htmlFor="ai-question">{t.question}</label><textarea id="ai-question" name="question" rows={4} maxLength={500} placeholder="e.g. What does the coming period look like for my career?" required /></div>
             <button id="ai-paid-prediction-submit" className="btn-primary ai-btn" type="submit" disabled={loading}>
               {loading
                 ? "Calculating your chart…"
@@ -317,8 +318,8 @@ export default function AiPrediction() {
           </form>
         </div>
         {answer && <div className="ai-result"><div className="ai-result-head"><div><h3>{language === "hi" ? "आपकी AI ज्योतिषीय भविष्यवाणी" : language === "mr" ? "तुमचे AI ज्योतिषीय वाचन" : "Your AI astrology reading"}</h3><span>{language === "hi" ? "चार्ट गणना · AI व्याख्या" : language === "mr" ? "कुंडली गणना · AI विश्लेषण" : "Chart calculated · AI interpreted"}</span></div></div>
-          <div className="ai-conclusion"><div className="ai-conclusion-label">{language === "hi" ? "निष्कर्ष" : language === "mr" ? "निष्कर्ष" : "Conclusion"}</div>{renderMarkdown(extractConclusion(answer) || answer)}</div>
-          <button type="button" className="btn-ghost ai-detail-btn" onClick={() => setShowDetailedReport((value) => !value)}>{showDetailedReport ? (language === "hi" ? "विस्तृत रिपोर्ट छिपाएँ" : language === "mr" ? "सविस्तर रिपोर्ट लपवा" : "Hide detailed report") : (language === "hi" ? "विस्तृत रिपोर्ट देखें" : language === "mr" ? "सविस्तर रिपोर्ट पहा" : "View detailed report")}</button>
+          <div className="ai-conclusion"><div className="ai-conclusion-label">{t.conclusion}</div>{renderMarkdown(extractConclusion(answer) || answer)}</div>
+          <button type="button" className="btn-ghost ai-detail-btn" onClick={() => setShowDetailedReport((value) => !value)}>{showDetailedReport ? t.hideDetailed : t.detailed}</button>
           {showDetailedReport && <div className="ai-detailed-report">{chart && <NorthIndianChart {...chart} />}<div className="ai-answer" style={{ maxHeight: "none", overflowY: "visible", overflowX: "visible", paddingRight: "0", paddingBottom: "32px" }}>{renderMarkdown(answer)}</div></div>}
           <div className="ai-cta"><div><strong>{language === "hi" ? "गहराई से पढ़ना चाहते हैं?" : language === "mr" ? "सखोल वाचन हवे आहे?" : "Want a deeper reading?"}</strong><p>{language === "hi" ? "अपने पूरे चार्ट पर मानव ज्योतिषी से चर्चा करें।" : language === "mr" ? "तुमच्या संपूर्ण कुंडलीवर मानवी ज्योतिषासोबत चर्चा करा." : "Discuss your complete chart with a human astrologer for 30–45 minutes."}</p></div><a href="#booking" className="btn-primary">{language === "hi" ? "₹500 में बुक करें" : language === "mr" ? "₹500 मध्ये बुक करा" : "Book for ₹500"}</a></div></div>}
         <p className="ai-disclaimer">AI-generated astrology guidance is for personal reflection and is not a scientific prediction, guarantee of future events, or professional advice.</p>
