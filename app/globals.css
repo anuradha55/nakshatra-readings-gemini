@@ -83,3 +83,64 @@ footer{position:relative;z-index:2;border-top:1px solid var(--line);padding:34px
   .ai-result-head{align-items:flex-start}
   .ai-result-head h3{font-size:1.2rem}
 }
+
+
+/* Prevent native date/time controls from overflowing their form columns */
+.field,
+.ai-two,
+.ai-two > .field {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.field input,
+.field select,
+.field textarea,
+.ai-two input,
+.ai-two select {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+}
+
+input[type="date"],
+input[type="time"] {
+  box-sizing: border-box;
+  inline-size: 100%;
+  max-inline-size: 100%;
+  min-inline-size: 0;
+}
+
+input[type="date"]::-webkit-datetime-edit,
+input[type="time"]::-webkit-datetime-edit,
+input[type="date"]::-webkit-datetime-edit-fields-wrapper,
+input[type="time"]::-webkit-datetime-edit-fields-wrapper {
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (max-width: 640px) {
+  /* AI prediction and astrologer booking date/time fields */
+  .ai-two {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+
+  .ai-two > .field {
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .ai-two > .field input,
+  .ai-two > .field select,
+  #ai-date,
+  #ai-time,
+  #booking-birth-date,
+  #booking-birth-time {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+}
