@@ -74,9 +74,9 @@ function renderMarkdown(markdown: string) {
 const RETRYABLE_STATUS = new Set([500, 502, 503, 504]);
 
 function extractConclusion(markdown: string) {
-  const match = markdown.match(/(?:^|\\n)##\\s*6\\.\\s*Conclusion\\s*\\n([\\s\\S]*?)(?=\\n##\\s*|$)/i) || markdown.match(/(?:^|\\n)##\\s*Conclusion\\s*\\n([\\s\\S]*?)(?=\\n##\\s*|$)/i) || markdown.match(/(?:^|\\n)(?:###\\s*)?(Conclusion|निष्कर्ष|निष्कर्ष:)\\s*\\n([\\s\\S]*?)(?=\\n##|$)/i);
+  const match = markdown.match(/(?:^|\\n)##\\s*(?:6\\.\\s*)?(?:Conclusion|निष्कर्ष|निष्कर्ष:)\\s*\\n([\\s\\S]*?)(?=\\n##\\s*|$)/i);
   if (!match) return "";
-  return (match[2] ?? match[1] ?? "").trim();
+  return (match?.[1] ?? "").trim();
 }
 
 function wait(ms: number) {
