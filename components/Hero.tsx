@@ -11,7 +11,7 @@ export default function Hero() {
             <br />We help you read it.
           </h1>
           <p className="lede">
-            One-on-one video or phone consultations on career, relationships,
+            One-on-one voice call consultations on career, relationships,
             and timing — grounded in your actual birth chart, not generic
             horoscopes.
           </p>
