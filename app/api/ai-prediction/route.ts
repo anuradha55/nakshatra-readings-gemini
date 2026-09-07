@@ -129,6 +129,7 @@ export async function POST(request: Request) {
     const birthPlace = clean(body.birthPlace, 150);
     const question = clean(body.question, 500);
     const paidPaymentId = clean(body.paidPaymentId, 100);
+    const language = ["en", "hi", "mr"].includes(String(body.language)) ? String(body.language) : "en";
     if (!email || !email.includes("@") || !birthDate || !birthTime || !birthPlace || !question) {
       return NextResponse.json({ error: "Please provide your email, birth date, birth time, birth place and question." }, { status: 400 });
     }
@@ -187,7 +188,7 @@ export async function POST(request: Request) {
 
 You are given a VERIFIED Vedic chart calculated by the application's astrology engine. The chart data, not your own guess, is the source of truth for planetary positions, houses, Nakshatras and Vimshottari Dasha.
 
-Your job is to interpret that chart in a clear, warm and convincing way for a customer who asked a specific question.
+Your job is to interpret that chart in a clear, warm and convincing way for a customer who asked a specific question.\n\nRESPONSE LANGUAGE: ${language === "hi" ? "Hindi (Devanagari script)" : language === "mr" ? "Marathi (Devanagari script)" : "English"}. Write every section heading and the complete interpretation in this language.
 
 MANDATORY RESPONSE STRUCTURE:
 ## 1. Birth Chart Snapshot
