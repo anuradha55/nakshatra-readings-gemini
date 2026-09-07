@@ -159,7 +159,7 @@ export async function POST(request: Request) {
       if (!paidPaymentId) {
         return NextResponse.json(
           {
-            error: "A free AI prediction has already been used for these birth details. You can get additional AI predictions for ₹10 each.",
+            error: "The free AI prediction has already been used. You can get additional AI predictions for ₹10 each.",
             freePredictionUsed: true,
             paidPrice: 10,
           },
