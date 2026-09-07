@@ -73,12 +73,20 @@ function renderMarkdown(markdown: string) {
 
 const RETRYABLE_STATUS = new Set([500, 502, 503, 504]);
 
+function extractConclusion(markdown: string) {
+  const match = markdown.match(/(?:^|\\n)##\\s*6\\.\\s*Conclusion\\s*\\n([\\s\\S]*?)(?=\\n##\\s*|$)/i) || markdown.match(/(?:^|\\n)##\\s*Conclusion\\s*\\n([\\s\\S]*?)(?=\\n##\\s*|$)/i) || markdown.match(/(?:^|\\n)(?:###\\s*)?(Conclusion|निष्कर्ष|निष्कर्ष:)\\s*\\n([\\s\\S]*?)(?=\\n##|$)/i);
+  if (!match) return "";
+  return (match[2] ?? match[1] ?? "").trim();
+}
+
 function wait(ms: number) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
 export default function AiPrediction() {
   const [loading, setLoading] = useState(false);
+  const [language, setLanguage] = useState<"en" | "hi" | "mr">("en");
+  const [showDetailedReport, setShowDetailedReport] = useState(false);
   const [answer, setAnswer] = useState("");
   const [chart, setChart] = useState<ChartData | null>(null);
   const [message, setMessage] = useState("");
@@ -205,7 +213,7 @@ export default function AiPrediction() {
     const form = new FormData(e.currentTarget);
     const email = String(form.get("email") ?? "").trim().toLowerCase();
 
-    setLoading(true); setAnswer(""); setChart(null); setMessage(""); setEmailStatus("");
+    setLoading(true); setAnswer(""); setChart(null); setMessage(""); setEmailStatus(""); setShowDetailedReport(false);
 
     if (freePredictionUsed && !paidPaymentId) {
       try {
@@ -217,7 +225,7 @@ export default function AiPrediction() {
       return;
     }
 
-    const payload = JSON.stringify({ name: form.get("name"), email, birthDate: form.get("birthDate"), birthTime: form.get("birthTime"), birthPlace: form.get("birthPlace"), question: form.get("question"), paidPaymentId: paidPaymentId || undefined });
+    const payload = JSON.stringify({ name: form.get("name"), email, birthDate: form.get("birthDate"), birthTime: form.get("birthTime"), birthPlace: form.get("birthPlace"), question: form.get("question"), paidPaymentId: paidPaymentId || undefined, language });
 
     try {
       let lastError = "Could not generate a prediction.";
@@ -284,6 +292,7 @@ export default function AiPrediction() {
             <div className="ai-benefits"><span>✦ Ascendant</span><span>✦ Planetary positions</span><span>✦ Mahadasha & Antardasha</span><span>✦ Question analysis</span></div>
           </div>
           <form className="ai-form" onSubmit={submit} onInput={() => { setFreePredictionUsed(false); setPaidPaymentId(""); }}>
+            <div className="field"><label htmlFor="ai-language">Language / भाषा / भाषा</label><select id="ai-language" value={language} onChange={(e) => setLanguage(e.target.value as "en" | "hi" | "mr")}><option value="en">English</option><option value="hi">हिंदी</option><option value="mr">मराठी</option></select></div>
             <div className="field"><label htmlFor="ai-name">Your name</label><input id="ai-name" name="name" /></div>
             <div className="field"><label htmlFor="ai-email">Email</label><input id="ai-email" name="email" type="email" required autoComplete="email" placeholder="name@example.com" title="Enter a valid email address, for example name@example.com" /></div>
             <div className="ai-two">
@@ -307,7 +316,11 @@ export default function AiPrediction() {
             {emailStatus && <p className="status-msg status-ok">{emailStatus}</p>}
           </form>
         </div>
-        {answer && <div className="ai-result"><div className="ai-result-head"><div><h3>Your AI astrology reading</h3><span>Chart calculated · AI interpreted</span></div></div>{chart && <NorthIndianChart {...chart} />}<div className="ai-answer" style={{ maxHeight: "none", overflowY: "visible", overflowX: "visible", paddingRight: "0", paddingBottom: "32px" }}>{renderMarkdown(answer)}</div><div className="ai-cta"><div><strong>Want a deeper reading?</strong><p>Discuss your complete chart with a human astrologer for 30–45 minutes.</p></div><a href="#booking" className="btn-primary">Book for ₹500</a></div></div>}
+        {answer && <div className="ai-result"><div className="ai-result-head"><div><h3>{language === "hi" ? "आपकी AI ज्योतिषीय भविष्यवाणी" : language === "mr" ? "तुमचे AI ज्योतिषीय वाचन" : "Your AI astrology reading"}</h3><span>{language === "hi" ? "चार्ट गणना · AI व्याख्या" : language === "mr" ? "कुंडली गणना · AI विश्लेषण" : "Chart calculated · AI interpreted"}</span></div></div>
+          <div className="ai-conclusion"><div className="ai-conclusion-label">{language === "hi" ? "निष्कर्ष" : language === "mr" ? "निष्कर्ष" : "Conclusion"}</div>{renderMarkdown(extractConclusion(answer) || answer)}</div>
+          <button type="button" className="btn-ghost ai-detail-btn" onClick={() => setShowDetailedReport((value) => !value)}>{showDetailedReport ? (language === "hi" ? "विस्तृत रिपोर्ट छिपाएँ" : language === "mr" ? "सविस्तर रिपोर्ट लपवा" : "Hide detailed report") : (language === "hi" ? "विस्तृत रिपोर्ट देखें" : language === "mr" ? "सविस्तर रिपोर्ट पहा" : "View detailed report")}</button>
+          {showDetailedReport && <div className="ai-detailed-report">{chart && <NorthIndianChart {...chart} />}<div className="ai-answer" style={{ maxHeight: "none", overflowY: "visible", overflowX: "visible", paddingRight: "0", paddingBottom: "32px" }}>{renderMarkdown(answer)}</div></div>}
+          <div className="ai-cta"><div><strong>{language === "hi" ? "गहराई से पढ़ना चाहते हैं?" : language === "mr" ? "सखोल वाचन हवे आहे?" : "Want a deeper reading?"}</strong><p>{language === "hi" ? "अपने पूरे चार्ट पर मानव ज्योतिषी से चर्चा करें।" : language === "mr" ? "तुमच्या संपूर्ण कुंडलीवर मानवी ज्योतिषासोबत चर्चा करा." : "Discuss your complete chart with a human astrologer for 30–45 minutes."}</p></div><a href="#booking" className="btn-primary">{language === "hi" ? "₹500 में बुक करें" : language === "mr" ? "₹500 मध्ये बुक करा" : "Book for ₹500"}</a></div></div>}
         <p className="ai-disclaimer">AI-generated astrology guidance is for personal reflection and is not a scientific prediction, guarantee of future events, or professional advice.</p>
       </div>
     </section>
