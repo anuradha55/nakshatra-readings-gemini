@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { Language, tr } from "@/lib/i18n";
 
 declare global {
   interface Window {
@@ -48,7 +49,8 @@ function timeOptions() {
 
 const TIME_OPTIONS = timeOptions();
 
-export default function BookingForm() {
+export default function BookingForm({ language }: { language: Language }) {
+  const t = tr(language);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState("");
   const [ok, setOk] = useState(false);
@@ -308,12 +310,8 @@ export default function BookingForm() {
       <div className="wrap">
         <div className="booking-panel">
           <div>
-            <h2>Book your reading</h2>
-            <p>
-              Fill in your details below. You&apos;ll be asked to pay securely
-              via Razorpay — once payment is confirmed, we&apos;ll reach out to
-              schedule your call.
-            </p>
+            <h2>{t.bookingTitle}</h2>
+            <p>{t.bookingText}</p>
             <div className={ok ? "status-msg status-ok" : "status-msg status-err"}>
               {status}
             </div>
@@ -327,15 +325,15 @@ export default function BookingForm() {
             }}
           >
             <div className="field">
-              <label htmlFor="name">Your name</label>
+              <label htmlFor="name">{t.name}</label>
               <input name="name" id="name" type="text" required />
             </div>
             <div className="field">
-              <label htmlFor="phone">Phone number</label>
+              <label htmlFor="phone">{t.phone}</label>
               <input name="phone" id="phone" type="tel" required />
             </div>
             <div className="field">
-              <label htmlFor="email">Email</label>
+              <label htmlFor="email">{t.email}</label>
               <input
                 name="email"
                 id="email"
@@ -347,17 +345,17 @@ export default function BookingForm() {
               />
             </div>
             <div className="field">
-              <label htmlFor="service">What would you like to focus on?</label>
+              <label htmlFor="service">{t.focus}</label>
               <select name="service" id="service" defaultValue="Career & direction">
-                <option>Career & direction</option>
-                <option>Relationships</option>
-                <option>General life reading</option>
+                <option>{t.career}</option>
+                <option>{t.relationships}</option>
+                <option>{t.general}</option>
               </select>
             </div>
 
             <div className="ai-two">
               <div className="field">
-                <label htmlFor="booking-birth-date">Birth date</label>
+                <label htmlFor="booking-birth-date">{t.birthDate}</label>
                 <input
                   name="birthDate"
                   id="booking-birth-date"
@@ -366,7 +364,7 @@ export default function BookingForm() {
                 />
               </div>
               <div className="field">
-                <label htmlFor="booking-birth-time">Birth time</label>
+                <label htmlFor="booking-birth-time">{t.birthTime}</label>
                 <select
                   id="booking-birth-time"
                   name="birthTime"
@@ -374,7 +372,7 @@ export default function BookingForm() {
                   onChange={(e) => setBirthTime(e.target.value)}
                   required
                 >
-                  <option value="">Select time</option>
+                  <option value="">{t.selectTime}</option>
                   {TIME_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
@@ -385,7 +383,7 @@ export default function BookingForm() {
             </div>
 
             <div className="field place-field">
-              <label htmlFor="booking-birth-place">Birth place</label>
+              <label htmlFor="booking-birth-place">{t.birthPlace}</label>
               <div className="place-input-wrap">
                 <input
                   id="booking-birth-place"
@@ -393,11 +391,11 @@ export default function BookingForm() {
                   value={birthPlace}
                   onChange={(e) => setBirthPlace(e.target.value)}
                   onFocus={() => placeSuggestions.length && setShowPlaces(true)}
-                  placeholder="Start typing a city or town"
+                  placeholder={t.placePlaceholder}
                   autoComplete="off"
                   required
                 />
-                {placeLoading && <span className="place-loading">Searching…</span>}
+                {placeLoading && <span className="place-loading">{t.searching}</span>}
               </div>
               {showPlaces && placeSuggestions.length > 0 && (
                 <div className="place-suggestions">
@@ -420,7 +418,7 @@ export default function BookingForm() {
             </div>
 
             <div className="price-line">
-              <span>Session fee</span>
+              <span>{t.sessionFee}</span>
               <span className="amt">₹500</span>
             </div>
             <button
@@ -434,10 +432,10 @@ export default function BookingForm() {
                 }
               }}
             >
-              {ok ? "Payment confirmed ✓" : loading ? (status.includes("Confirming") || status.includes("Payment received") ? "Confirming booking…" : "Preparing payment…") : "Pay ₹500 & book session"}
+              {ok ? t.confirmed : loading ? (status.includes("Confirming") || status.includes("Payment received") ? t.confirming : t.preparing) : t.pay}
             </button>
             <p className="note">
-              Payments are processed securely by Razorpay. Your card/UPI details never touch our servers.
+              {t.secure}
             </p>
           </form>
         </div>
