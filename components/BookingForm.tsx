@@ -31,24 +31,6 @@ type PlaceSuggestion = {
   timezone?: string;
 };
 
-function timeOptions() {
-  const options: { value: string; label: string }[] = [];
-  for (let hour = 0; hour < 24; hour += 1) {
-    for (let minute = 0; minute < 60; minute += 1) {
-      const value = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
-      const displayHour = hour % 12 || 12;
-      const period = hour < 12 ? "AM" : "PM";
-      options.push({
-        value,
-        label: `${displayHour}:${String(minute).padStart(2, "0")} ${period}`,
-      });
-    }
-  }
-  return options;
-}
-
-const TIME_OPTIONS = timeOptions();
-
 export default function BookingForm({ language }: { language: Language }) {
   const t = tr(language);
   const [loading, setLoading] = useState(false);
@@ -206,74 +188,70 @@ export default function BookingForm({ language }: { language: Language }) {
       let rzp;
       try {
         rzp = new window.Razorpay({
-        key: RAZORPAY_KEY_ID,
-        amount: order.amount,
-        currency: order.currency,
-        name: "Nakshatra Readings",
-        description: `${booking.service} — Astrology session`,
-        order_id: order.id,
-        prefill: {
-          name: booking.name,
-          email: booking.email,
-          contact: booking.phone,
-        },
-        theme: { color: "#CDA463" },
-        handler: async (response: Record<string, string>) => {
-          setStatus("Payment received securely. Confirming your booking…");
+          key: RAZORPAY_KEY_ID,
+          amount: order.amount,
+          currency: order.currency,
+          name: "Nakshatra Readings",
+          description: `${booking.service} — Astrology session`,
+          order_id: order.id,
+          prefill: {
+            name: booking.name,
+            email: booking.email,
+            contact: booking.phone,
+          },
+          theme: { color: "#CDA463" },
+          handler: async (response: Record<string, string>) => {
+            setStatus("Payment received securely. Confirming your booking…");
 
-          let verificationFinished = false;
-          const timeoutId = window.setTimeout(() => {
-            if (!verificationFinished) {
-              // Razorpay has already confirmed the payment. Keep the button
-              // disabled so the customer cannot accidentally pay a second time.
+            let verificationFinished = false;
+            const timeoutId = window.setTimeout(() => {
+              if (!verificationFinished) {
+                setLoading(false);
+                setOk(true);
+                setStatus(
+                  "Payment received successfully. We’re confirming your booking in the background. Please do not make another payment."
+                );
+              }
+            }, 12000);
+
+            try {
+              const verifyRes = await fetch("/api/verify-payment", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                  bookingId: order.bookingId,
+                }),
+              });
+
+              const result = await verifyRes.json().catch(() => ({}));
+              verificationFinished = true;
+              window.clearTimeout(timeoutId);
+              setLoading(false);
+
+              if (verifyRes.ok && result.success) {
+                setOk(true);
+                setStatus("Payment confirmed! Opening your booking confirmation…");
+                window.location.assign("/booking-success?booking=" + encodeURIComponent(String(order.bookingId)));
+                return;
+              } else {
+                setOk(true);
+                setStatus(
+                  "Payment received successfully. We could not complete the final confirmation on this screen. Please do not make another payment; we will reconcile your booking automatically."
+                );
+              }
+            } catch {
+              verificationFinished = true;
+              window.clearTimeout(timeoutId);
               setLoading(false);
               setOk(true);
               setStatus(
-                "Payment received successfully. We’re confirming your booking in the background. Please do not make another payment."
+                "Payment received successfully. Confirmation is taking longer than expected. Please do not make another payment; we will reconcile your booking automatically."
               );
             }
-          }, 12000);
-
-          try {
-            const verifyRes = await fetch("/api/verify-payment", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-                bookingId: order.bookingId,
-              }),
-            });
-
-            const result = await verifyRes.json().catch(() => ({}));
-            verificationFinished = true;
-            window.clearTimeout(timeoutId);
-            setLoading(false);
-
-            if (verifyRes.ok && result.success) {
-              setOk(true);
-              setStatus("Payment confirmed! Opening your booking confirmation…");
-              window.location.assign("/booking-success?booking=" + encodeURIComponent(String(order.bookingId)));
-              return;
-            } else {
-              // Never encourage another payment after Razorpay has already
-              // returned a successful payment response.
-              setOk(true);
-              setStatus(
-                "Payment received successfully. We could not complete the final confirmation on this screen. Please do not make another payment; we will reconcile your booking automatically."
-              );
-            }
-          } catch {
-            verificationFinished = true;
-            window.clearTimeout(timeoutId);
-            setLoading(false);
-            setOk(true);
-            setStatus(
-              "Payment received successfully. Confirmation is taking longer than expected. Please do not make another payment; we will reconcile your booking automatically."
-            );
-          }
-        },
+          },
         });
       } catch (error) {
         throw new Error(`Razorpay popup initialization failed: ${error instanceof Error ? error.message : "Unknown error"}`);
@@ -299,7 +277,6 @@ export default function BookingForm({ language }: { language: Language }) {
       console.error("[Payment diagnostic] Payment flow failed:", error);
       setOk(false);
       setStatus(`Payment error: ${message}`);
-      // Temporary visible diagnostic: this cannot be hidden by CSS or layout.
       window.alert(`Payment diagnostic error:\n${message}`);
       setLoading(false);
     }
@@ -365,20 +342,16 @@ export default function BookingForm({ language }: { language: Language }) {
               </div>
               <div className="field">
                 <label htmlFor="booking-birth-time">{t.birthTime}</label>
-                <select
+                <input
                   id="booking-birth-time"
                   name="birthTime"
+                  type="time"
                   value={birthTime}
                   onChange={(e) => setBirthTime(e.target.value)}
+                  step="60"
                   required
-                >
-                  <option value="">{t.selectTime}</option>
-                  {TIME_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+                />
+                <small className="field-hint">Select the exact hour and minute.</small>
               </div>
             </div>
 
