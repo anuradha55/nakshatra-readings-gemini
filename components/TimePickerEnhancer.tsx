@@ -83,55 +83,27 @@ function enhanceTime(input: HTMLInputElement) {
   input.parentElement?.insertBefore(wrapper, input.nextSibling);
 }
 
-function formatDate(value: string) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return "Select a date";
-  const [year, month, day] = value.split("-").map(Number);
-  return new Intl.DateTimeFormat("en-IN", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(year, month - 1, day));
-}
-
 function enhanceDate(input: HTMLInputElement) {
-  if (input.dataset.customDatePicker === "true") return;
-  input.dataset.customDatePicker = "true";
+  if (input.dataset.nativeDatePickerReady === "true") return;
+  input.dataset.nativeDatePickerReady = "true";
 
-  // Keep the REAL native date input as the tap target. Do not use showPicker()
-  // from a synthetic wrapper click: mobile Safari/Chrome can reject that call
-  // when the native control is not the element receiving the gesture.
+  // Keep the real <input type="date"> visible and directly tappable.
+  // No overlay, synthetic click, focus-only handler, or async showPicker call.
+  input.style.display = "block";
+  input.style.position = "relative";
+  input.style.width = "100%";
   input.style.height = "52px";
   input.style.minHeight = "52px";
   input.style.maxHeight = "52px";
   input.style.boxSizing = "border-box";
-  input.style.overflow = "hidden";
-  input.style.position = "relative";
-  input.style.zIndex = "4";
-  input.style.opacity = "0";
+  input.style.opacity = "1";
   input.style.pointerEvents = "auto";
+  input.style.zIndex = "2";
   input.style.cursor = "pointer";
-
-  const wrapper = document.createElement("div");
-  wrapper.className = "custom-date-picker";
-  wrapper.setAttribute("data-for", input.id);
-  wrapper.style.height = "52px";
-  wrapper.style.minHeight = "52px";
-  wrapper.style.maxHeight = "52px";
-  wrapper.style.boxSizing = "border-box";
-  wrapper.style.pointerEvents = "none";
-
-  const display = document.createElement("span");
-  display.className = "custom-date-picker-value";
-  const icon = document.createElement("span");
-  icon.className = "custom-date-picker-icon";
-  icon.textContent = "▣";
-  icon.setAttribute("aria-hidden", "true");
-  wrapper.append(display, icon);
-  input.parentElement?.insertBefore(wrapper, input.nextSibling);
-
-  const update = () => {
-    display.textContent = formatDate(input.value);
-    wrapper.classList.toggle("has-value", Boolean(input.value));
-  };
-  input.addEventListener("change", update);
-  input.addEventListener("input", update);
-  update();
+  input.style.touchAction = "manipulation";
+  input.style.textAlign = "left";
+  input.style.padding = "0 42px 0 12px";
+  input.style.margin = "0";
 }
 
 export default function TimePickerEnhancer() {
@@ -159,11 +131,12 @@ export default function TimePickerEnhancer() {
       .custom-time-picker-icon{flex:0 0 18px;width:18px;color:var(--gold-soft);font-size:.95rem;text-align:center;pointer-events:none;margin-left:10px;overflow:visible}
       .custom-time-picker select option{background:#151126;color:#fff}
 
-      .custom-date-picker{position:absolute;left:0;top:0;width:100%;max-width:100%;height:52px;min-height:52px;max-height:52px;display:flex;align-items:center;justify-content:space-between;gap:8px;background:rgba(15,12,36,.55);border:1px solid var(--line);border-radius:10px;padding:0 12px;box-sizing:border-box;overflow:hidden;color:var(--text);z-index:1;text-align:left;touch-action:none;user-select:none}
-      .custom-date-picker-value{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-dim);font-family:'Work Sans',sans-serif;font-size:.92rem;text-align:left}
-      .custom-date-picker.has-value .custom-date-picker-value{color:var(--text)}
-      .custom-date-picker-icon{flex:0 0 auto;color:var(--gold-soft);font-size:.9rem;pointer-events:none}
-      input[data-custom-date-picker="true"]{position:absolute!important;left:0!important;top:0!important;width:100%!important;height:52px!important;min-height:52px!important;max-height:52px!important;padding:0!important;margin:0!important;opacity:0!important;border:0!important;background:transparent!important;cursor:pointer!important;z-index:4!important;pointer-events:auto!important;box-sizing:border-box!important;touch-action:manipulation!important}
+      /* Native date input is the only date-picker interaction surface. */
+      input[data-native-date-picker-ready="true"]{display:block!important;position:relative!important;width:100%!important;height:52px!important;min-height:52px!important;max-height:52px!important;opacity:1!important;pointer-events:auto!important;z-index:2!important;box-sizing:border-box!important;cursor:pointer!important;touch-action:manipulation!important;text-align:left!important;padding:0 42px 0 12px!important;margin:0!important;}
+      input[data-native-date-picker-ready="true"]::-webkit-calendar-picker-indicator{opacity:1!important;display:block!important;cursor:pointer!important;width:22px;height:22px;}
+      input[data-native-date-picker-ready="true"]::-webkit-date-and-time-value{text-align:left;}
+      input[data-native-date-picker-ready="true"]::-webkit-datetime-edit{text-align:left;padding:0;}
+      input[data-native-date-picker-ready="true"]::-webkit-datetime-edit-fields-wrapper{text-align:left;padding:0;}
 
       @media(max-width:640px){
         .custom-time-picker{height:52px;min-height:52px;max-height:52px;padding-left:10px;padding-right:10px;overflow:visible;min-width:0}
@@ -174,8 +147,6 @@ export default function TimePickerEnhancer() {
         .custom-time-picker select[aria-label="AM or PM"]{flex-basis:40px;min-width:40px;width:40px}
         .custom-time-picker-controls> :nth-child(2){flex-basis:6px;width:6px;overflow:visible}
         .custom-time-picker-icon{flex-basis:16px;width:16px;font-size:.9rem;margin-left:10px;overflow:visible}
-        .custom-date-picker{height:52px;min-height:52px;max-height:52px;padding:0 10px;z-index:1}
-        .custom-date-picker-value{font-size:.84rem}
       }
       @media(max-width:480px){
         .custom-time-picker{height:52px;min-height:52px;max-height:52px;padding-left:10px;padding-right:10px}
@@ -185,7 +156,6 @@ export default function TimePickerEnhancer() {
         .custom-time-picker select[aria-label="AM or PM"]{flex-basis:40px;min-width:40px;width:40px}
         .custom-time-picker-controls> :nth-child(2){flex-basis:5px;width:5px;overflow:visible}
         .custom-time-picker-icon{flex-basis:14px;width:14px;font-size:.82rem;margin-left:10px;overflow:visible}
-        .custom-date-picker{height:52px;min-height:52px;max-height:52px}
       }
     ` }} />
   );
