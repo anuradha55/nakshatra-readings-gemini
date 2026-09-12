@@ -115,6 +115,10 @@ export default function BookingForm({ language }: { language: Language }) {
       let order: Record<string, unknown>;
       try { order = await orderRes.json(); } catch { throw new Error(`Order API returned an invalid response (HTTP ${orderRes.status}).`); }
       if (!orderRes.ok) {
+        if (orderRes.status === 409) {
+          setSelectedSlot(null);
+          setAvailabilityRefreshToken((value) => value + 1);
+        }
         const baseError = typeof order.error === "string" ? order.error : "Could not start payment. Please choose another appointment slot and try again.";
         throw new Error(baseError);
       }
