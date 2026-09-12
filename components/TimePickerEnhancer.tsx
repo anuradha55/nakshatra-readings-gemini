@@ -35,59 +35,104 @@ function enhance(input: HTMLInputElement) {
   wrapper.className = "custom-time-picker";
   wrapper.setAttribute("data-for", input.id);
 
-  const hourSelect = document.createElement("select");
-  const minuteSelect = document.createElement("select");
-  const periodSelect = document.createElement("select");
-  hourSelect.setAttribute("aria-label", "Hour");
-  minuteSelect.setAttribute("aria-label", "Minute");
-  periodSelect.setAttribute("aria-label", "AM or PM");
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "custom-time-picker-display";
+  button.setAttribute("aria-haspopup", "listbox");
+  button.setAttribute("aria-expanded", "false");
 
-  for (let h = 1; h <= 12; h += 1) {
-    const option = document.createElement("option");
-    option.value = String(h);
-    option.textContent = pad(h);
-    hourSelect.appendChild(option);
-  }
-  for (let m = 0; m <= 59; m += 1) {
-    const option = document.createElement("option");
-    option.value = String(m);
-    option.textContent = pad(m);
-    minuteSelect.appendChild(option);
-  }
-  ["AM", "PM"].forEach((period) => {
-    const option = document.createElement("option");
-    option.value = period;
-    option.textContent = period;
-    periodSelect.appendChild(option);
-  });
-
-  const setFromInput = () => {
-    const parsed = parseTime(input.value);
-    hourSelect.value = String(parsed.hour);
-    minuteSelect.value = String(parsed.minute);
-    periodSelect.value = parsed.period;
-  };
-
-  const syncInput = () => {
-    input.value = to24Hour(Number(hourSelect.value), Number(minuteSelect.value), periodSelect.value);
-    input.dispatchEvent(new Event("input", { bubbles: true }));
-    input.dispatchEvent(new Event("change", { bubbles: true }));
-  };
-
-  [hourSelect, minuteSelect, periodSelect].forEach((select) => {
-    select.addEventListener("change", syncInput);
-  });
-
-  setFromInput();
-  input.addEventListener("change", setFromInput);
-  input.addEventListener("input", setFromInput);
+  const value = document.createElement("span");
+  value.className = "custom-time-picker-value";
 
   const icon = document.createElement("span");
   icon.className = "custom-time-picker-icon";
   icon.textContent = "◷";
   icon.setAttribute("aria-hidden", "true");
 
-  wrapper.append(hourSelect, document.createTextNode(":"), minuteSelect, periodSelect, icon);
+  button.append(value, icon);
+
+  const menu = document.createElement("div");
+  menu.className = "custom-time-picker-menu";
+  menu.setAttribute("role", "listbox");
+
+  const hourColumn = document.createElement("div");
+  const minuteColumn = document.createElement("div");
+  const periodColumn = document.createElement("div");
+  hourColumn.className = minuteColumn.className = periodColumn.className = "custom-time-picker-column";
+
+  let selectedHour = 12;
+  let selectedMinute = 0;
+  let selectedPeriod = "AM";
+
+  const updateDisplay = () => {
+    value.textContent = `${pad(selectedHour)} : ${pad(selectedMinute)} ${selectedPeriod}`;
+  };
+
+  const syncInput = () => {
+    input.value = to24Hour(selectedHour, selectedMinute, selectedPeriod);
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+    updateDisplay();
+  };
+
+  const makeOption = (text: string, onClick: () => void) => {
+    const option = document.createElement("button");
+    option.type = "button";
+    option.className = "custom-time-picker-option";
+    option.textContent = text;
+    option.addEventListener("click", onClick);
+    return option;
+  };
+
+  for (let h = 1; h <= 12; h += 1) {
+    hourColumn.appendChild(makeOption(pad(h), () => {
+      selectedHour = h;
+      syncInput();
+    }));
+  }
+  for (let m = 0; m <= 59; m += 1) {
+    minuteColumn.appendChild(makeOption(pad(m), () => {
+      selectedMinute = m;
+      syncInput();
+    }));
+  }
+  ["AM", "PM"].forEach((period) => {
+    periodColumn.appendChild(makeOption(period, () => {
+      selectedPeriod = period;
+      syncInput();
+      closeMenu();
+    }));
+  });
+
+  menu.append(hourColumn, minuteColumn, periodColumn);
+  wrapper.append(button, menu);
+
+  const setFromInput = () => {
+    const parsed = parseTime(input.value);
+    selectedHour = parsed.hour;
+    selectedMinute = parsed.minute;
+    selectedPeriod = parsed.period;
+    updateDisplay();
+  };
+
+  const closeMenu = () => {
+    menu.classList.remove("open");
+    button.setAttribute("aria-expanded", "false");
+  };
+
+  button.addEventListener("click", (event) => {
+    event.preventDefault();
+    const isOpen = menu.classList.toggle("open");
+    button.setAttribute("aria-expanded", String(isOpen));
+  });
+
+  document.addEventListener("click", (event) => {
+    if (!wrapper.contains(event.target as Node)) closeMenu();
+  });
+
+  setFromInput();
+  input.addEventListener("change", setFromInput);
+  input.addEventListener("input", setFromInput);
   input.parentElement?.insertBefore(wrapper, input.nextSibling);
 }
 
@@ -108,14 +153,17 @@ export default function TimePickerEnhancer() {
 
   return (
     <style dangerouslySetInnerHTML={{ __html: `
-      .custom-time-picker{width:100%;height:46px;display:flex;align-items:center;justify-content:center;gap:0;background:rgba(15,12,36,.55);border:1px solid var(--line);border-radius:10px;padding:0 10px;box-sizing:border-box;overflow:visible}
-      .custom-time-picker:focus-within{outline:2px solid var(--gold);outline-offset:1px}
-      .custom-time-picker select{appearance:none;-webkit-appearance:none;flex:0 0 auto;width:54px;height:38px;min-width:54px;padding:0;margin:0;border:0;background:transparent;color:var(--text);font:inherit;font-size:.92rem;text-align:center;text-align-last:center;cursor:pointer;outline:none;box-sizing:border-box}
-      .custom-time-picker select option{background:#151126;color:#fff}
-      .custom-time-picker > :nth-child(2){flex:0 0 18px;width:18px;text-align:center}
-      .custom-time-picker select:nth-child(4){width:68px;min-width:68px}
-      .custom-time-picker-icon{flex:0 0 28px;width:28px;color:var(--gold-soft);font-size:1.05rem;text-align:center;pointer-events:none}
-      @media(max-width:640px){.custom-time-picker{padding:0 7px}.custom-time-picker select{width:54px;min-width:54px;font-size:.9rem}.custom-time-picker select:nth-child(4){width:68px;min-width:68px}.custom-time-picker-icon{flex-basis:24px;width:24px}}
+      .custom-time-picker{position:relative;width:100%;height:46px}
+      .custom-time-picker-display{width:100%;height:46px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 12px;background:rgba(15,12,36,.55);border:1px solid var(--line);border-radius:10px;color:var(--text);font:inherit;font-size:.92rem;cursor:pointer;box-sizing:border-box}
+      .custom-time-picker-display:focus{outline:2px solid var(--gold);outline-offset:1px}
+      .custom-time-picker-value{flex:1 1 auto;text-align:center;white-space:nowrap;overflow:visible}
+      .custom-time-picker-icon{flex:0 0 22px;color:var(--gold-soft);font-size:1.05rem;text-align:center;pointer-events:none}
+      .custom-time-picker-menu{position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:50;display:none;grid-template-columns:1fr 1fr 1fr;gap:6px;padding:8px;background:#171238;border:1px solid rgba(205,164,99,.35);border-radius:10px;box-shadow:0 16px 35px rgba(0,0,0,.45)}
+      .custom-time-picker-menu.open{display:grid}
+      .custom-time-picker-column{max-height:190px;overflow-y:auto;display:flex;flex-direction:column;gap:2px}
+      .custom-time-picker-option{width:100%;height:34px;flex:0 0 34px;border:0;border-radius:7px;background:transparent;color:var(--text);font:inherit;font-size:.9rem;cursor:pointer;text-align:center}
+      .custom-time-picker-option:hover,.custom-time-picker-option:focus{background:rgba(205,164,99,.14);color:var(--gold-soft);outline:none}
+      @media(max-width:640px){.custom-time-picker-menu{grid-template-columns:1fr 1fr 1fr}.custom-time-picker-option{height:36px;flex-basis:36px}.custom-time-picker-column{max-height:180px}.custom-time-picker-display{padding:0 10px}}
     ` }} />
   );
 }
