@@ -9,6 +9,7 @@ const STANDARD_BOOKING_AMOUNT = 10000;
 const COMPLETE_KUNDLI_AMOUNT = 50000;
 
 export async function POST(request: Request) {
+  let reservedSlotId: string | null = null;
   try {
     const { booking } = await request.json();
     if (!booking?.name || !booking?.phone || !booking?.email || !booking?.service || !booking?.slotId) {
@@ -29,22 +30,39 @@ export async function POST(request: Request) {
 
     const platformShare = Math.floor((configuredAmount * platformPercent) / 100);
     const astrologerShare = configuredAmount - platformShare;
-    await reserveSlot(String(booking.slotId));
+    reservedSlotId = String(booking.slotId);
+    await reserveSlot(reservedSlotId);
 
-    const razorpay = new Razorpay({ key_id: keyId, key_secret: keySecret });
-    const receipt = `nr_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
-    const order = await razorpay.orders.create({ amount: configuredAmount, currency: "INR", receipt, notes: { service: booking.service, email: booking.email, slotId: String(booking.slotId) } });
+    try {
+      const razorpay = new Razorpay({ key_id: keyId, key_secret: keySecret });
+      const receipt = `nr_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+      const order = await razorpay.orders.create({ amount: configuredAmount, currency: "INR", receipt, notes: { service: booking.service, email: booking.email, slotId: reservedSlotId } });
 
-    const savedBooking = await prisma.booking.create({
-      data: {
-        name: booking.name, phone: booking.phone, email: booking.email, service: booking.service,
-        birthDetails: booking.birthdetails || null, amount: Number(order.amount), currency: order.currency,
-        razorpayOrderId: order.id, slotId: String(booking.slotId), platformShare, astrologerShare, payoutStatus: "PENDING",
-      },
-    });
+      const savedBooking = await prisma.booking.create({
+        data: {
+          name: booking.name, phone: booking.phone, email: booking.email, service: booking.service,
+          birthDetails: booking.birthdetails || null, amount: Number(order.amount), currency: order.currency,
+          razorpayOrderId: order.id, slotId: reservedSlotId, platformShare, astrologerShare, payoutStatus: "PENDING",
+        },
+      });
 
-    return NextResponse.json({ id: order.id, amount: order.amount, currency: order.currency, bookingId: savedBooking.id });
+      reservedSlotId = null;
+      return NextResponse.json({ id: order.id, amount: order.amount, currency: order.currency, bookingId: savedBooking.id });
+    } catch (paymentSetupError) {
+      await prisma.availabilitySlot.updateMany({
+        where: { id: reservedSlotId, status: "HELD" },
+        data: { status: "AVAILABLE", holdExpiresAt: null },
+      });
+      reservedSlotId = null;
+      throw paymentSetupError;
+    }
   } catch (error) {
+    if (reservedSlotId) {
+      await prisma.availabilitySlot.updateMany({
+        where: { id: reservedSlotId, status: "HELD" },
+        data: { status: "AVAILABLE", holdExpiresAt: null },
+      }).catch((releaseError) => console.error("CREATE_ORDER_SLOT_RELEASE_ERROR", releaseError));
+    }
     console.error("CREATE_ORDER_ERROR", error);
     const message = error instanceof Error ? error.message : String(error);
     const razorpayError = error as { statusCode?: number; error?: { description?: string; reason?: string; code?: string } };
