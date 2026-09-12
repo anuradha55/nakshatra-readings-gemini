@@ -9,21 +9,7 @@
   .nav-actions select { max-width: 82px; min-width: 0; }
   .site-nav .cta { padding: 8px 12px; font-size: .76rem; flex-shrink: 0; }
 
-  /* AI: give Birth Time more horizontal space than Birth Date. */
-  .ai-form {
-    display: grid !important;
-    grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr) !important;
-    column-gap: 12px !important;
-    row-gap: 0 !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    max-width: 100% !important;
-    overflow: visible !important;
-    padding: 0 !important;
-    border: 0 !important;
-    background: transparent !important;
-    box-sizing: border-box !important;
-  }
+  .ai-form { display: grid !important; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr) !important; column-gap: 12px !important; row-gap: 0 !important; width: 100% !important; min-width: 0 !important; max-width: 100% !important; overflow: visible !important; padding: 0 !important; border: 0 !important; background: transparent !important; box-sizing: border-box !important; }
   .ai-form > .field { grid-column: 1 / -1 !important; min-width: 0 !important; width: auto !important; max-width: none !important; box-sizing: border-box !important; }
   .ai-form > .field:has(#ai-date) { grid-column: 1 !important; }
   .ai-form > .birth-time-place-row { display: contents !important; }
@@ -31,157 +17,32 @@
   .ai-form > .birth-time-place-row > .field:has(#ai-place) { grid-column: 1 / -1 !important; min-width: 0 !important; width: auto !important; max-width: none !important; box-sizing: border-box !important; }
   .ai-form input, .ai-form select, .ai-form textarea, .ai-form .custom-time-picker { width: 100% !important; min-width: 0 !important; max-width: 100% !important; box-sizing: border-box !important; }
 
-  /* Native date input is intentionally visible on phones for reliable touch support. */
-  .ai-form .custom-date-picker,
-  .booking-panel form .custom-date-picker { display: none !important; }
-  .ai-form input[data-custom-date-picker="true"],
-  .booking-panel form input[data-custom-date-picker="true"] {
-    position: static !important;
-    inset: auto !important;
-    display: block !important;
-    width: 100% !important;
-    height: 46px !important;
-    min-width: 0 !important;
-    max-width: 100% !important;
-    opacity: 1 !important;
-    padding: 12px 14px !important;
-    margin: 0 !important;
-    border: 1px solid var(--line) !important;
-    background: rgba(15,12,36,.55) !important;
-    color: var(--text) !important;
-    appearance: auto !important;
-    -webkit-appearance: auto !important;
-    pointer-events: auto !important;
-    touch-action: manipulation !important;
-    cursor: pointer !important;
-    box-sizing: border-box !important;
-  }
+  .ai-form .custom-date-picker, .booking-panel form .custom-date-picker { display: none !important; }
+  .ai-form input[data-custom-date-picker="true"], .booking-panel form input[data-custom-date-picker="true"] { position: static !important; inset: auto !important; display: block !important; width: 100% !important; height: 46px !important; min-height: 46px !important; max-height: 46px !important; min-width: 0 !important; max-width: 100% !important; opacity: 1 !important; padding: 12px 8px !important; margin: 0 !important; border: 1px solid var(--line) !important; background: rgba(15,12,36,.55) !important; color: var(--text) !important; appearance: auto !important; -webkit-appearance: auto !important; line-height: 20px !important; pointer-events: auto !important; touch-action: manipulation !important; cursor: pointer !important; box-sizing: border-box !important; overflow: visible !important; }
   .ai-form #ai-date { font-size: .82rem !important; padding-left: 6px !important; padding-right: 6px !important; }
 
-  /* The native time input stays hidden; TimePickerEnhancer supplies the only visible picker. */
-  .ai-form input[data-custom-time-picker="true"],
-  .booking-panel form input[data-custom-time-picker="true"] {
-    display: none !important;
-    position: absolute !important;
-    width: 0 !important;
-    height: 0 !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-  }
+  .ai-form input[data-custom-time-picker="true"], .booking-panel form input[data-custom-time-picker="true"] { display: none !important; position: absolute !important; width: 0 !important; height: 0 !important; opacity: 0 !important; pointer-events: none !important; }
+  .ai-form .custom-time-picker, .booking-panel form .custom-time-picker { width: 100% !important; min-width: 0 !important; max-width: 100% !important; height: 46px !important; min-height: 46px !important; max-height: 46px !important; box-sizing: border-box !important; overflow: visible !important; display: flex !important; flex-wrap: nowrap !important; align-items: center !important; padding-top: 0 !important; padding-bottom: 0 !important; }
+  .ai-form .custom-time-picker select, .booking-panel form .custom-time-picker select { flex: 0 0 auto !important; width: auto !important; max-width: none !important; min-width: 0 !important; height: 38px !important; min-height: 38px !important; max-height: 38px !important; text-align: center !important; text-align-last: center !important; font-size: .8rem !important; padding: 0 2px !important; line-height: 38px !important; box-sizing: border-box !important; overflow: visible !important; flex-shrink: 0 !important; }
+  .ai-form .custom-time-picker select[aria-label="Hour"], .booking-panel form .custom-time-picker select[aria-label="Hour"] { flex: 0 0 2.8ch !important; width: 2.8ch !important; min-width: 28px !important; max-width: 34px !important; }
+  .ai-form .custom-time-picker select[aria-label="Minute"], .booking-panel form .custom-time-picker select[aria-label="Minute"] { flex: 0 0 2.8ch !important; width: 2.8ch !important; min-width: 28px !important; max-width: 34px !important; padding-left: 3px !important; padding-right: 3px !important; overflow: visible !important; }
+  .ai-form .custom-time-picker select[aria-label="AM or PM"], .booking-panel form .custom-time-picker select[aria-label="AM or PM"] { flex: 0 0 4.2ch !important; width: 4.2ch !important; min-width: 40px !important; max-width: 46px !important; }
+  .ai-form .custom-time-picker > :nth-child(2), .booking-panel form .custom-time-picker > :nth-child(2) { flex: 0 0 6px !important; width: 6px !important; min-width: 6px !important; max-width: 6px !important; overflow: visible !important; }
+  .ai-form .custom-time-picker .custom-time-picker-icon, .booking-panel form .custom-time-picker .custom-time-picker-icon { flex: 0 0 16px !important; width: 16px !important; min-width: 16px !important; max-width: 16px !important; margin-left: 1px !important; overflow: visible !important; }
 
-  /* Keep the complete time control inside its field without squeezing the minute selector. */
-  .ai-form .custom-time-picker,
-  .booking-panel form .custom-time-picker {
-    width: 100% !important;
-    min-width: 0 !important;
-    max-width: 100% !important;
-    height: 46px !important;
-    min-height: 46px !important;
-    max-height: 46px !important;
-    box-sizing: border-box !important;
-    overflow: visible !important;
-    display: flex !important;
-    flex-wrap: nowrap !important;
-    align-items: center !important;
-  }
-  .ai-form .custom-time-picker select,
-  .booking-panel form .custom-time-picker select {
-    flex: 0 0 auto !important;
-    width: auto !important;
-    max-width: none !important;
-    min-width: 0 !important;
-    text-align: center !important;
-    text-align-last: center !important;
-    font-size: .8rem !important;
-    padding: 0 2px !important;
-    box-sizing: border-box !important;
-    overflow: visible !important;
-  }
-  .ai-form .custom-time-picker select[aria-label="Hour"],
-  .booking-panel form .custom-time-picker select[aria-label="Hour"] {
-    flex: 0 0 2.8ch !important;
-    min-width: 2.8ch !important;
-  }
-  .ai-form .custom-time-picker select[aria-label="Minute"],
-  .booking-panel form .custom-time-picker select[aria-label="Minute"] {
-    flex: 0 0 2.8ch !important;
-    min-width: 2.8ch !important;
-    padding-left: 3px !important;
-    padding-right: 3px !important;
-  }
-  .ai-form .custom-time-picker select[aria-label="AM or PM"],
-  .booking-panel form .custom-time-picker select[aria-label="AM or PM"] {
-    flex: 0 0 3.8ch !important;
-    min-width: 3.8ch !important;
-  }
-  .ai-form .custom-time-picker > :nth-child(2),
-  .booking-panel form .custom-time-picker > :nth-child(2) {
-    flex: 0 0 6px !important;
-    width: 6px !important;
-    overflow: visible !important;
-  }
-  .ai-form .custom-time-picker .custom-time-picker-icon,
-  .booking-panel form .custom-time-picker .custom-time-picker-icon {
-    flex: 0 0 16px !important;
-    width: 16px !important;
-    margin-left: 1px !important;
-    overflow: visible !important;
-  }
+  /* Keep Birth Date and Birth Time boxes exactly aligned on mobile. */
+  .ai-form > .field:has(#ai-date), .ai-form > .birth-time-place-row > .field:has(#ai-time), .booking-panel form .booking-birth-row > .field { min-width: 0 !important; overflow: visible !important; align-self: stretch !important; }
+  .ai-form > .field:has(#ai-date) input[data-custom-date-picker="true"], .ai-form > .birth-time-place-row > .field:has(#ai-time) .custom-time-picker, .booking-panel form .booking-birth-row input[data-custom-date-picker="true"], .booking-panel form .booking-birth-row .custom-time-picker { height: 46px !important; min-height: 46px !important; max-height: 46px !important; }
+  .ai-form > .birth-time-place-row > .field:has(#ai-time) .field-hint, .booking-panel form .booking-birth-row > .field:has(#booking-birth-time) .field-hint { display: block !important; margin-top: 6px !important; line-height: 1.3 !important; }
 
   .ai-section { padding-bottom: calc(64px + env(safe-area-inset-bottom, 24px)) !important; }
+  .booking-panel form .booking-birth-row { display: grid !important; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important; gap: 12px !important; width: 100% !important; min-width: 0 !important; max-width: 100% !important; overflow: visible !important; align-items: stretch !important; box-sizing: border-box !important; }
+  .booking-panel form .booking-birth-row > .field { min-width: 0 !important; width: auto !important; max-width: none !important; overflow: visible !important; box-sizing: border-box !important; }
+  .booking-panel form .booking-birth-row input[type="date"] { width: 100% !important; min-width: 0 !important; max-width: 100% !important; box-sizing: border-box !important; font-size: .8rem !important; padding-left: 6px !important; padding-right: 6px !important; }
 
-  /* Client booking: safe 50/50 birth date/time row. */
-  .booking-panel form .booking-birth-row {
-    display: grid !important;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
-    gap: 12px !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    max-width: 100% !important;
-    overflow: visible !important;
-    box-sizing: border-box !important;
-  }
-  .booking-panel form .booking-birth-row > .field {
-    min-width: 0 !important;
-    width: auto !important;
-    max-width: none !important;
-    overflow: visible !important;
-    box-sizing: border-box !important;
-  }
-  .booking-panel form .booking-birth-row input[type="date"] {
-    width: 100% !important;
-    min-width: 0 !important;
-    max-width: 100% !important;
-    box-sizing: border-box !important;
-    font-size: .8rem !important;
-    padding-left: 6px !important;
-    padding-right: 6px !important;
-  }
-
-  /* Astrologer dashboard availability controls also use contained columns. */
-  main form[style*="grid-template-columns"] {
-    display: grid !important;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
-    gap: 12px !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    max-width: 100% !important;
-    box-sizing: border-box !important;
-  }
-  main form[style*="grid-template-columns"] > label,
-  main form[style*="grid-template-columns"] > button {
-    min-width: 0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    box-sizing: border-box !important;
-  }
-  main form[style*="grid-template-columns"] > label input,
-  main form[style*="grid-template-columns"] > label select {
-    width: 100% !important;
-    min-width: 0 !important;
-    max-width: 100% !important;
-    box-sizing: border-box !important;
-  }
+  main form[style*="grid-template-columns"] { display: grid !important; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important; gap: 12px !important; width: 100% !important; min-width: 0 !important; max-width: 100% !important; box-sizing: border-box !important; }
+  main form[style*="grid-template-columns"] > label, main form[style*="grid-template-columns"] > button { min-width: 0 !important; width: 100% !important; max-width: 100% !important; box-sizing: border-box !important; }
+  main form[style*="grid-template-columns"] > label input, main form[style*="grid-template-columns"] > label select { width: 100% !important; min-width: 0 !important; max-width: 100% !important; box-sizing: border-box !important; }
 
   .booking-panel { width: 100% !important; min-width: 0 !important; overflow: visible !important; }
   .booking-panel form, .booking-panel form > * { min-width: 0 !important; max-width: 100% !important; box-sizing: border-box !important; }
@@ -199,7 +60,7 @@
   .ai-form { column-gap: 10px !important; }
   .ai-form #ai-date, .booking-panel form .booking-birth-row input[type="date"] { font-size: .78rem !important; padding-left: 5px !important; padding-right: 5px !important; }
   .ai-form .custom-time-picker select, .booking-panel form .custom-time-picker select { font-size: .76rem !important; }
-  .ai-form .custom-time-picker select[aria-label="Hour"], .booking-panel form .custom-time-picker select[aria-label="Hour"] { flex-basis: 2.8ch !important; min-width: 2.8ch !important; }
-  .ai-form .custom-time-picker select[aria-label="Minute"], .booking-panel form .custom-time-picker select[aria-label="Minute"] { flex-basis: 2.8ch !important; min-width: 2.8ch !important; padding-left: 3px !important; padding-right: 3px !important; }
-  .ai-form .custom-time-picker select[aria-label="AM or PM"], .booking-panel form .custom-time-picker select[aria-label="AM or PM"] { flex-basis: 3.8ch !important; min-width: 3.8ch !important; }
+  .ai-form .custom-time-picker select[aria-label="Minute"], .booking-panel form .custom-time-picker select[aria-label="Minute"] { min-width: 28px !important; width: 28px !important; max-width: 32px !important; padding-left: 3px !important; padding-right: 3px !important; }
+  .ai-form .custom-time-picker select[aria-label="Hour"], .booking-panel form .custom-time-picker select[aria-label="Hour"] { min-width: 28px !important; width: 28px !important; max-width: 32px !important; }
+  .ai-form .custom-time-picker select[aria-label="AM or PM"], .booking-panel form .custom-time-picker select[aria-label="AM or PM"] { min-width: 40px !important; width: 40px !important; max-width: 44px !important; }
 }
