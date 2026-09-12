@@ -1,178 +1,48 @@
-/* Mobile-only corrections. Desktop/laptop layout remains untouched. */
+/* Mobile form layout. Desktop layout remains controlled by globals.css. */
 @media (max-width: 860px) {
-  html, body {
-    width: 100% !important;
-    max-width: 100% !important;
-    overflow-x: hidden !important;
-  }
+  html, body { width: 100%; max-width: 100%; overflow-x: hidden; }
+  .wrap { width: 100%; max-width: 100%; min-width: 0; padding-left: 16px; padding-right: 16px; }
 
-  .wrap {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    padding-left: 16px !important;
-    padding-right: 16px !important;
-  }
+  header { width: 100%; overflow: hidden; }
+  .site-nav { width: 100%; min-width: 0; gap: 8px; }
+  .brand { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: 1.05rem; }
+  .nav-actions { min-width: 0; flex-shrink: 1; gap: 7px; }
+  .nav-actions select { max-width: 82px; min-width: 0; }
+  .site-nav .cta { padding: 8px 12px; font-size: .76rem; flex-shrink: 0; }
 
-  header { width: 100% !important; overflow: hidden !important; }
-  .site-nav { width: 100% !important; min-width: 0 !important; gap: 8px !important; }
-  .brand { min-width: 0 !important; overflow: hidden !important; text-overflow: ellipsis !important; font-size: 1.05rem !important; }
-  .nav-actions { min-width: 0 !important; flex-shrink: 1 !important; gap: 7px !important; }
-  .nav-actions select { max-width: 82px !important; min-width: 0 !important; }
-  .site-nav .cta { padding: 8px 12px !important; font-size: .76rem !important; flex-shrink: 0 !important; }
-
-  /* AI: one field per row by default. Only Birth Date + Birth Time share a row. */
+  /* AI form: one column for normal fields. Date + time are the only two-column row. */
   .ai-form {
     display: grid !important;
-    grid-template-columns: minmax(0, 1fr) !important;
-    gap: 0 !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    max-width: 100% !important;
-    overflow: visible !important;
-  }
-
-  .ai-form > .field,
-  .ai-form .ai-two > .field,
-  .ai-form .birth-time-place-row > .field {
-    min-width: 0 !important;
-    max-width: 100% !important;
-    width: 100% !important;
-    box-sizing: border-box !important;
-    grid-column: 1 / -1 !important;
-  }
-
-  /* Flatten the Date/Time/Place wrapper so Date and Time can occupy the same row. */
-  .ai-form .ai-two:has(#ai-date),
-  .ai-form > .birth-time-place-row {
-    display: contents !important;
-  }
-
-  .ai-form .field:has(#ai-date) {
-    grid-column: 1 !important;
-    min-width: 0 !important;
-  }
-
-  .ai-form .field:has(#ai-time) {
-    grid-column: 2 !important;
-    min-width: 0 !important;
-  }
-
-  .ai-form .field:has(#ai-place) {
-    grid-column: 1 / -1 !important;
-  }
-
-  .ai-form .field:has(#ai-question),
-  .ai-form > button,
-  .ai-form > p {
-    grid-column: 1 / -1 !important;
-  }
-
-  /* The AI date/time pair is a two-column row; all other fields remain full width. */
-  .ai-form:has(#ai-date) {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
     column-gap: 10px !important;
-  }
-
-  .ai-form:has(#ai-date) > .field:not(:has(#ai-date)):not(:has(#ai-time)):not(:has(#ai-place)):not(:has(#ai-question)),
-  .ai-form:has(#ai-date) > .field:has(#ai-name),
-  .ai-form:has(#ai-date) > .field:has(#ai-email) {
-    grid-column: 1 / -1 !important;
-  }
-
-  /* Prevent intrinsic widths from pushing the date/time controls into each other. */
-  .ai-form input,
-  .ai-form select,
-  .ai-form textarea,
-  .ai-form .custom-time-picker {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    box-sizing: border-box !important;
-  }
-
-  .ai-form #ai-date {
-    width: 100% !important;
-    font-size: .82rem !important;
-    padding-left: 7px !important;
-    padding-right: 7px !important;
-  }
-
-  .ai-form .custom-time-picker {
-    overflow: hidden !important;
-  }
-
-  /* Astrologer: Birth Date + Birth Time stay side-by-side on mobile. */
-  .booking-panel {
-    width: 100% !important;
-    min-width: 0 !important;
-    overflow: visible !important;
-  }
-
-  .booking-panel form,
-  .booking-panel form > * {
-    min-width: 0 !important;
-    max-width: 100% !important;
-  }
-
-  .booking-panel form .booking-birth-row {
-    display: grid !important;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
-    column-gap: 10px !important;
+    row-gap: 0 !important;
     width: 100% !important;
     min-width: 0 !important;
     max-width: 100% !important;
-    overflow: visible !important;
   }
+  .ai-form > .field { grid-column: 1 / -1 !important; min-width: 0 !important; width: 100% !important; max-width: 100% !important; }
+  .ai-form > .field:has(#ai-date) { grid-column: 1 !important; }
+  .ai-form > .birth-time-place-row { display: contents !important; }
+  .ai-form > .birth-time-place-row > .field:has(#ai-time) { grid-column: 2 !important; min-width: 0 !important; width: 100% !important; }
+  .ai-form > .birth-time-place-row > .field:has(#ai-place) { grid-column: 1 / -1 !important; min-width: 0 !important; width: 100% !important; }
+  .ai-form input, .ai-form select, .ai-form textarea, .ai-form .custom-time-picker { width: 100% !important; min-width: 0 !important; max-width: 100% !important; box-sizing: border-box !important; }
+  .ai-form #ai-date { width: 100% !important; min-width: 0 !important; max-width: 100% !important; font-size: .82rem !important; padding-left: 7px !important; padding-right: 7px !important; }
 
-  .booking-panel form .booking-birth-row > .field {
-    min-width: 0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    overflow: visible !important;
-  }
-
-  .booking-panel form .booking-birth-row input[type="date"],
-  .booking-panel form .booking-birth-row input[type="time"],
-  .booking-panel form .booking-birth-row .custom-time-picker {
-    width: 100% !important;
-    min-width: 0 !important;
-    max-width: 100% !important;
-    box-sizing: border-box !important;
-  }
-
-  .booking-panel form .booking-birth-row input[type="date"] {
-    font-size: .82rem !important;
-    padding-left: 7px !important;
-    padding-right: 7px !important;
-  }
-
-  .booking-panel form .booking-birth-row .custom-time-picker {
-    overflow: hidden !important;
-  }
-
-  .booking-panel form .place-field {
-    position: relative !important;
-    z-index: 2 !important;
-  }
-
-  .booking-panel form .place-suggestions {
-    z-index: 1000 !important;
-  }
+  /* Astrologer form: explicit two-column birth row; place remains a separate row. */
+  .booking-panel { width: 100% !important; min-width: 0 !important; overflow: visible !important; }
+  .booking-panel form { width: 100% !important; min-width: 0 !important; }
+  .booking-panel form .booking-birth-row { display: grid !important; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important; column-gap: 10px !important; width: 100% !important; min-width: 0 !important; max-width: 100% !important; overflow: visible !important; }
+  .booking-panel form .booking-birth-row > .field { min-width: 0 !important; width: 100% !important; max-width: 100% !important; overflow: visible !important; }
+  .booking-panel form .booking-birth-row input[type="date"], .booking-panel form .booking-birth-row input[type="time"], .booking-panel form .booking-birth-row .custom-time-picker { width: 100% !important; min-width: 0 !important; max-width: 100% !important; box-sizing: border-box !important; }
+  .booking-panel form .booking-birth-row input[type="date"] { font-size: .82rem !important; padding-left: 7px !important; padding-right: 7px !important; }
+  .booking-panel form .place-field { position: relative !important; z-index: 2 !important; }
+  .booking-panel form .place-suggestions { z-index: 1000 !important; }
 }
 
 @media (max-width: 360px) {
-  .wrap { padding-left: 12px !important; padding-right: 12px !important; }
-  .brand { font-size: 1rem !important; }
-  .site-nav .cta { padding-left: 10px !important; padding-right: 10px !important; }
-
-  .ai-form:has(#ai-date) { column-gap: 6px !important; }
-  .booking-panel form .booking-birth-row { column-gap: 6px !important; }
-
-  .ai-form #ai-date,
-  .booking-panel form .booking-birth-row input[type="date"] {
-    font-size: .76rem !important;
-    padding-left: 5px !important;
-    padding-right: 5px !important;
-  }
+  .wrap { padding-left: 12px; padding-right: 12px; }
+  .brand { font-size: 1rem; }
+  .site-nav .cta { padding-left: 10px; padding-right: 10px; }
+  .ai-form, .booking-panel form .booking-birth-row { column-gap: 6px !important; }
+  .ai-form #ai-date, .booking-panel form .booking-birth-row input[type="date"] { font-size: .76rem !important; padding-left: 5px !important; padding-right: 5px !important; }
 }
