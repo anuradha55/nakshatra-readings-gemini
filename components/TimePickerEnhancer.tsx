@@ -23,6 +23,34 @@ function to24Hour(hour: number, minute: number, period: string) {
   return `${pad(h)}:${pad(minute)}`;
 }
 
+function applyMobileBirthRowLayout(input: HTMLInputElement) {
+  if (window.matchMedia("(max-width: 860px)").matches && input.id === "ai-time") {
+    const form = input.closest("form.ai-form") as HTMLElement | null;
+    const timeField = input.closest(".field") as HTMLElement | null;
+    const dateField = form?.querySelector(".field:has(#ai-date)") as HTMLElement | null;
+    const birthRow = input.closest(".birth-time-place-row") as HTMLElement | null;
+
+    if (form) {
+      form.style.setProperty("grid-template-columns", "minmax(0, 1fr) minmax(0, 1fr)", "important");
+      form.style.setProperty("column-gap", "12px", "important");
+      form.style.setProperty("grid-column-gap", "12px", "important");
+    }
+    if (birthRow) birthRow.style.setProperty("display", "contents", "important");
+    if (dateField) {
+      dateField.style.setProperty("grid-column", "1", "important");
+      dateField.style.setProperty("width", "100%", "important");
+      dateField.style.setProperty("min-width", "0", "important");
+    }
+    if (timeField) {
+      timeField.style.setProperty("grid-column", "2", "important");
+      timeField.style.setProperty("width", "100%", "important");
+      timeField.style.setProperty("min-width", "0", "important");
+      timeField.style.setProperty("max-width", "none", "important");
+      timeField.style.setProperty("box-sizing", "border-box", "important");
+    }
+  }
+}
+
 function enhanceTime(input: HTMLInputElement) {
   if (input.dataset.customTimePicker === "true") return;
   input.dataset.customTimePicker = "true";
@@ -81,6 +109,7 @@ function enhanceTime(input: HTMLInputElement) {
   controls.append(hourSelect, document.createTextNode(":"), minuteSelect, periodSelect);
   wrapper.append(controls, icon);
   input.parentElement?.insertBefore(wrapper, input.nextSibling);
+  applyMobileBirthRowLayout(input);
 }
 
 function enhanceDate(input: HTMLInputElement) {
@@ -132,11 +161,18 @@ export default function TimePickerEnhancer() {
       .custom-time-picker select option{background:#151126;color:#fff}
 
       /* Native date input is the only date-picker interaction surface. */
-      input[data-native-date-picker-ready="true"]{display:block!important;position:relative!important;width:100%!important;height:52px!important;min-height:52px!important;max-height:52px!important;opacity:1!important;pointer-events:auto!important;z-index:2!important;box-sizing:border-box!important;cursor:pointer!important;touch-action:manipulation!important;text-align:left!important;padding:0 42px 0 12px!important;margin:0!important;}
+      input[data-native-date-picker-ready="true"]{display:block!important;position:relative!important;width:100%!important;height:52px!important;min-height:52px!important;max-height:52px!important;opacity:1!important;pointer-events:auto!important;z-index:2!important;box-sizing:border-box!important;cursor:pointer!important;touch-action:manipulation!important;text-align:left!important;padding:0 42px 0 12px!important;margin:0!important;line-height:52px!important;}
       input[data-native-date-picker-ready="true"]::-webkit-calendar-picker-indicator{opacity:1!important;display:block!important;cursor:pointer!important;width:22px;height:22px;}
-      input[data-native-date-picker-ready="true"]::-webkit-date-and-time-value{text-align:left;}
-      input[data-native-date-picker-ready="true"]::-webkit-datetime-edit{text-align:left;padding:0;}
-      input[data-native-date-picker-ready="true"]::-webkit-datetime-edit-fields-wrapper{text-align:left;padding:0;}
+      input[data-native-date-picker-ready="true"]::-webkit-date-and-time-value{text-align:left;line-height:52px;}
+      input[data-native-date-picker-ready="true"]::-webkit-datetime-edit{text-align:left;padding:0;line-height:52px;}
+      input[data-native-date-picker-ready="true"]::-webkit-datetime-edit-fields-wrapper{text-align:left;padding:0;line-height:52px;}
+
+      @media(max-width:860px){
+        .ai-form{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;column-gap:12px!important;grid-column-gap:12px!important;}
+        .ai-form>.field:has(#ai-date){grid-column:1!important;width:100%!important;min-width:0!important;max-width:none!important;}
+        .ai-form>.birth-time-place-row{display:contents!important;}
+        .ai-form>.birth-time-place-row>.field:has(#ai-time){grid-column:2!important;width:100%!important;min-width:0!important;max-width:none!important;box-sizing:border-box!important;}
+      }
 
       @media(max-width:640px){
         .custom-time-picker{height:52px;min-height:52px;max-height:52px;padding-left:10px;padding-right:10px;overflow:visible;min-width:0}
