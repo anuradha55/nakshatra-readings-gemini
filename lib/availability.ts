@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 
-export const HOLD_MINUTES = 10;
+export const HOLD_MINUTES = 5;
 
 export function slotStatusIsBookable(status: string, holdExpiresAt: Date | null) {
   return status === "AVAILABLE" || (status === "HELD" && !!holdExpiresAt && holdExpiresAt <= new Date());
