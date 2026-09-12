@@ -1,16 +1,27 @@
-.ai-two {
-  grid-template-columns: minmax(0, 1fr) !important;
+.ai-form .birth-time-place-row {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+  gap: 12px !important;
+  width: 100% !important;
+  align-items: start !important;
 }
 
-.ai-two > .field {
-  min-width: 0;
-  width: 100%;
+.ai-form .birth-time-place-row > .field {
+  min-width: 0 !important;
+  width: 100% !important;
 }
 
-.ai-two input[type="time"] {
+.ai-form .birth-time-place-row input[type="time"],
+.ai-form .birth-time-place-row input[type="text"] {
   width: 100% !important;
   min-width: 0 !important;
   box-sizing: border-box !important;
   padding-right: 14px !important;
   font-size: 16px !important;
+}
+
+@media (max-width: 640px) {
+  .ai-form .birth-time-place-row {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
 }
