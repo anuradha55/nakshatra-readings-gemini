@@ -78,7 +78,7 @@ export default function BookingForm({ language }: { language: Language }) {
       let order: Record<string, unknown>;
       try { order = await orderRes.json(); } catch { throw new Error(`Order API returned an invalid response (HTTP ${orderRes.status}).`); }
       if (!orderRes.ok) {
-        const diagnostic = order.diagnostic && typeof order.diagnostic === "object" ? diagnostic as { message?: unknown; statusCode?: unknown; razorpayCode?: unknown; razorpayDescription?: unknown; razorpayReason?: unknown } : null;
+        const diagnostic = order.diagnostic && typeof order.diagnostic === "object" ? order.diagnostic as { message?: unknown; statusCode?: unknown; razorpayCode?: unknown; razorpayDescription?: unknown; razorpayReason?: unknown } : null;
         const details = diagnostic ? [typeof diagnostic.message === "string" ? diagnostic.message : "", diagnostic.statusCode ? "HTTP/Razorpay status: " + diagnostic.statusCode : "", typeof diagnostic.razorpayCode === "string" ? "Razorpay code: " + diagnostic.razorpayCode : "", typeof diagnostic.razorpayDescription === "string" ? diagnostic.razorpayDescription : "", typeof diagnostic.razorpayReason === "string" ? diagnostic.razorpayReason : ""].filter(Boolean).join("\n") : "";
         const baseError = typeof order.error === "string" ? order.error : "Could not start payment (HTTP " + orderRes.status + ").";
         throw new Error(baseError + (details ? "\n\nDiagnostic:\n" + details : ""));
