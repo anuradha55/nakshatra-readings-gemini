@@ -51,12 +51,12 @@
     flex-shrink: 0 !important;
   }
 
-  /* AI form is a single-column mobile layout for name and email, then two-column for date/time. */
+  /* AI form is a two-column mobile grid only. */
   .ai-form {
     display: grid !important;
-    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
     column-gap: 10px !important;
-    row-gap: 12px !important;
+    row-gap: 0 !important;
     width: 100% !important;
     min-width: 0 !important;
     max-width: 100% !important;
@@ -72,64 +72,40 @@
     box-sizing: border-box !important;
   }
 
-  /* Name and Email fields: single column (full width) */
-  .ai-form .field:has(#ai-name),
-  .ai-form .field:has(#ai-email) {
-    grid-column: 1 !important;
-    min-width: 0 !important;
-    width: 100% !important;
+  /* If date and time are inside the same wrapper, flatten it into the AI grid. */
+  .ai-form .ai-two:has(#ai-date) {
+    display: contents !important;
   }
 
-  /* If date and time are inside a wrapper, convert to two-column grid. */
-  .ai-form .ai-two {
-    display: grid !important;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
-    gap: 12px !important;
-    width: 100% !important;
-    min-width: 0 !important;
-  }
-
-  .ai-form .ai-two > .field {
-    min-width: 0 !important;
-    width: 100% !important;
-  }
-
-  /* Birth Date + Birth Time in two-column layout within .ai-two wrapper. */
-  .ai-form .ai-two > .field:has(#ai-date) {
+  /* Birth Date + Birth Time always occupy separate columns. */
+  .ai-form .field:has(#ai-date) {
     grid-column: 1 !important;
     min-width: 0 !important;
   }
 
-  .ai-form .ai-two > .field:has(#ai-time) {
+  .ai-form .field:has(#ai-time) {
     grid-column: 2 !important;
     min-width: 0 !important;
   }
 
-  /* Fallback for date/time not in wrapper: create two-column grid. */
-  .ai-form .field:has(#ai-date),
-  .ai-form .field:has(#ai-time) {
-    display: inline-block !important;
-    width: calc(50% - 5px) !important;
-    min-width: 0 !important;
-    box-sizing: border-box !important;
+  /* Existing time/place wrapper: flatten it so Time stays beside Date. */
+  .ai-form > .birth-time-place-row {
+    display: contents !important;
   }
 
-  .ai-form .field:has(#ai-date) {
-    margin-right: 10px !important;
+  .ai-form > .birth-time-place-row > .field:has(#ai-time) {
+    grid-column: 2 !important;
   }
 
-  /* Birth Place is always full-width. */
+  /* Birth Place is always a full-width row below date/time. */
   .ai-form .field:has(#ai-place) {
-    display: block !important;
-    width: 100% !important;
-    clear: both !important;
+    grid-column: 1 / -1 !important;
   }
 
   .ai-form > .field:has(#ai-question),
   .ai-form > button,
   .ai-form > p {
     grid-column: 1 / -1 !important;
-    width: 100% !important;
   }
 
   /* Prevent native/custom controls from imposing their desktop intrinsic width. */
