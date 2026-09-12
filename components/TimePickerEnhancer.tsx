@@ -136,6 +136,71 @@ export default function TimePickerEnhancer() {
         .custom-time-picker> :nth-child(2){width:6px}
         .custom-time-picker-icon{width:18px;font-size:.95rem}
       }
+
+      /* Mobile-only form correction. Desktop/laptop layout is intentionally untouched. */
+      @media(max-width:860px){
+        .booking-panel form > .ai-two{
+          display:grid !important;
+          grid-template-columns:minmax(0,1fr) minmax(0,1fr) !important;
+          gap:10px !important;
+          width:100% !important;
+          min-width:0 !important;
+          max-width:100% !important;
+          align-items:start !important;
+          overflow:visible !important;
+        }
+        .booking-panel form > .ai-two > .field{
+          width:100% !important;
+          min-width:0 !important;
+          max-width:100% !important;
+          overflow:hidden !important;
+        }
+        .booking-panel form > .ai-two > .field input,
+        .booking-panel form > .ai-two > .field select,
+        .booking-panel form > .ai-two > .field textarea{
+          width:100% !important;
+          min-width:0 !important;
+          max-width:100% !important;
+          display:block !important;
+          box-sizing:border-box !important;
+        }
+
+        .ai-form > .ai-two{
+          display:grid !important;
+          grid-template-columns:minmax(0,1fr) minmax(0,1fr) !important;
+          gap:10px !important;
+          width:100% !important;
+          min-width:0 !important;
+          max-width:100% !important;
+          align-items:start !important;
+        }
+        .ai-form > .ai-two > .field{
+          width:100% !important;
+          min-width:0 !important;
+          max-width:100% !important;
+          overflow:hidden !important;
+        }
+        .ai-form > .ai-two > .field input,
+        .ai-form > .ai-two > .field select,
+        .ai-form > .ai-two > .field textarea{
+          width:100% !important;
+          min-width:0 !important;
+          max-width:100% !important;
+          display:block !important;
+          box-sizing:border-box !important;
+        }
+
+        .custom-time-picker{
+          width:100% !important;
+          min-width:0 !important;
+          max-width:100% !important;
+        }
+      }
+
+      @media(max-width:360px){
+        .booking-panel form > .ai-two,
+        .ai-form > .ai-two{gap:8px !important;}
+      }
     ` }} />
   );
 }
