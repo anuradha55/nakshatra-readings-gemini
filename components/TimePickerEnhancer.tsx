@@ -119,6 +119,9 @@ function enhanceDate(input: HTMLInputElement) {
     display.textContent = formatDate(input.value);
     wrapper.classList.toggle("has-value", Boolean(input.value));
   };
+
+  // The visible 52px wrapper is the mobile tap target. The native input is kept
+  // transparent but does not sit above the wrapper, so it cannot steal the tap.
   const openPicker = () => {
     try {
       if (typeof input.showPicker === "function") input.showPicker();
@@ -128,6 +131,10 @@ function enhanceDate(input: HTMLInputElement) {
     }
   };
   wrapper.addEventListener("click", openPicker);
+  wrapper.addEventListener("touchend", (event) => {
+    event.preventDefault();
+    openPicker();
+  }, { passive: false });
   input.addEventListener("change", update);
   input.addEventListener("input", update);
   update();
@@ -147,10 +154,10 @@ export default function TimePickerEnhancer() {
 
   return (
     <style dangerouslySetInnerHTML={{ __html: `
-      .custom-time-picker{width:100%;max-width:100%;height:52px;min-height:52px;max-height:52px;display:flex;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:0;background:rgba(15,12,36,.55);border:1px solid var(--line);border-radius:10px;padding:0 10px;box-sizing:border-box;overflow:visible;min-width:0}
+      .custom-time-picker{width:100%;max-width:100%;height:52px;min-height:52px;max-height:52px;display:flex;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:0;background:rgba(15,12,36,.55);border:1px solid var(--line);border-radius:10px;padding:0 10px;box-sizing:border-box;overflow:visible;min-width:0;touch-action:manipulation}
       .custom-time-picker:focus-within{outline:2px solid var(--gold);outline-offset:1px}
       .custom-time-picker-controls{display:flex;align-items:center;justify-content:flex-start;flex:1 1 auto;min-width:0;width:auto;gap:0;text-align:left;overflow:visible}
-      .custom-time-picker select{appearance:none;-webkit-appearance:none;flex:0 0 auto;width:auto;min-width:0;max-width:none;height:40px;border:0;background:transparent;color:var(--text);font:inherit;font-size:.9rem;text-align:center;text-align-last:center;cursor:pointer;outline:none;padding:0 2px;margin:0;box-sizing:border-box;overflow:visible;flex-shrink:0}
+      .custom-time-picker select{appearance:none;-webkit-appearance:none;flex:0 0 auto;width:auto;min-width:0;max-width:none;height:40px;border:0;background:transparent;color:var(--text);font:inherit;font-size:.9rem;text-align:center;text-align-last:center;cursor:pointer;outline:none;padding:0 2px;margin:0;box-sizing:border-box;overflow:visible;flex-shrink:0;touch-action:manipulation}
       .custom-time-picker select[aria-label="Hour"]{flex:0 0 28px;min-width:28px;width:28px}
       .custom-time-picker select[aria-label="Minute"]{flex:0 0 30px;min-width:30px;width:30px;padding-left:4px;padding-right:4px;overflow:visible}
       .custom-time-picker select[aria-label="AM or PM"]{flex:0 0 40px;min-width:40px;width:40px}
@@ -158,11 +165,11 @@ export default function TimePickerEnhancer() {
       .custom-time-picker-icon{flex:0 0 18px;width:18px;color:var(--gold-soft);font-size:.95rem;text-align:center;pointer-events:none;margin-left:10px;overflow:visible}
       .custom-time-picker select option{background:#151126;color:#fff}
 
-      .custom-date-picker{position:relative;width:100%;max-width:100%;height:52px;min-height:52px;max-height:52px;display:flex;align-items:center;justify-content:space-between;gap:8px;background:rgba(15,12,36,.55);border:1px solid var(--line);border-radius:10px;padding:0 12px;box-sizing:border-box;overflow:hidden;color:var(--text);cursor:pointer;z-index:1;text-align:left}
+      .custom-date-picker{position:relative;width:100%;max-width:100%;height:52px;min-height:52px;max-height:52px;display:flex;align-items:center;justify-content:space-between;gap:8px;background:rgba(15,12,36,.55);border:1px solid var(--line);border-radius:10px;padding:0 12px;box-sizing:border-box;overflow:hidden;color:var(--text);cursor:pointer;z-index:3;text-align:left;touch-action:manipulation;user-select:none;-webkit-tap-highlight-color:transparent}
       .custom-date-picker-value{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-dim);font-family:'Work Sans',sans-serif;font-size:.92rem;text-align:left}
       .custom-date-picker.has-value .custom-date-picker-value{color:var(--text)}
       .custom-date-picker-icon{flex:0 0 auto;color:var(--gold-soft);font-size:.9rem;pointer-events:none}
-      input[data-custom-date-picker="true"]{position:absolute!important;left:0!important;top:0!important;width:100%!important;height:52px!important;min-height:52px!important;max-height:52px!important;padding:0 12px!important;margin:0!important;opacity:0!important;border:0!important;background:transparent!important;cursor:pointer!important;z-index:2!important;box-sizing:border-box!important;text-align:left!important;-webkit-text-align:left!important}
+      input[data-custom-date-picker="true"]{position:absolute!important;left:0!important;top:0!important;width:100%!important;height:52px!important;min-height:52px!important;max-height:52px!important;padding:0!important;margin:0!important;opacity:0!important;border:0!important;background:transparent!important;cursor:pointer!important;z-index:0!important;pointer-events:none!important;box-sizing:border-box!important}
 
       @media(max-width:640px){
         .custom-time-picker{height:52px;min-height:52px;max-height:52px;padding-left:10px;padding-right:10px;overflow:visible;min-width:0}
@@ -173,8 +180,8 @@ export default function TimePickerEnhancer() {
         .custom-time-picker select[aria-label="AM or PM"]{flex-basis:40px;min-width:40px;width:40px}
         .custom-time-picker-controls> :nth-child(2){flex-basis:6px;width:6px;overflow:visible}
         .custom-time-picker-icon{flex-basis:16px;width:16px;font-size:.9rem;margin-left:10px;overflow:visible}
-        .custom-date-picker{height:52px;min-height:52px;max-height:52px;padding:0 10px}
-        .custom-date-picker-value{font-size:.84rem;text-align:left}
+        .custom-date-picker{height:52px;min-height:52px;max-height:52px;padding:0 10px;z-index:3}
+        .custom-date-picker-value{font-size:.84rem}
       }
       @media(max-width:480px){
         .custom-time-picker{height:52px;min-height:52px;max-height:52px;padding-left:10px;padding-right:10px}
