@@ -20,7 +20,6 @@ function enhance(input: HTMLInputElement) {
 
   const display = document.createElement("span");
   display.className = "custom-date-picker-value";
-  display.textContent = formatDate(input.value);
 
   const icon = document.createElement("span");
   icon.className = "custom-date-picker-icon";
@@ -68,8 +67,9 @@ export default function DatePickerEnhancer() {
       .custom-date-picker-value{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-dim);font-family:'Work Sans',sans-serif;font-size:.92rem}
       .custom-date-picker.has-value .custom-date-picker-value{color:var(--text)}
       .custom-date-picker-icon{flex:0 0 auto;color:var(--gold-soft);font-size:.9rem;pointer-events:none}
-      .custom-date-picker:focus-within{outline:2px solid var(--gold);outline-offset:1px}
-      .custom-date-picker + input[type="date"]{position:absolute!important;inset:auto!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important;opacity:0!important}
+      .custom-date-picker + input[type="date"]{position:static!important;width:auto!important;height:auto!important;opacity:0!important}
+      input[data-custom-date-picker="true"]{position:absolute!important;left:0!important;top:0!important;width:100%!important;height:46px!important;padding:0!important;margin:0!important;opacity:0!important;border:0!important;background:transparent!important;cursor:pointer!important;z-index:2!important}
+      .custom-date-picker{z-index:1}
       @media(max-width:640px){.custom-date-picker{height:46px;padding:0 10px}.custom-date-picker-value{font-size:.84rem}.custom-date-picker-icon{font-size:.85rem}}
     ` }} />
   );
