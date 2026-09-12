@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
-import { prisma } from "@/lib/prisma";
 import { sendAstrologerBookingSms, sendCustomerBookingSms } from "@/lib/twilio";
+import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 
@@ -58,14 +58,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ received: true, bookingFound: false });
     }
 
+    // If checkout was cancelled/failed on the site, its slot has already been
+    // released. Do not turn that cancelled attempt into a paid booking later.
+    if (booking.status === "CANCELLED") {
+      console.warn("RAZORPAY_PAYMENT_FOR_CANCELLED_BOOKING", { bookingId: booking.id, orderId, paymentId, eventName });
+      return NextResponse.json({ received: true, ignored: true, reason: "booking_cancelled" });
+    }
+
     // Idempotent processing: repeated Razorpay deliveries must never create a second payout.
     let newlyMarkedPaid = false;
-    if (booking.status !== "PAID") {
+    if (booking.status === "PENDING") {
       await prisma.$transaction(async (tx) => {
         const paymentUpdate = await tx.booking.updateMany({
           where: {
             id: booking.id,
-            status: { not: "PAID" },
+            status: "PENDING",
           },
           data: {
             status: "PAID",
