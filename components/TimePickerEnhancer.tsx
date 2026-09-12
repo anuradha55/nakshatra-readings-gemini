@@ -128,11 +128,11 @@ export default function TimePickerEnhancer() {
 
   return (
     <style dangerouslySetInnerHTML={{ __html: `
-      .custom-time-picker{width:100%;max-width:100%;height:46px;display:grid;grid-template-columns:minmax(0,1fr) 8px minmax(0,1fr) minmax(42px,.9fr) 18px;align-items:center;gap:0;background:rgba(15,12,36,.55);border:1px solid var(--line);border-radius:10px;padding:0 6px;box-sizing:border-box;overflow:hidden}
+      .custom-time-picker{width:100%;max-width:100%;height:46px;display:flex;flex-wrap:nowrap;align-items:center;gap:0;background:rgba(15,12,36,.55);border:1px solid var(--line);border-radius:10px;padding:0 6px;box-sizing:border-box;overflow:hidden}
       .custom-time-picker:focus-within{outline:2px solid var(--gold);outline-offset:1px}
-      .custom-time-picker select{appearance:none;-webkit-appearance:none;width:100%;min-width:0;height:38px;border:0;background:transparent;color:var(--text);font:inherit;font-size:.9rem;text-align:center;cursor:pointer;outline:none;padding:0;margin:0}
-      .custom-time-picker> :nth-child(2){width:8px;text-align:center}
-      .custom-time-picker-icon{width:18px;color:var(--gold-soft);font-size:.95rem;text-align:right;pointer-events:none;margin-left:2px}
+      .custom-time-picker select{appearance:none;-webkit-appearance:none;flex:1 1 0;width:auto;min-width:0;max-width:none;height:38px;border:0;background:transparent;color:var(--text);font:inherit;font-size:.9rem;text-align:center;text-align-last:center;cursor:pointer;outline:none;padding:0 1px;margin:0;box-sizing:border-box}
+      .custom-time-picker> :nth-child(2){flex:0 0 8px;width:8px;text-align:center}
+      .custom-time-picker-icon{flex:0 0 18px;width:18px;color:var(--gold-soft);font-size:.95rem;text-align:right;pointer-events:none;margin-left:2px}
       .custom-time-picker select option{background:#151126;color:#fff}
 
       .custom-date-picker{position:relative;width:100%;max-width:100%;height:46px;display:flex;align-items:center;justify-content:space-between;gap:8px;background:rgba(15,12,36,.55);border:1px solid var(--line);border-radius:10px;padding:0 12px;box-sizing:border-box;overflow:hidden;color:var(--text);cursor:pointer;z-index:1}
@@ -142,19 +142,19 @@ export default function TimePickerEnhancer() {
       input[data-custom-date-picker="true"]{position:absolute!important;left:0!important;top:0!important;width:100%!important;height:46px!important;padding:0!important;margin:0!important;opacity:0!important;border:0!important;background:transparent!important;cursor:pointer!important;z-index:2!important}
 
       @media(max-width:640px){
-        .custom-time-picker{grid-template-columns:minmax(0,1fr) 6px minmax(0,1fr) minmax(42px,.9fr) 16px;height:46px;padding-left:3px;padding-right:3px}
-        .custom-time-picker select{font-size:.8rem}
-        .custom-time-picker> :nth-child(2){width:6px}
-        .custom-time-picker-icon{width:16px;font-size:.9rem;margin-left:1px}
+        .custom-time-picker{height:46px;padding-left:3px;padding-right:3px;overflow:hidden;}
+        .custom-time-picker select{font-size:.8rem;padding-left:0;padding-right:0;min-width:0;}
+        .custom-time-picker> :nth-child(2){flex-basis:6px;width:6px}
+        .custom-time-picker-icon{flex-basis:16px;width:16px;font-size:.9rem;margin-left:1px}
         .custom-date-picker{height:46px;padding:0 10px}
         .custom-date-picker-value{font-size:.84rem}
         .custom-date-picker-icon{font-size:.85rem}
       }
-      @media(max-width:360px){
-        .custom-time-picker{grid-template-columns:minmax(0,1fr) 5px minmax(0,1fr) minmax(38px,.9fr) 14px;padding-left:2px;padding-right:2px}
-        .custom-time-picker select{font-size:.76rem}
-        .custom-time-picker> :nth-child(2){width:5px}
-        .custom-time-picker-icon{width:14px;font-size:.85rem;margin-left:0}
+      @media(max-width:480px){
+        .custom-time-picker{padding-left:2px;padding-right:2px;}
+        .custom-time-picker select{font-size:.76rem;line-height:1;}
+        .custom-time-picker> :nth-child(2){flex-basis:5px;width:5px}
+        .custom-time-picker-icon{flex-basis:14px;width:14px;font-size:.82rem;margin-left:0}
       }
     ` }} />
   );
