@@ -49,10 +49,12 @@ export async function POST(request: Request) {
       reservedSlotId = null;
       return NextResponse.json({ id: order.id, amount: order.amount, currency: order.currency, bookingId: savedBooking.id });
     } catch (paymentSetupError) {
-      await prisma.availabilitySlot.updateMany({
-        where: { id: reservedSlotId, status: "HELD" },
-        data: { status: "AVAILABLE", holdExpiresAt: null },
-      });
+      if (reservedSlotId) {
+        await prisma.availabilitySlot.updateMany({
+          where: { id: reservedSlotId, status: "HELD" },
+          data: { status: "AVAILABLE", holdExpiresAt: null },
+        });
+      }
       reservedSlotId = null;
       throw paymentSetupError;
     }
