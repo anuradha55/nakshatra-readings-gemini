@@ -1,12 +1,24 @@
 .ai-form .birth-time-place-row {
-  display: grid !important;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
-  gap: 12px !important;
-  width: 100% !important;
-  align-items: start !important;
+  display: contents !important;
 }
 
-.ai-form .birth-time-place-row > .field {
+.ai-form > .field {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+.ai-form > .field:has(#ai-date) {
+  grid-column: 1 !important;
+}
+
+.ai-form .birth-time-place-row > .field:first-child {
+  grid-column: 2 !important;
+  min-width: 0 !important;
+  width: 100% !important;
+}
+
+.ai-form .birth-time-place-row > .place-field {
+  grid-column: 1 / -1 !important;
   min-width: 0 !important;
   width: 100% !important;
 }
@@ -20,8 +32,14 @@
   font-size: 16px !important;
 }
 
+.ai-form > button,
+.ai-form > p {
+  grid-column: 1 / -1;
+}
+
 @media (max-width: 640px) {
-  .ai-form .birth-time-place-row {
-    grid-template-columns: minmax(0, 1fr) !important;
+  .ai-form .birth-time-place-row > .field:first-child,
+  .ai-form > .field:has(#ai-date) {
+    grid-column: 1 / -1 !important;
   }
 }
