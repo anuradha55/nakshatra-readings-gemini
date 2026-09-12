@@ -11,13 +11,15 @@ function timeLabel(value: string) {
   return new Intl.DateTimeFormat("en-IN", { hour: "numeric", minute: "2-digit", timeZone: "Asia/Kolkata" }).format(new Date(value));
 }
 
-export default function AvailabilityPicker({ selectedSlotId, onSelect }: { selectedSlotId: string; onSelect: (slot: Slot | null) => void }) {
+export default function AvailabilityPicker({ selectedSlotId, onSelect, refreshToken = 0 }: { selectedSlotId: string; onSelect: (slot: Slot | null) => void; refreshToken?: number }) {
   const [slots, setSlots] = useState<Slot[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
     let active = true;
+    setLoading(true);
+    setError("");
     fetch("/api/availability", { cache: "no-store" })
       .then(async (res) => {
         const body = await res.json();
@@ -27,7 +29,7 @@ export default function AvailabilityPicker({ selectedSlotId, onSelect }: { selec
       .catch((e) => active && setError(e instanceof Error ? e.message : "Unable to load appointment slots."))
       .finally(() => active && setLoading(false));
     return () => { active = false; };
-  }, []);
+  }, [refreshToken]);
 
   const groups = useMemo(() => {
     const map = new Map<string, Slot[]>();
