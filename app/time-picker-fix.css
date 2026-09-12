@@ -44,6 +44,64 @@
   grid-column: 1 / -1 !important;
 }
 
+/* Astrologer booking form: Birth Date + Birth Time on one row,
+   Birth Place on its own row, including on mobile. */
+.booking-panel > div + form {
+  position: relative !important;
+  z-index: 30 !important;
+  overflow: visible !important;
+}
+
+.booking-panel > div + form > .field:has(#booking-birth-date) {
+  display: inline-block !important;
+  vertical-align: top !important;
+  width: calc(50% - 6px) !important;
+  margin-right: 12px !important;
+}
+
+.booking-panel > div + form > .birth-time-place-row {
+  display: contents !important;
+}
+
+.booking-panel > div + form > .birth-time-place-row > .field:first-child {
+  display: inline-block !important;
+  vertical-align: top !important;
+  width: calc(50% - 6px) !important;
+  position: relative !important;
+  z-index: 40 !important;
+}
+
+.booking-panel > div + form > .birth-time-place-row > .place-field {
+  width: 100% !important;
+  position: relative !important;
+  z-index: 50 !important;
+  clear: both !important;
+}
+
+.booking-panel > div + form input[type="date"],
+.booking-panel > div + form input[type="time"] {
+  width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  height: 46px !important;
+  font-size: 16px !important;
+}
+
+.booking-panel,
+.booking-panel > div,
+.booking-panel > div + form,
+.booking-panel .field,
+.booking-panel .birth-time-place-row,
+.booking-panel .place-field {
+  overflow: visible !important;
+}
+
+.booking-panel .place-suggestions {
+  z-index: 9999 !important;
+  max-height: 260px !important;
+  overflow-y: auto !important;
+}
+
 @media (max-width: 640px) {
   .ai-form {
     grid-template-columns: minmax(0, 1fr) !important;
@@ -52,5 +110,27 @@
   .ai-form .birth-time-place-row > .field:first-child,
   .ai-form > .field:has(#ai-date) {
     grid-column: 1 / -1 !important;
+  }
+
+  /* Keep the astrologer Birth Date and Birth Time side-by-side on phones. */
+  .booking-panel > div + form > .field:has(#booking-birth-date),
+  .booking-panel > div + form > .birth-time-place-row > .field:first-child {
+    display: inline-block !important;
+    width: calc(50% - 6px) !important;
+    vertical-align: top !important;
+  }
+
+  .booking-panel > div + form > .birth-time-place-row > .field:first-child {
+    margin-left: 0 !important;
+  }
+
+  .booking-panel > div + form > .birth-time-place-row > .place-field {
+    display: block !important;
+    width: 100% !important;
+    clear: both !important;
+  }
+
+  .booking-panel > div + form > .field:has(#booking-birth-date) {
+    margin-right: 12px !important;
   }
 }
