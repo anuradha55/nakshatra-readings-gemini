@@ -108,12 +108,14 @@ export default function TimePickerEnhancer() {
 
   return (
     <style dangerouslySetInnerHTML={{ __html: `
-      .custom-time-picker{width:100%;height:46px;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) minmax(64px,.9fr) 28px;align-items:center;gap:0;background:rgba(15,12,36,.55);border:1px solid var(--line);border-radius:10px;padding:0 9px 0 12px;box-sizing:border-box}
+      .custom-time-picker{width:100%;height:46px;display:flex;align-items:center;justify-content:center;gap:0;background:rgba(15,12,36,.55);border:1px solid var(--line);border-radius:10px;padding:0 10px;box-sizing:border-box;overflow:visible}
       .custom-time-picker:focus-within{outline:2px solid var(--gold);outline-offset:1px}
-      .custom-time-picker select{appearance:none;-webkit-appearance:none;width:100%;height:38px;min-width:0;border:0;background:transparent;color:var(--text);font:inherit;font-size:.92rem;text-align:center;cursor:pointer;outline:none}
+      .custom-time-picker select{appearance:none;-webkit-appearance:none;flex:0 0 auto;width:54px;height:38px;min-width:54px;padding:0;margin:0;border:0;background:transparent;color:var(--text);font:inherit;font-size:.92rem;text-align:center;text-align-last:center;cursor:pointer;outline:none;box-sizing:border-box}
       .custom-time-picker select option{background:#151126;color:#fff}
-      .custom-time-picker-icon{color:var(--gold-soft);font-size:1.05rem;text-align:right;pointer-events:none}
-      @media(max-width:640px){.custom-time-picker{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) minmax(58px,.85fr) 24px;padding-left:10px;padding-right:7px}.custom-time-picker select{font-size:.9rem}}
+      .custom-time-picker > :nth-child(2){flex:0 0 18px;width:18px;text-align:center}
+      .custom-time-picker select:nth-child(4){width:68px;min-width:68px}
+      .custom-time-picker-icon{flex:0 0 28px;width:28px;color:var(--gold-soft);font-size:1.05rem;text-align:center;pointer-events:none}
+      @media(max-width:640px){.custom-time-picker{padding:0 7px}.custom-time-picker select{width:54px;min-width:54px;font-size:.9rem}.custom-time-picker select:nth-child(4){width:68px;min-width:68px}.custom-time-picker-icon{flex-basis:24px;width:24px}}
     ` }} />
   );
 }
