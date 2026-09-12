@@ -92,11 +92,20 @@ function formatDate(value: string) {
 function enhanceDate(input: HTMLInputElement) {
   if (input.dataset.customDatePicker === "true") return;
   input.dataset.customDatePicker = "true";
+
+  // Keep the REAL native date input as the tap target. Do not use showPicker()
+  // from a synthetic wrapper click: mobile Safari/Chrome can reject that call
+  // when the native control is not the element receiving the gesture.
   input.style.height = "52px";
   input.style.minHeight = "52px";
   input.style.maxHeight = "52px";
   input.style.boxSizing = "border-box";
-  input.style.overflow = "visible";
+  input.style.overflow = "hidden";
+  input.style.position = "relative";
+  input.style.zIndex = "4";
+  input.style.opacity = "0";
+  input.style.pointerEvents = "auto";
+  input.style.cursor = "pointer";
 
   const wrapper = document.createElement("div");
   wrapper.className = "custom-date-picker";
@@ -105,6 +114,7 @@ function enhanceDate(input: HTMLInputElement) {
   wrapper.style.minHeight = "52px";
   wrapper.style.maxHeight = "52px";
   wrapper.style.boxSizing = "border-box";
+  wrapper.style.pointerEvents = "none";
 
   const display = document.createElement("span");
   display.className = "custom-date-picker-value";
@@ -119,22 +129,6 @@ function enhanceDate(input: HTMLInputElement) {
     display.textContent = formatDate(input.value);
     wrapper.classList.toggle("has-value", Boolean(input.value));
   };
-
-  // The visible 52px wrapper is the mobile tap target. The native input is kept
-  // transparent but does not sit above the wrapper, so it cannot steal the tap.
-  const openPicker = () => {
-    try {
-      if (typeof input.showPicker === "function") input.showPicker();
-      else input.click();
-    } catch {
-      input.click();
-    }
-  };
-  wrapper.addEventListener("click", openPicker);
-  wrapper.addEventListener("touchend", (event) => {
-    event.preventDefault();
-    openPicker();
-  }, { passive: false });
   input.addEventListener("change", update);
   input.addEventListener("input", update);
   update();
@@ -165,11 +159,11 @@ export default function TimePickerEnhancer() {
       .custom-time-picker-icon{flex:0 0 18px;width:18px;color:var(--gold-soft);font-size:.95rem;text-align:center;pointer-events:none;margin-left:10px;overflow:visible}
       .custom-time-picker select option{background:#151126;color:#fff}
 
-      .custom-date-picker{position:relative;width:100%;max-width:100%;height:52px;min-height:52px;max-height:52px;display:flex;align-items:center;justify-content:space-between;gap:8px;background:rgba(15,12,36,.55);border:1px solid var(--line);border-radius:10px;padding:0 12px;box-sizing:border-box;overflow:hidden;color:var(--text);cursor:pointer;z-index:3;text-align:left;touch-action:manipulation;user-select:none;-webkit-tap-highlight-color:transparent}
+      .custom-date-picker{position:absolute;left:0;top:0;width:100%;max-width:100%;height:52px;min-height:52px;max-height:52px;display:flex;align-items:center;justify-content:space-between;gap:8px;background:rgba(15,12,36,.55);border:1px solid var(--line);border-radius:10px;padding:0 12px;box-sizing:border-box;overflow:hidden;color:var(--text);z-index:1;text-align:left;touch-action:none;user-select:none}
       .custom-date-picker-value{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-dim);font-family:'Work Sans',sans-serif;font-size:.92rem;text-align:left}
       .custom-date-picker.has-value .custom-date-picker-value{color:var(--text)}
       .custom-date-picker-icon{flex:0 0 auto;color:var(--gold-soft);font-size:.9rem;pointer-events:none}
-      input[data-custom-date-picker="true"]{position:absolute!important;left:0!important;top:0!important;width:100%!important;height:52px!important;min-height:52px!important;max-height:52px!important;padding:0!important;margin:0!important;opacity:0!important;border:0!important;background:transparent!important;cursor:pointer!important;z-index:0!important;pointer-events:none!important;box-sizing:border-box!important}
+      input[data-custom-date-picker="true"]{position:absolute!important;left:0!important;top:0!important;width:100%!important;height:52px!important;min-height:52px!important;max-height:52px!important;padding:0!important;margin:0!important;opacity:0!important;border:0!important;background:transparent!important;cursor:pointer!important;z-index:4!important;pointer-events:auto!important;box-sizing:border-box!important;touch-action:manipulation!important}
 
       @media(max-width:640px){
         .custom-time-picker{height:52px;min-height:52px;max-height:52px;padding-left:10px;padding-right:10px;overflow:visible;min-width:0}
@@ -180,7 +174,7 @@ export default function TimePickerEnhancer() {
         .custom-time-picker select[aria-label="AM or PM"]{flex-basis:40px;min-width:40px;width:40px}
         .custom-time-picker-controls> :nth-child(2){flex-basis:6px;width:6px;overflow:visible}
         .custom-time-picker-icon{flex-basis:16px;width:16px;font-size:.9rem;margin-left:10px;overflow:visible}
-        .custom-date-picker{height:52px;min-height:52px;max-height:52px;padding:0 10px;z-index:3}
+        .custom-date-picker{height:52px;min-height:52px;max-height:52px;padding:0 10px;z-index:1}
         .custom-date-picker-value{font-size:.84rem}
       }
       @media(max-width:480px){
