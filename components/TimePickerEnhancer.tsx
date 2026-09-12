@@ -83,32 +83,22 @@ export default function TimePickerEnhancer() {
 
   return (
     <style dangerouslySetInnerHTML={{ __html: `
-      .custom-time-picker{width:100%;max-width:100%;height:46px;display:flex;align-items:center;gap:0;background:rgba(15,12,36,.55);border:1px solid var(--line);border-radius:10px;padding:0 6px;box-sizing:border-box;overflow:hidden}
+      .custom-time-picker{width:100%;max-width:100%;height:46px;display:grid;grid-template-columns:minmax(0,1fr) 8px minmax(0,1fr) minmax(42px,.9fr) 18px;align-items:center;gap:0;background:rgba(15,12,36,.55);border:1px solid var(--line);border-radius:10px;padding:0 6px;box-sizing:border-box;overflow:hidden}
       .custom-time-picker:focus-within{outline:2px solid var(--gold);outline-offset:1px}
-      .custom-time-picker select{appearance:none;-webkit-appearance:none;flex:1 1 0;width:0;min-width:0;height:38px;border:0;background:transparent;color:var(--text);font:inherit;font-size:.9rem;text-align:center;cursor:pointer;outline:none;padding:0;margin:0}
-      .custom-time-picker select:nth-of-type(1){flex-basis:32px}
-      .custom-time-picker select:nth-of-type(2){flex-basis:32px}
-      .custom-time-picker select:nth-of-type(3){flex-basis:44px}
-      .custom-time-picker> :not(select){flex:0 0 auto}
-      .custom-time-picker> :nth-child(2){width:7px;text-align:center}
+      .custom-time-picker select{appearance:none;-webkit-appearance:none;width:100%;min-width:0;height:38px;border:0;background:transparent;color:var(--text);font:inherit;font-size:.9rem;text-align:center;cursor:pointer;outline:none;padding:0;margin:0}
+      .custom-time-picker> :nth-child(2){width:8px;text-align:center}
       .custom-time-picker-icon{width:18px;color:var(--gold-soft);font-size:.95rem;text-align:right;pointer-events:none;margin-left:2px}
       .custom-time-picker select option{background:#151126;color:#fff}
       @media(max-width:640px){
-        .custom-time-picker{height:46px;padding-left:3px;padding-right:3px}
-        .custom-time-picker select{font-size:.78rem}
-        .custom-time-picker select:nth-of-type(1){flex-basis:28px}
-        .custom-time-picker select:nth-of-type(2){flex-basis:28px}
-        .custom-time-picker select:nth-of-type(3){flex-basis:38px}
-        .custom-time-picker> :nth-child(2){width:5px}
+        .custom-time-picker{grid-template-columns:minmax(0,1fr) 6px minmax(0,1fr) minmax(42px,.9fr) 16px;height:46px;padding-left:3px;padding-right:3px}
+        .custom-time-picker select{font-size:.8rem}
+        .custom-time-picker> :nth-child(2){width:6px}
         .custom-time-picker-icon{width:16px;font-size:.9rem;margin-left:1px}
       }
       @media(max-width:360px){
-        .custom-time-picker{padding-left:2px;padding-right:2px}
-        .custom-time-picker select{font-size:.72rem}
-        .custom-time-picker select:nth-of-type(1){flex-basis:24px}
-        .custom-time-picker select:nth-of-type(2){flex-basis:24px}
-        .custom-time-picker select:nth-of-type(3){flex-basis:34px}
-        .custom-time-picker> :nth-child(2){width:4px}
+        .custom-time-picker{grid-template-columns:minmax(0,1fr) 5px minmax(0,1fr) minmax(38px,.9fr) 14px;padding-left:2px;padding-right:2px}
+        .custom-time-picker select{font-size:.76rem}
+        .custom-time-picker> :nth-child(2){width:5px}
         .custom-time-picker-icon{width:14px;font-size:.85rem;margin-left:0}
       }
     ` }} />
