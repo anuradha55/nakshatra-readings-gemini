@@ -7,9 +7,52 @@ export function slotStatusIsBookable(status: string, holdExpiresAt: Date | null)
 }
 
 export async function releaseExpiredHolds() {
-  await prisma.availabilitySlot.updateMany({
-    where: { status: "HELD", holdExpiresAt: { lte: new Date() } },
-    data: { status: "AVAILABLE", holdExpiresAt: null },
+  const now = new Date();
+
+  await prisma.$transaction(async (tx) => {
+    const expiredSlots = await tx.availabilitySlot.findMany({
+      where: { status: "HELD", holdExpiresAt: { lte: now } },
+      select: { id: true },
+    });
+
+    if (expiredSlots.length === 0) return;
+
+    const slotIds = expiredSlots.map((slot) => slot.id);
+    const bookings = await tx.booking.findMany({
+      where: { slotId: { in: slotIds } },
+      select: { id: true, slotId: true, status: true },
+    });
+
+    const paidSlotIds = new Set(
+      bookings
+        .filter((booking) => booking.status === "PAID" && booking.slotId)
+        .map((booking) => booking.slotId as string),
+    );
+
+    for (const booking of bookings) {
+      if (!booking.slotId || booking.status === "PAID") continue;
+      await tx.booking.update({
+        where: { id: booking.id },
+        data: {
+          slotId: null,
+          ...(booking.status === "PENDING"
+            ? { status: "CANCELLED" as const, payoutStatus: "CANCELLED" as const }
+            : {}),
+        },
+      });
+    }
+
+    await tx.availabilitySlot.updateMany({
+      where: { id: { in: slotIds }, status: "HELD" },
+      data: { status: "AVAILABLE", holdExpiresAt: null },
+    });
+
+    if (paidSlotIds.size > 0) {
+      await tx.availabilitySlot.updateMany({
+        where: { id: { in: Array.from(paidSlotIds) } },
+        data: { status: "BOOKED", holdExpiresAt: null },
+      });
+    }
   });
 }
 
