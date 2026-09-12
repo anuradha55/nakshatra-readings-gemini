@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { Language, tr } from "@/lib/i18n";
 import AvailabilityPicker from "@/components/AvailabilityPicker";
 
@@ -48,10 +48,18 @@ export default function BookingForm({ language }: { language: Language }) {
   const [placeSuggestions, setPlaceSuggestions] = useState<PlaceSuggestion[]>([]);
   const [showPlaces, setShowPlaces] = useState(false);
   const [placeLoading, setPlaceLoading] = useState(false);
+  const placeSelectionRef = useRef(false);
 
   const bookingAmount = service === "Entire Kundli Analysis" ? COMPLETE_KUNDLI_AMOUNT : STANDARD_BOOKING_AMOUNT;
 
   useEffect(() => {
+    if (placeSelectionRef.current) {
+      placeSelectionRef.current = false;
+      setPlaceSuggestions([]);
+      setShowPlaces(false);
+      return;
+    }
+
     const query = birthPlace.trim();
     if (query.length < 2) { setPlaceSuggestions([]); setShowPlaces(false); return; }
     const controller = new AbortController();
@@ -69,7 +77,8 @@ export default function BookingForm({ language }: { language: Language }) {
   }, [birthPlace]);
 
   function selectPlace(place: PlaceSuggestion) {
-    setBirthPlace([place.name, place.admin1, place.country].filter(Boolean).join(", ")); setShowPlaces(false);
+    placeSelectionRef.current = true;
+    setBirthPlace([place.name, place.admin1, place.country].filter(Boolean).join(", ")); setPlaceSuggestions([]); setShowPlaces(false);
   }
   function setDiagnostic(message: string) { console.info(`[Payment diagnostic] ${message}`); setStatus(message); }
 
@@ -179,12 +188,12 @@ export default function BookingForm({ language }: { language: Language }) {
     }
   }
 
-  return <section className="booking" id="booking"><div className="wrap"><div className="booking-panel"><div><h2>{t.bookingTitle}</h2><p>{t.bookingText}</p><div className={ok ? "status-msg status-ok" : "status-msg status-err"}>{status}</div></div><form onSubmit={handleSubmit} onInvalidCapture={(event) => { const target = event.target as HTMLInputElement | HTMLSelectElement; setStatus(`Form validation: please complete the required field "${target.name || target.id || "unknown"}".`); }}>
+  return <section className="booking" id="booking"><div className="wrap"><div className="booking-panel"><div><h2>{t.bookingTitle}</h2><p>{t.bookingText}</p><div className={ok ? "status-msg status-ok" : "status-msg status-err"}>{status}</div></div><form onSubmit={handleSubmit} onInvalidCapture={(event) => { const target = event.target as HTMLInputElement | HTMLSelectElement; if (target.id === "booking-birth-time") return; setStatus(`Form validation: please complete the required field "${target.name || target.id || "unknown"}".`); }}>
     <div className="field"><label htmlFor="name">{t.name}</label><input name="name" id="name" type="text" required /></div>
     <div className="field"><label htmlFor="phone">{t.phone}</label><input name="phone" id="phone" type="tel" required /></div>
     <div className="field"><label htmlFor="email">{t.email}</label><input name="email" id="email" type="email" required autoComplete="email" placeholder="name@example.com" title="Please enter a valid email address, for example name@example.com" /></div>
     <div className="field"><label htmlFor="service">{t.focus}</label><select name="service" id="service" value={service} onChange={(e) => setService(e.target.value)}>{FOCUS_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}</select></div>
-    <div className="ai-two booking-birth-stacked"><div className="field"><label htmlFor="booking-birth-date">{t.birthDate}</label><input name="birthDate" id="booking-birth-date" type="date" required /></div><div className="field"><label htmlFor="booking-birth-time">{t.birthTime}</label><input id="booking-birth-time" name="birthTime" type="time" value={birthTime} onChange={(e) => setBirthTime(e.target.value)} step="60" required style={{ width: "100%", height: "46px", minWidth: 0, boxSizing: "border-box" }} /><small className="field-hint">Select the exact hour and minute.</small></div></div>
+    <div className="ai-two booking-birth-stacked"><div className="field"><label htmlFor="booking-birth-date">{t.birthDate}</label><input name="birthDate" id="booking-birth-date" type="date" required /></div><div className="field"><label htmlFor="booking-birth-time">{t.birthTime}</label><input id="booking-birth-time" name="birthTime" type="time" value={birthTime} onChange={(e) => setBirthTime(e.target.value)} step="60" style={{ width: "100%", height: "46px", minWidth: 0, boxSizing: "border-box" }} /><small className="field-hint">Select the exact hour and minute.</small></div></div>
     <div className="field place-field"><label htmlFor="booking-birth-place">{t.birthPlace}</label><div className="place-input-wrap"><input id="booking-birth-place" name="birthPlace" value={birthPlace} onChange={(e) => setBirthPlace(e.target.value)} onFocus={() => placeSuggestions.length && setShowPlaces(true)} placeholder={t.placePlaceholder} autoComplete="off" required />{placeLoading && <span className="place-loading">{t.searching}</span>}</div>{showPlaces && placeSuggestions.length > 0 && <div className="place-suggestions">{placeSuggestions.map((place, index) => <button type="button" className="place-option" key={`${place.name}-${place.latitude}-${index}`} onMouseDown={(event) => event.preventDefault()} onClick={() => selectPlace(place)}><strong>{place.name}</strong><span>{[place.admin1, place.country].filter(Boolean).join(", ")}</span></button>)}</div>}</div>
     <AvailabilityPicker selectedSlotId={selectedSlot?.id ?? ""} onSelect={setSelectedSlot} refreshToken={availabilityRefreshToken} />
     <div className="price-line"><span>{t.sessionFee}</span><span className="amt">₹{bookingAmount}</span></div>
