@@ -115,10 +115,8 @@ export default function BookingForm({ language }: { language: Language }) {
       let order: Record<string, unknown>;
       try { order = await orderRes.json(); } catch { throw new Error(`Order API returned an invalid response (HTTP ${orderRes.status}).`); }
       if (!orderRes.ok) {
-        const diagnostic = order.diagnostic && typeof order.diagnostic === "object" ? order.diagnostic as { message?: unknown; statusCode?: unknown; razorpayCode?: unknown; razorpayDescription?: unknown; razorpayReason?: unknown } : null;
-        const details = diagnostic ? [typeof diagnostic.message === "string" ? diagnostic.message : "", diagnostic.statusCode ? "HTTP/Razorpay status: " + diagnostic.statusCode : "", typeof diagnostic.razorpayCode === "string" ? "Razorpay code: " + diagnostic.razorpayCode : "", typeof diagnostic.razorpayDescription === "string" ? diagnostic.razorpayDescription : "", typeof diagnostic.razorpayReason === "string" ? diagnostic.razorpayReason : ""].filter(Boolean).join("\n") : "";
-        const baseError = typeof order.error === "string" ? order.error : "Could not start payment (HTTP " + orderRes.status + ").";
-        throw new Error(baseError + (details ? "\n\nDiagnostic:\n" + details : ""));
+        const baseError = typeof order.error === "string" ? order.error : "Could not start payment. Please choose another appointment slot and try again.";
+        throw new Error(baseError);
       }
       if (!order.id || !order.amount || !order.currency || !order.bookingId) throw new Error("Order was created but the website received incomplete payment details.");
       createdBookingId = String(order.bookingId);
@@ -169,7 +167,11 @@ export default function BookingForm({ language }: { language: Language }) {
       try { rzp.open(); window.setTimeout(() => { setStatus((current) => current === "Step 4/4: Opening secure Razorpay payment window..." ? "" : current); }, 1500); } catch (error) { throw new Error(`Razorpay popup could not open: ${error instanceof Error ? error.message : "Unknown error"}`); }
     } catch (error) {
       if (createdBookingId && !paymentCompleted) await releaseBookingHold(createdBookingId);
-      const message = error instanceof Error ? error.message : "Something went wrong."; console.error("[Payment diagnostic] Payment flow failed:", error); setOk(false); setStatus(`Payment error: ${message}`); window.alert(`Payment diagnostic error:\n${message}`); setLoading(false);
+      const message = error instanceof Error ? error.message : "Something went wrong.";
+      console.error("[Payment diagnostic] Payment flow failed:", error);
+      setOk(false);
+      setStatus(message);
+      setLoading(false);
     }
   }
 
