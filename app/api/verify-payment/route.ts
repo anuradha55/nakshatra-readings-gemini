@@ -14,6 +14,7 @@ export async function POST(request: Request) {
 
     const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
     if (!booking) return NextResponse.json({ error: "Booking not found." }, { status: 404 });
+    if (booking.status === "CANCELLED") return NextResponse.json({ error: "This booking was cancelled because payment was not completed. Please start a new booking." }, { status: 409 });
     const expectedSignature = crypto.createHmac("sha256", secret).update(`${booking.razorpayOrderId}|${razorpay_payment_id}`).digest("hex");
     if (expectedSignature.length !== razorpay_signature.length || !crypto.timingSafeEqual(Buffer.from(expectedSignature, "utf8"), Buffer.from(razorpay_signature, "utf8"))) return NextResponse.json({ error: "Payment signature verification failed." }, { status: 400 });
 
