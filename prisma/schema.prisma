@@ -36,6 +36,13 @@ enum BookingNotificationStatus {
   FAILED
 }
 
+enum AvailabilitySlotStatus {
+  AVAILABLE
+  HELD
+  BOOKED
+  BLOCKED
+}
+
 model Booking {
   id                  String        @id @default(cuid())
   name                String
@@ -49,6 +56,7 @@ model Booking {
   razorpayOrderId     String        @unique
   razorpayPaymentId   String?       @unique
   paymentVerifiedAt   DateTime?
+  slotId              String?       @unique
 
   platformShare       Int           @default(0)
   astrologerShare     Int           @default(0)
@@ -59,11 +67,30 @@ model Booking {
 
   payout               AstrologerPayout?
   notifications        BookingNotification[]
+  slot                 AvailabilitySlot? @relation(fields: [slotId], references: [id], onDelete: SetNull)
 
   @@index([email])
   @@index([status])
   @@index([payoutStatus])
   @@index([createdAt])
+}
+
+model AvailabilitySlot {
+  id              String                 @id @default(cuid())
+  astrologerEmail String
+  astrologerName  String
+  startsAt        DateTime
+  endsAt          DateTime
+  status          AvailabilitySlotStatus @default(AVAILABLE)
+  holdExpiresAt   DateTime?
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+
+  booking         Booking?
+
+  @@index([astrologerEmail, startsAt])
+  @@index([status, startsAt])
+  @@index([startsAt, endsAt])
 }
 
 model BookingNotification {
@@ -122,7 +149,6 @@ model AiPrediction {
 
   @@index([email, createdAt])
 }
-
 
 model AiFreePredictionClaim {
   id            String   @id @default(cuid())
