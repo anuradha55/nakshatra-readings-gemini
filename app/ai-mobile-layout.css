@@ -1,0 +1,71 @@
+/* AI prediction mobile-only layout. Desktop/laptop layout is intentionally untouched. */
+@media (max-width: 860px) {
+  .ai-form {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    column-gap: 12px !important;
+    row-gap: 0 !important;
+    min-width: 0 !important;
+    overflow: visible !important;
+  }
+
+  .ai-form > .field {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Name and email remain full-width. */
+  .ai-form > .field:nth-child(1),
+  .ai-form > .field:nth-child(2) {
+    grid-column: 1 / -1 !important;
+  }
+
+  /* Birth Date + Birth Time share the same row. */
+  .ai-form > .field:has(#ai-date) {
+    grid-column: 1 !important;
+    min-width: 0 !important;
+  }
+
+  .ai-form > .birth-time-place-row {
+    display: contents !important;
+  }
+
+  .ai-form > .birth-time-place-row > .field:first-child {
+    grid-column: 2 !important;
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Birth Place gets its own full-width row below date/time. */
+  .ai-form > .birth-time-place-row > .place-field {
+    grid-column: 1 / -1 !important;
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  .ai-form > .field:has(#ai-question),
+  .ai-form > button,
+  .ai-form > p {
+    grid-column: 1 / -1 !important;
+  }
+
+  .ai-form #ai-date,
+  .ai-form #ai-time,
+  .ai-form #ai-place,
+  .ai-form #ai-question {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .ai-form .birth-time-place-row > .field:first-child .field-hint {
+    display: block;
+  }
+}
+
+@media (max-width: 360px) {
+  .ai-form {
+    column-gap: 8px !important;
+  }
+}
