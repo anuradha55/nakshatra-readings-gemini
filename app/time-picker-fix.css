@@ -1,10 +1,17 @@
+.ai-form {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+  column-gap: 12px !important;
+  row-gap: 0 !important;
+}
+
 .ai-form .birth-time-place-row {
   display: contents !important;
 }
 
 .ai-form > .field {
-  grid-column: 1 / -1;
-  min-width: 0;
+  grid-column: 1 / -1 !important;
+  min-width: 0 !important;
 }
 
 .ai-form > .field:has(#ai-date) {
@@ -34,10 +41,14 @@
 
 .ai-form > button,
 .ai-form > p {
-  grid-column: 1 / -1;
+  grid-column: 1 / -1 !important;
 }
 
 @media (max-width: 640px) {
+  .ai-form {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
   .ai-form .birth-time-place-row > .field:first-child,
   .ai-form > .field:has(#ai-date) {
     grid-column: 1 / -1 !important;
