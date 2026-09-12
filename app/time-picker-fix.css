@@ -1,0 +1,16 @@
+.ai-two {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+.ai-two > .field {
+  min-width: 0;
+  width: 100%;
+}
+
+.ai-two input[type="time"] {
+  width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  padding-right: 14px !important;
+  font-size: 16px !important;
+}
