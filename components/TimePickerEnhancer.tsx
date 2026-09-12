@@ -21,34 +21,6 @@ function to24Hour(hour: number, minute: number, period: string) {
   return `${pad(h)}:${pad(minute)}`;
 }
 
-function applyMobileBirthRowLayout(input: HTMLInputElement) {
-  if (!window.matchMedia("(max-width: 860px)").matches || input.id !== "ai-time") return;
-  const form = input.closest("form.ai-form") as HTMLElement | null;
-  const timeField = input.closest(".field") as HTMLElement | null;
-  const dateField = form?.querySelector(".field:has(#ai-date)") as HTMLElement | null;
-  const birthRow = input.closest(".birth-time-place-row") as HTMLElement | null;
-
-  if (form) {
-    form.style.setProperty("grid-template-columns", "minmax(0, 1fr)", "important");
-    form.style.setProperty("column-gap", "0", "important");
-    form.style.setProperty("grid-column-gap", "0", "important");
-  }
-  if (birthRow) birthRow.style.setProperty("display", "contents", "important");
-  if (dateField) {
-    dateField.style.setProperty("grid-column", "1", "important");
-    dateField.style.setProperty("width", "100%", "important");
-    dateField.style.setProperty("min-width", "0", "important");
-    dateField.style.setProperty("max-width", "none", "important");
-  }
-  if (timeField) {
-    timeField.style.setProperty("grid-column", "1", "important");
-    timeField.style.setProperty("width", "100%", "important");
-    timeField.style.setProperty("min-width", "0", "important");
-    timeField.style.setProperty("max-width", "none", "important");
-    timeField.style.setProperty("box-sizing", "border-box", "important");
-  }
-}
-
 function enhanceTime(input: HTMLInputElement) {
   if (input.dataset.customTimePicker === "true") return;
   input.dataset.customTimePicker = "true";
@@ -94,7 +66,6 @@ function enhanceTime(input: HTMLInputElement) {
   controls.append(hourSelect, document.createTextNode(":"), minuteSelect, periodSelect);
   wrapper.append(controls, icon);
   input.parentElement?.insertBefore(wrapper, input.nextSibling);
-  applyMobileBirthRowLayout(input);
 }
 
 function enhanceDate(input: HTMLInputElement) {
@@ -112,8 +83,8 @@ function enhanceDate(input: HTMLInputElement) {
   input.style.zIndex = "2";
   input.style.cursor = "pointer";
   input.style.touchAction = "manipulation";
-  input.style.textAlign = "left";
-  input.style.padding = "0 42px 0 12px";
+  input.style.textAlign = "center";
+  input.style.padding = "0 42px";
   input.style.margin = "0";
 }
 
@@ -130,46 +101,45 @@ export default function TimePickerEnhancer() {
   }, []);
 
   return <style dangerouslySetInnerHTML={{ __html: `
-    .custom-time-picker{width:100%;max-width:100%;height:52px;min-height:52px;max-height:52px;display:flex;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:0;background:rgba(15,12,36,.55);border:1px solid var(--line);border-radius:10px;padding:0 10px;box-sizing:border-box;overflow:visible;min-width:0;touch-action:manipulation}
+    .custom-time-picker{position:relative;width:100%;max-width:100%;height:52px;min-height:52px;max-height:52px;display:flex;flex-wrap:nowrap;align-items:center;justify-content:center;gap:0;background:rgba(15,12,36,.55);border:1px solid var(--line);border-radius:10px;padding:0 42px 0 10px;box-sizing:border-box;overflow:visible;min-width:0;touch-action:manipulation}
     .custom-time-picker:focus-within{outline:2px solid var(--gold);outline-offset:1px}
-    .custom-time-picker-controls{display:flex;align-items:center;justify-content:flex-start;flex:1 1 auto;min-width:0;width:auto;gap:0;text-align:left;overflow:visible}
+    .custom-time-picker-controls{display:flex;align-items:center;justify-content:center;flex:0 1 auto;min-width:0;width:auto;gap:0;text-align:center;overflow:visible}
     .custom-time-picker select{appearance:none;-webkit-appearance:none;flex:0 0 auto;width:auto;min-width:0;max-width:none;height:40px;border:0;background:transparent;color:var(--text);font:inherit;font-size:.9rem;text-align:center;text-align-last:center;cursor:pointer;outline:none;padding:0 2px;margin:0;box-sizing:border-box;overflow:visible;flex-shrink:0;touch-action:manipulation}
     .custom-time-picker select[aria-label="Hour"]{flex:0 0 28px;min-width:28px;width:28px}
     .custom-time-picker select[aria-label="Minute"]{flex:0 0 30px;min-width:30px;width:30px;padding-left:4px;padding-right:4px;overflow:visible}
     .custom-time-picker select[aria-label="AM or PM"]{flex:0 0 40px;min-width:40px;width:40px}
     .custom-time-picker-controls> :nth-child(2){flex:0 0 8px;width:8px;text-align:center;overflow:visible}
-    .custom-time-picker-icon{flex:0 0 18px;width:18px;color:var(--gold-soft);font-size:.95rem;text-align:center;pointer-events:none;margin-left:10px;overflow:visible}
+    .custom-time-picker-icon{position:absolute;right:10px;top:50%;transform:translateY(-50%);width:18px;color:var(--gold-soft);font-size:.95rem;text-align:center;pointer-events:none;overflow:visible}
     .custom-time-picker select option{background:#151126;color:#fff}
-    input[data-native-date-picker-ready="true"]{display:block!important;position:relative!important;width:100%!important;height:52px!important;min-height:52px!important;max-height:52px!important;opacity:1!important;pointer-events:auto!important;z-index:2!important;box-sizing:border-box!important;cursor:pointer!important;touch-action:manipulation!important;text-align:left!important;padding:0 42px 0 12px!important;margin:0!important;line-height:normal!important;}
+    input[data-native-date-picker-ready="true"]{display:block!important;position:relative!important;width:100%!important;height:52px!important;min-height:52px!important;max-height:52px!important;opacity:1!important;pointer-events:auto!important;z-index:2!important;box-sizing:border-box!important;cursor:pointer!important;touch-action:manipulation!important;text-align:center!important;padding:0 42px!important;margin:0!important;line-height:normal!important;}
     input[data-native-date-picker-ready="true"]::-webkit-calendar-picker-indicator{opacity:1!important;display:block!important;cursor:pointer!important;width:22px;height:22px;}
-    input[data-native-date-picker-ready="true"]::-webkit-date-and-time-value{text-align:left;line-height:normal;}
-    input[data-native-date-picker-ready="true"]::-webkit-datetime-edit{text-align:left;padding:0;line-height:normal;}
-    input[data-native-date-picker-ready="true"]::-webkit-datetime-edit-fields-wrapper{text-align:left;padding:0;line-height:normal;}
+    input[data-native-date-picker-ready="true"]::-webkit-date-and-time-value{text-align:center;line-height:normal;}
+    input[data-native-date-picker-ready="true"]::-webkit-datetime-edit{text-align:center;padding:0;line-height:normal;}
+    input[data-native-date-picker-ready="true"]::-webkit-datetime-edit-fields-wrapper{text-align:center;padding:0;line-height:normal;}
     @media(max-width:860px){
-      .ai-form{grid-template-columns:minmax(0,1fr)!important;column-gap:0!important;grid-column-gap:0!important;}
-      .ai-form>.field:has(#ai-date){grid-column:1!important;width:100%!important;min-width:0!important;max-width:none!important;}
-      .ai-form>.birth-time-place-row{display:contents!important;}
-      .ai-form>.birth-time-place-row>.field:has(#ai-time){grid-column:1!important;width:100%!important;min-width:0!important;max-width:none!important;box-sizing:border-box!important;}
-      .ai-form>.birth-time-place-row>.field:has(#ai-place){grid-column:1!important;width:100%!important;min-width:0!important;max-width:none!important;box-sizing:border-box!important;}
-    }
-    @media(max-width:640px){
-      .custom-time-picker{height:52px;min-height:52px;max-height:52px;padding-left:10px;padding-right:10px;overflow:visible;min-width:0}
-      .custom-time-picker-controls{justify-content:flex-start;min-width:0;overflow:visible}
-      .custom-time-picker select{font-size:.8rem;padding-left:1px;padding-right:1px;overflow:visible}
-      .custom-time-picker select[aria-label="Hour"]{flex-basis:28px;min-width:28px;width:28px}
-      .custom-time-picker select[aria-label="Minute"]{flex-basis:30px;min-width:30px;width:30px;padding-left:4px;padding-right:4px}
-      .custom-time-picker select[aria-label="AM or PM"]{flex-basis:40px;min-width:40px;width:40px}
-      .custom-time-picker-controls> :nth-child(2){flex-basis:6px;width:6px;overflow:visible}
-      .custom-time-picker-icon{flex-basis:16px;width:16px;font-size:.9rem;margin-left:10px;overflow:visible}
+      /* One real vertical stack for both mobile forms. No grid/flex row can squeeze or overlap the birth fields. */
+      .ai-form{display:flex!important;flex-direction:column!important;gap:16px!important;width:100%!important;min-width:0!important;max-width:100%!important;overflow:visible!important;}
+      .ai-form>.field{width:100%!important;min-width:0!important;max-width:none!important;margin-bottom:0!important;}
+      .ai-form>.field:has(#ai-date){width:100%!important;min-width:0!important;max-width:none!important;}
+      .ai-form>.birth-time-place-row{display:flex!important;flex-direction:column!important;gap:16px!important;width:100%!important;min-width:0!important;max-width:none!important;margin:0!important;grid-template-columns:none!important;}
+      .ai-form>.birth-time-place-row>.field{width:100%!important;min-width:0!important;max-width:none!important;margin-bottom:0!important;}
+      .booking-panel form .booking-birth-stacked{display:flex!important;flex-direction:column!important;gap:16px!important;width:100%!important;min-width:0!important;max-width:none!important;margin:0!important;grid-template-columns:none!important;}
+      .booking-panel form .booking-birth-stacked>.field{width:100%!important;min-width:0!important;max-width:none!important;margin-bottom:0!important;}
+      .ai-form input,.ai-form select,.ai-form textarea,.ai-form .custom-time-picker,.booking-panel form input,.booking-panel form select,.booking-panel form textarea,.booking-panel form .custom-time-picker{width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important;}
+      .ai-form input[data-native-date-picker-ready="true"],.booking-panel form input[data-native-date-picker-ready="true"]{text-align:center!important;padding:0 42px!important;}
+      .ai-form .custom-time-picker,.booking-panel form .custom-time-picker{align-items:center!important;justify-content:center!important;text-align:center!important;}
+      .ai-form .custom-time-picker-controls,.booking-panel form .custom-time-picker-controls{align-items:center!important;justify-content:center!important;text-align:center!important;}
+      .ai-form .custom-time-picker .custom-time-picker-icon,.booking-panel form .custom-time-picker .custom-time-picker-icon{position:absolute!important;right:10px!important;left:auto!important;top:50%!important;transform:translateY(-50%)!important;margin:0!important;}
+      .ai-form .field-hint,.booking-panel form .field-hint{display:block!important;margin-top:6px!important;line-height:1.3!important;}
     }
     @media(max-width:480px){
-      .custom-time-picker{height:52px;min-height:52px;max-height:52px;padding-left:10px;padding-right:10px}
+      .custom-time-picker{height:52px;min-height:52px;max-height:52px;padding-left:10px;padding-right:42px}
       .custom-time-picker select{font-size:.76rem;line-height:1}
       .custom-time-picker select[aria-label="Hour"]{flex-basis:28px;min-width:28px;width:28px}
       .custom-time-picker select[aria-label="Minute"]{flex-basis:30px;min-width:30px;width:30px;padding-left:4px;padding-right:4px}
       .custom-time-picker select[aria-label="AM or PM"]{flex-basis:40px;min-width:40px;width:40px}
       .custom-time-picker-controls> :nth-child(2){flex-basis:5px;width:5px;overflow:visible}
-      .custom-time-picker-icon{flex-basis:14px;width:14px;font-size:.82rem;margin-left:10px;overflow:visible}
+      .custom-time-picker-icon{right:10px;width:14px;font-size:.82rem}
     }
   ` }} />;
 }
