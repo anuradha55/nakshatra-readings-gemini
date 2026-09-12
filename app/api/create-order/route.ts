@@ -1,12 +1,17 @@
 import { NextResponse } from "next/server";
 import Razorpay from "razorpay";
 import { prisma } from "@/lib/prisma";
-import { reserveSlot } from "@/lib/availability";
+import { releaseExpiredHolds, reserveSlot } from "@/lib/availability";
 
 export const runtime = "nodejs";
 
 const STANDARD_BOOKING_AMOUNT = 10000;
 const COMPLETE_KUNDLI_AMOUNT = 50000;
+const SLOT_CONFLICT_MESSAGE = "This appointment slot is no longer available. Please choose another slot.";
+
+function isUniqueConstraintError(error: unknown) {
+  return typeof error === "object" && error !== null && "code" in error && (error as { code?: unknown }).code === "P2002";
+}
 
 export async function POST(request: Request) {
   let reservedSlotId: string | null = null;
@@ -30,7 +35,19 @@ export async function POST(request: Request) {
 
     const platformShare = Math.floor((configuredAmount * platformPercent) / 100);
     const astrologerShare = configuredAmount - platformShare;
-    reservedSlotId = String(booking.slotId);
+    const requestedSlotId = String(booking.slotId);
+
+    // Clean up expired holds before checking the slot's existing booking relation.
+    await releaseExpiredHolds();
+    const existingBooking = await prisma.booking.findUnique({
+      where: { slotId: requestedSlotId },
+      select: { id: true, status: true },
+    });
+    if (existingBooking) {
+      return NextResponse.json({ error: SLOT_CONFLICT_MESSAGE }, { status: 409 });
+    }
+
+    reservedSlotId = requestedSlotId;
     await reserveSlot(reservedSlotId);
 
     try {
@@ -50,10 +67,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ id: order.id, amount: order.amount, currency: order.currency, bookingId: savedBooking.id });
     } catch (paymentSetupError) {
       if (reservedSlotId) {
-        await prisma.availabilitySlot.updateMany({
-          where: { id: reservedSlotId, status: "HELD" },
-          data: { status: "AVAILABLE", holdExpiresAt: null },
-        });
+        if (isUniqueConstraintError(paymentSetupError)) {
+          await prisma.availabilitySlot.updateMany({
+            where: { id: reservedSlotId, status: "HELD" },
+            data: { status: "BOOKED", holdExpiresAt: null },
+          });
+        } else {
+          await prisma.availabilitySlot.updateMany({
+            where: { id: reservedSlotId, status: "HELD" },
+            data: { status: "AVAILABLE", holdExpiresAt: null },
+          });
+        }
       }
       reservedSlotId = null;
       throw paymentSetupError;
@@ -65,9 +89,15 @@ export async function POST(request: Request) {
         data: { status: "AVAILABLE", holdExpiresAt: null },
       }).catch((releaseError) => console.error("CREATE_ORDER_SLOT_RELEASE_ERROR", releaseError));
     }
+
+    if (isUniqueConstraintError(error)) {
+      console.warn("CREATE_ORDER_SLOT_CONFLICT");
+      return NextResponse.json({ error: SLOT_CONFLICT_MESSAGE }, { status: 409 });
+    }
+
     console.error("CREATE_ORDER_ERROR", error);
     const message = error instanceof Error ? error.message : String(error);
-    const razorpayError = error as { statusCode?: number; error?: { description?: string; reason?: string; code?: string } };
-    return NextResponse.json({ error: message.includes("slot") || message.includes("Slot") ? message : "Unable to create payment order.", diagnostic: { message, statusCode: razorpayError.statusCode ?? null, razorpayCode: razorpayError.error?.code ?? null, razorpayDescription: razorpayError.error?.description ?? null, razorpayReason: razorpayError.error?.reason ?? null } }, { status: message.includes("slot") || message.includes("Slot") ? 409 : 500 });
+    const isSlotError = message.includes("slot") || message.includes("Slot");
+    return NextResponse.json({ error: isSlotError ? message : "Unable to create payment order." }, { status: isSlotError ? 409 : 500 });
   }
 }
