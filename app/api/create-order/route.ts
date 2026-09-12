@@ -5,6 +5,9 @@ import { reserveSlot } from "@/lib/availability";
 
 export const runtime = "nodejs";
 
+const STANDARD_BOOKING_AMOUNT = 10000;
+const COMPLETE_KUNDLI_AMOUNT = 50000;
+
 export async function POST(request: Request) {
   try {
     const { booking } = await request.json();
@@ -16,8 +19,9 @@ export async function POST(request: Request) {
     const keySecret = process.env.RAZORPAY_KEY_SECRET;
     if (!keyId || !keySecret) return NextResponse.json({ error: "Razorpay is not configured on the server." }, { status: 500 });
 
-    const configuredAmount = Number(process.env.BOOKING_AMOUNT ?? "50000");
-    if (!Number.isInteger(configuredAmount) || configuredAmount <= 0) return NextResponse.json({ error: "Invalid BOOKING_AMOUNT configuration." }, { status: 500 });
+    const configuredAmount = booking.service === "Entire Kundli Analysis"
+      ? COMPLETE_KUNDLI_AMOUNT
+      : STANDARD_BOOKING_AMOUNT;
 
     const platformPercent = Number(process.env.PLATFORM_SHARE_PERCENT ?? "20");
     const astrologerPercent = Number(process.env.ASTROLOGER_SHARE_PERCENT ?? "80");
