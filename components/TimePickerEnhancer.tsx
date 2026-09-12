@@ -167,8 +167,10 @@ export default function TimePickerEnhancer() {
       .custom-time-picker-column::-webkit-scrollbar-thumb:hover{background:var(--gold-soft)}
       .custom-time-picker-option{width:100%;height:34px;flex:0 0 34px;border:0;border-radius:7px;background:transparent;color:var(--text);font:inherit;font-size:.9rem;cursor:pointer;text-align:center}
       .custom-time-picker-option:hover,.custom-time-picker-option:focus{background:rgba(205,164,99,.14);color:var(--gold-soft);outline:none}
-      input[type="date"]{color-scheme:dark}
-      input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(1) brightness(1.25);opacity:.95;cursor:pointer}
+      /* Force the browser calendar glyph to render white on the dark purple form. */
+      input[type="date"]{color-scheme:dark !important;accent-color:var(--gold)}
+      input[type="date"]::-webkit-calendar-picker-indicator,
+      input[type="date"]::-webkit-calendar-picker-indicator:hover{filter:brightness(0) invert(1) !important;-webkit-filter:brightness(0) invert(1) !important;opacity:1 !important;cursor:pointer}
       @media(max-width:640px){.custom-time-picker-menu{grid-template-columns:1fr 1fr 1fr}.custom-time-picker-option{height:36px;flex-basis:36px}.custom-time-picker-column{max-height:180px}.custom-time-picker-display{padding:0 10px}}
     ` }} />
   );
