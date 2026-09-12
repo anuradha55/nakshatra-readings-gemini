@@ -1,46 +1,105 @@
-/* AI prediction mobile-only layout. Desktop/laptop layout is intentionally untouched. */
+/* Mobile-only corrections. Desktop/laptop layout remains untouched. */
 @media (max-width: 860px) {
+  /* Keep the whole site locked to the actual mobile viewport. */
+  html,
+  body {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+  }
+
+  .wrap {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
+  header {
+    width: 100% !important;
+    overflow: hidden !important;
+  }
+
+  .site-nav {
+    width: 100% !important;
+    min-width: 0 !important;
+    gap: 8px !important;
+  }
+
+  .brand {
+    min-width: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    font-size: 1.05rem !important;
+  }
+
+  .nav-actions {
+    min-width: 0 !important;
+    flex-shrink: 1 !important;
+    gap: 7px !important;
+  }
+
+  .nav-actions select {
+    max-width: 82px !important;
+    min-width: 0 !important;
+  }
+
+  .site-nav .cta {
+    padding: 8px 12px !important;
+    font-size: .76rem !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* AI form is a two-column mobile grid only. */
   .ai-form {
     display: grid !important;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
-    column-gap: 12px !important;
+    column-gap: 10px !important;
     row-gap: 0 !important;
+    width: 100% !important;
     min-width: 0 !important;
+    max-width: 100% !important;
     overflow: visible !important;
   }
 
-  .ai-form > .field {
+  .ai-form > .field,
+  .ai-form .ai-two > .field,
+  .ai-form .birth-time-place-row > .field {
     min-width: 0 !important;
+    max-width: 100% !important;
     width: 100% !important;
+    box-sizing: border-box !important;
   }
 
-  /* Name and email remain full-width. */
-  .ai-form > .field:nth-child(1),
-  .ai-form > .field:nth-child(2) {
-    grid-column: 1 / -1 !important;
+  /* If date and time are inside the same wrapper, flatten it into the AI grid. */
+  .ai-form .ai-two:has(#ai-date) {
+    display: contents !important;
   }
 
-  /* Birth Date + Birth Time share the same row. */
-  .ai-form > .field:has(#ai-date) {
+  /* Birth Date + Birth Time always occupy separate columns. */
+  .ai-form .field:has(#ai-date) {
     grid-column: 1 !important;
     min-width: 0 !important;
   }
 
+  .ai-form .field:has(#ai-time) {
+    grid-column: 2 !important;
+    min-width: 0 !important;
+  }
+
+  /* Existing time/place wrapper: flatten it so Time stays beside Date. */
   .ai-form > .birth-time-place-row {
     display: contents !important;
   }
 
-  .ai-form > .birth-time-place-row > .field:first-child {
+  .ai-form > .birth-time-place-row > .field:has(#ai-time) {
     grid-column: 2 !important;
-    min-width: 0 !important;
-    width: 100% !important;
   }
 
-  /* Birth Place gets its own full-width row below date/time. */
-  .ai-form > .birth-time-place-row > .place-field {
+  /* Birth Place is always a full-width row below date/time. */
+  .ai-form .field:has(#ai-place) {
     grid-column: 1 / -1 !important;
-    min-width: 0 !important;
-    width: 100% !important;
   }
 
   .ai-form > .field:has(#ai-question),
@@ -49,23 +108,52 @@
     grid-column: 1 / -1 !important;
   }
 
-  .ai-form #ai-date,
-  .ai-form #ai-time,
-  .ai-form #ai-place,
-  .ai-form #ai-question {
+  /* Prevent native/custom controls from imposing their desktop intrinsic width. */
+  .ai-form input,
+  .ai-form select,
+  .ai-form textarea,
+  .ai-form .custom-time-picker {
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
     box-sizing: border-box !important;
   }
 
-  .ai-form .birth-time-place-row > .field:first-child .field-hint {
-    display: block;
+  .ai-form #ai-date {
+    font-size: .86rem !important;
+    padding-left: 9px !important;
+    padding-right: 9px !important;
+  }
+
+  .ai-form .custom-time-picker {
+    overflow: hidden !important;
+  }
+
+  .ai-form .custom-time-picker select {
+    flex: 0 1 auto !important;
+  }
+
+  .ai-form .field-hint {
+    display: block !important;
   }
 }
 
 @media (max-width: 360px) {
+  .wrap {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
   .ai-form {
     column-gap: 8px !important;
+  }
+
+  .brand {
+    font-size: 1rem !important;
+  }
+
+  .site-nav .cta {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
   }
 }
