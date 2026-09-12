@@ -2,7 +2,8 @@
 
 import { useEffect } from "react";
 
-const IDS = ["ai-time", "booking-birth-time"];
+const TIME_IDS = ["ai-time", "booking-birth-time"];
+const DATE_IDS = ["ai-date", "booking-birth-date"];
 
 function pad(value: number) {
   return String(value).padStart(2, "0");
@@ -22,7 +23,7 @@ function to24Hour(hour: number, minute: number, period: string) {
   return `${pad(h)}:${pad(minute)}`;
 }
 
-function enhance(input: HTMLInputElement) {
+function enhanceTime(input: HTMLInputElement) {
   if (input.dataset.customTimePicker === "true") return;
   input.dataset.customTimePicker = "true";
   input.style.display = "none";
@@ -72,9 +73,53 @@ function enhance(input: HTMLInputElement) {
   input.parentElement?.insertBefore(wrapper, input.nextSibling);
 }
 
+function formatDate(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return "Select a date";
+  const [year, month, day] = value.split("-").map(Number);
+  return new Intl.DateTimeFormat("en-IN", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(year, month - 1, day));
+}
+
+function enhanceDate(input: HTMLInputElement) {
+  if (input.dataset.customDatePicker === "true") return;
+  input.dataset.customDatePicker = "true";
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "custom-date-picker";
+  wrapper.setAttribute("data-for", input.id);
+
+  const display = document.createElement("span");
+  display.className = "custom-date-picker-value";
+  const icon = document.createElement("span");
+  icon.className = "custom-date-picker-icon";
+  icon.textContent = "▣";
+  icon.setAttribute("aria-hidden", "true");
+  wrapper.append(display, icon);
+  input.parentElement?.insertBefore(wrapper, input.nextSibling);
+
+  const update = () => {
+    display.textContent = formatDate(input.value);
+    wrapper.classList.toggle("has-value", Boolean(input.value));
+  };
+  const openPicker = () => {
+    try {
+      if (typeof input.showPicker === "function") input.showPicker();
+      else input.click();
+    } catch {
+      input.click();
+    }
+  };
+  wrapper.addEventListener("click", openPicker);
+  input.addEventListener("change", update);
+  input.addEventListener("input", update);
+  update();
+}
+
 export default function TimePickerEnhancer() {
   useEffect(() => {
-    const apply = () => IDS.forEach((id) => { const input = document.getElementById(id) as HTMLInputElement | null; if (input) enhance(input); });
+    const apply = () => {
+      TIME_IDS.forEach((id) => { const input = document.getElementById(id) as HTMLInputElement | null; if (input) enhanceTime(input); });
+      DATE_IDS.forEach((id) => { const input = document.getElementById(id) as HTMLInputElement | null; if (input) enhanceDate(input); });
+    };
     apply();
     const observer = new MutationObserver(apply);
     observer.observe(document.body, { childList: true, subtree: true });
@@ -89,11 +134,21 @@ export default function TimePickerEnhancer() {
       .custom-time-picker> :nth-child(2){width:8px;text-align:center}
       .custom-time-picker-icon{width:18px;color:var(--gold-soft);font-size:.95rem;text-align:right;pointer-events:none;margin-left:2px}
       .custom-time-picker select option{background:#151126;color:#fff}
+
+      .custom-date-picker{position:relative;width:100%;max-width:100%;height:46px;display:flex;align-items:center;justify-content:space-between;gap:8px;background:rgba(15,12,36,.55);border:1px solid var(--line);border-radius:10px;padding:0 12px;box-sizing:border-box;overflow:hidden;color:var(--text);cursor:pointer;z-index:1}
+      .custom-date-picker-value{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-dim);font-family:'Work Sans',sans-serif;font-size:.92rem}
+      .custom-date-picker.has-value .custom-date-picker-value{color:var(--text)}
+      .custom-date-picker-icon{flex:0 0 auto;color:var(--gold-soft);font-size:.9rem;pointer-events:none}
+      input[data-custom-date-picker="true"]{position:absolute!important;left:0!important;top:0!important;width:100%!important;height:46px!important;padding:0!important;margin:0!important;opacity:0!important;border:0!important;background:transparent!important;cursor:pointer!important;z-index:2!important}
+
       @media(max-width:640px){
         .custom-time-picker{grid-template-columns:minmax(0,1fr) 6px minmax(0,1fr) minmax(42px,.9fr) 16px;height:46px;padding-left:3px;padding-right:3px}
         .custom-time-picker select{font-size:.8rem}
         .custom-time-picker> :nth-child(2){width:6px}
         .custom-time-picker-icon{width:16px;font-size:.9rem;margin-left:1px}
+        .custom-date-picker{height:46px;padding:0 10px}
+        .custom-date-picker-value{font-size:.84rem}
+        .custom-date-picker-icon{font-size:.85rem}
       }
       @media(max-width:360px){
         .custom-time-picker{grid-template-columns:minmax(0,1fr) 5px minmax(0,1fr) minmax(38px,.9fr) 14px;padding-left:2px;padding-right:2px}
