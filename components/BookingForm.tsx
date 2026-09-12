@@ -14,6 +14,22 @@ declare global {
 }
 
 const RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ?? "";
+const STANDARD_BOOKING_AMOUNT = 100;
+const COMPLETE_KUNDLI_AMOUNT = 500;
+
+const FOCUS_OPTIONS = [
+  "Marriage",
+  "Relationships",
+  "Career",
+  "Finance",
+  "Family & Children",
+  "Health",
+  "Education",
+  "Spirituality",
+  "Legal & Litigation",
+  "General life prediction",
+  "Entire Kundli Analysis",
+] as const;
 
 type Booking = { name: string; phone: string; email: string; service: string; birthdetails: string; slotId: string };
 type PlaceSuggestion = { name: string; admin1?: string; country?: string; latitude: number; longitude: number; timezone?: string };
@@ -27,9 +43,12 @@ export default function BookingForm({ language }: { language: Language }) {
   const [birthTime, setBirthTime] = useState("");
   const [birthPlace, setBirthPlace] = useState("");
   const [selectedSlot, setSelectedSlot] = useState<SelectedSlot | null>(null);
+  const [service, setService] = useState<string>(FOCUS_OPTIONS[0]);
   const [placeSuggestions, setPlaceSuggestions] = useState<PlaceSuggestion[]>([]);
   const [showPlaces, setShowPlaces] = useState(false);
   const [placeLoading, setPlaceLoading] = useState(false);
+
+  const bookingAmount = service === "Entire Kundli Analysis" ? COMPLETE_KUNDLI_AMOUNT : STANDARD_BOOKING_AMOUNT;
 
   useEffect(() => {
     const query = birthPlace.trim();
@@ -87,7 +106,7 @@ export default function BookingForm({ language }: { language: Language }) {
       if (!window.Razorpay) throw new Error("Razorpay Checkout is not available after loading the script.");
       let rzp;
       try {
-        rzp = new window.Razorpay({ key: RAZORPAY_KEY_ID, amount: order.amount, currency: order.currency, name: "Nakshatra Readings", description: `${booking.service} — Astrology session`, order_id: order.id, prefill: { name: booking.name, email: booking.email, contact: booking.phone }, theme: { color: "#CDA463" }, handler: async (response: Record<string, string>) => {
+        rzp = new window.Razorpay({ key: RAZORPAY_KEY_ID, amount: order.amount, currency: order.currency, name: "Nakshatra Readings", description: `${booking.service} — Astrology session`, prefill: { name: booking.name, email: booking.email, contact: booking.phone }, theme: { color: "#CDA463" }, order_id: order.id, handler: async (response: Record<string, string>) => {
           setStatus("Payment received securely. Confirming your booking…"); let verificationFinished = false;
           const timeoutId = window.setTimeout(() => { if (!verificationFinished) { setLoading(false); setOk(true); setStatus("Payment received successfully. We’re confirming your booking in the background. Please do not make another payment."); } }, 12000);
           try {
@@ -110,11 +129,11 @@ export default function BookingForm({ language }: { language: Language }) {
     <div className="field"><label htmlFor="name">{t.name}</label><input name="name" id="name" type="text" required /></div>
     <div className="field"><label htmlFor="phone">{t.phone}</label><input name="phone" id="phone" type="tel" required /></div>
     <div className="field"><label htmlFor="email">{t.email}</label><input name="email" id="email" type="email" required autoComplete="email" placeholder="name@example.com" title="Please enter a valid email address, for example name@example.com" /></div>
-    <div className="field"><label htmlFor="service">{t.focus}</label><select name="service" id="service" defaultValue="Career & direction"><option>{t.career}</option><option>{t.relationships}</option><option>{t.general}</option></select></div>
+    <div className="field"><label htmlFor="service">{t.focus}</label><select name="service" id="service" value={service} onChange={(e) => setService(e.target.value)}>{FOCUS_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}</select></div>
     <div className="ai-two booking-birth-stacked"><div className="field"><label htmlFor="booking-birth-date">{t.birthDate}</label><input name="birthDate" id="booking-birth-date" type="date" required /></div><div className="field"><label htmlFor="booking-birth-time">{t.birthTime}</label><input id="booking-birth-time" name="birthTime" type="time" value={birthTime} onChange={(e) => setBirthTime(e.target.value)} step="60" required style={{ width: "100%", height: "46px", minWidth: 0, boxSizing: "border-box" }} /><small className="field-hint">Select the exact hour and minute.</small></div></div>
     <div className="field place-field"><label htmlFor="booking-birth-place">{t.birthPlace}</label><div className="place-input-wrap"><input id="booking-birth-place" name="birthPlace" value={birthPlace} onChange={(e) => setBirthPlace(e.target.value)} onFocus={() => placeSuggestions.length && setShowPlaces(true)} placeholder={t.placePlaceholder} autoComplete="off" required />{placeLoading && <span className="place-loading">{t.searching}</span>}</div>{showPlaces && placeSuggestions.length > 0 && <div className="place-suggestions">{placeSuggestions.map((place, index) => <button type="button" className="place-option" key={`${place.name}-${place.latitude}-${index}`} onMouseDown={(event) => event.preventDefault()} onClick={() => selectPlace(place)}><strong>{place.name}</strong><span>{[place.admin1, place.country].filter(Boolean).join(", ")}</span></button>)}</div>}</div>
     <AvailabilityPicker selectedSlotId={selectedSlot?.id ?? ""} onSelect={setSelectedSlot} />
-    <div className="price-line"><span>{t.sessionFee}</span><span className="amt">₹500</span></div>
-    <button type="submit" className="btn-primary pay-btn" disabled={loading || ok}>{ok ? t.confirmed : loading ? (status.includes("Confirming") || status.includes("Payment received") ? t.confirming : t.preparing) : t.pay}</button><p className="note">{t.secure}</p>
+    <div className="price-line"><span>{t.sessionFee}</span><span className="amt">₹{bookingAmount}</span></div>
+    <button type="submit" className="btn-primary pay-btn" disabled={loading || ok}>{ok ? t.confirmed : loading ? (status.includes("Confirming") || status.includes("Payment received") ? t.confirming : t.preparing) : `Pay ₹${bookingAmount} & book session`}</button><p className="note">{t.secure}</p>
   </form></div></div></section>;
 }
