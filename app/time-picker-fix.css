@@ -44,62 +44,60 @@
   grid-column: 1 / -1 !important;
 }
 
-/* Astrologer booking form: Birth Date + Birth Time on one row,
-   Birth Place on its own row, including on mobile. */
-.booking-panel > div + form {
-  position: relative !important;
-  z-index: 30 !important;
+/* Astrologer booking form: keep Birth Date + Birth Time together on every mobile width. */
+.booking-panel {
   overflow: visible !important;
 }
 
-.booking-panel > div + form > .field:has(#booking-birth-date) {
-  display: inline-block !important;
-  vertical-align: top !important;
-  width: calc(50% - 6px) !important;
-  margin-right: 12px !important;
+.booking-panel > div,
+.booking-panel > form {
+  min-width: 0 !important;
+  overflow: visible !important;
 }
 
-.booking-panel > div + form > .birth-time-place-row {
-  display: contents !important;
-}
-
-.booking-panel > div + form > .birth-time-place-row > .field:first-child {
-  display: inline-block !important;
-  vertical-align: top !important;
-  width: calc(50% - 6px) !important;
-  position: relative !important;
-  z-index: 40 !important;
-}
-
-.booking-panel > div + form > .birth-time-place-row > .place-field {
-  width: 100% !important;
-  position: relative !important;
-  z-index: 50 !important;
-  clear: both !important;
-}
-
-.booking-panel > div + form input[type="date"],
-.booking-panel > div + form input[type="time"] {
+.booking-panel form .birth-date-time-row {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+  gap: 12px !important;
   width: 100% !important;
   min-width: 0 !important;
+  overflow: visible !important;
+  position: relative !important;
+  z-index: 100 !important;
+}
+
+.booking-panel form .birth-date-time-row > .field {
+  min-width: 0 !important;
+  width: 100% !important;
+  overflow: visible !important;
+}
+
+.booking-panel form .birth-date-time-row input[type="date"],
+.booking-panel form .birth-date-time-row input[type="time"] {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
   box-sizing: border-box !important;
-  height: 46px !important;
   font-size: 16px !important;
 }
 
-.booking-panel,
-.booking-panel > div,
-.booking-panel > div + form,
-.booking-panel .field,
-.booking-panel .birth-time-place-row,
-.booking-panel .place-field {
-  overflow: visible !important;
+.booking-panel form .birth-date-time-row input[type="time"] {
+  position: relative !important;
+  z-index: 101 !important;
 }
 
-.booking-panel .place-suggestions {
-  z-index: 9999 !important;
-  max-height: 260px !important;
-  overflow-y: auto !important;
+.booking-panel form .place-field {
+  position: relative !important;
+  z-index: 90 !important;
+}
+
+.booking-panel form .place-suggestions {
+  z-index: 1000 !important;
+}
+
+.booking-panel form .birth-date-time-row + .place-field,
+.booking-panel form .birth-date-time-row + .place-field .place-input-wrap {
+  overflow: visible !important;
 }
 
 @media (max-width: 640px) {
@@ -112,25 +110,24 @@
     grid-column: 1 / -1 !important;
   }
 
-  /* Keep the astrologer Birth Date and Birth Time side-by-side on phones. */
-  .booking-panel > div + form > .field:has(#booking-birth-date),
-  .booking-panel > div + form > .birth-time-place-row > .field:first-child {
-    display: inline-block !important;
-    width: calc(50% - 6px) !important;
-    vertical-align: top !important;
+  .booking-panel form .birth-date-time-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    gap: 8px !important;
   }
 
-  .booking-panel > div + form > .birth-time-place-row > .field:first-child {
-    margin-left: 0 !important;
+  .booking-panel form .birth-date-time-row .field {
+    margin-bottom: 16px !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .booking-panel form .birth-date-time-row {
+    gap: 6px !important;
   }
 
-  .booking-panel > div + form > .birth-time-place-row > .place-field {
-    display: block !important;
-    width: 100% !important;
-    clear: both !important;
-  }
-
-  .booking-panel > div + form > .field:has(#booking-birth-date) {
-    margin-right: 12px !important;
+  .booking-panel form .birth-date-time-row input[type="date"],
+  .booking-panel form .birth-date-time-row input[type="time"] {
+    padding-left: 9px !important;
+    padding-right: 9px !important;
   }
 }
