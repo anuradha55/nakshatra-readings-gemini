@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
 import { releaseExpiredHolds } from "@/lib/availability";
+import { ensureDailySessions } from "@/lib/daily-slots";
 
 export const runtime = "nodejs";
 
@@ -14,9 +15,10 @@ function parseIST(date: string, time: string) {
 export async function GET() {
   const session = await getAdminSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  await ensureDailySessions();
   await releaseExpiredHolds();
   const where = session.role === "astrologer" ? { astrologerEmail: session.email } : {};
-  const slots = await prisma.availabilitySlot.findMany({ where, orderBy: { startsAt: "asc" }, take: 200, include: { booking: { select: { id: true, name: true, phone: true, email: true, service: true, status: true } } } });
+  const slots = await prisma.availabilitySlot.findMany({ where, orderBy: { startsAt: "asc" }, take: 1000, include: { booking: { select: { id: true, name: true, phone: true, email: true, service: true, status: true } } } });
   return NextResponse.json({ slots, timezone: "Asia/Kolkata" });
 }
 
@@ -24,7 +26,14 @@ export async function POST(request: Request) {
   const session = await getAdminSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
-    const body = await request.json() as { date?: string; startTime?: string; endTime?: string; astrologerEmail?: string; astrologerName?: string };
+    const body = await request.json() as { action?: "generateDaily"; date?: string; startTime?: string; endTime?: string; astrologerEmail?: string; astrologerName?: string };
+
+    if (body.action === "generateDaily") {
+      const result = await ensureDailySessions();
+      if (!result.configured) return NextResponse.json({ error: "Configure ASTROLOGER_EMAILS before creating slots." }, { status: 500 });
+      return NextResponse.json({ ok: true, ...result });
+    }
+
     const startsAt = parseIST(String(body.date ?? ""), String(body.startTime ?? ""));
     const endsAt = parseIST(String(body.date ?? ""), String(body.endTime ?? ""));
     if (endsAt <= startsAt) return NextResponse.json({ error: "End time must be after start time." }, { status: 400 });
