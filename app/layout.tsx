@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./time-picker-fix.css";
 import TimePickerEnhancer from "@/components/TimePickerEnhancer";
 
 export const metadata: Metadata = {
