@@ -9,10 +9,10 @@
   .nav-actions select { max-width: 82px; min-width: 0; }
   .site-nav .cta { padding: 8px 12px; font-size: .76rem; flex-shrink: 0; }
 
-  /* AI birth date/time are separate grid items on mobile. Keep the gap explicit. */
+  /* AI birth date/time are separate grid items on mobile. The columns explicitly reserve 12px between the boxes. */
   .ai-form {
     display: grid !important;
-    grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr) !important;
+    grid-template-columns: minmax(0, calc((100% - 12px) * .4)) minmax(0, calc((100% - 12px) * .6)) !important;
     column-gap: 12px !important;
     grid-column-gap: 12px !important;
     row-gap: 0 !important;
@@ -26,19 +26,38 @@
     box-sizing: border-box !important;
   }
   .ai-form > .field { grid-column: 1 / -1 !important; min-width: 0 !important; width: auto !important; max-width: none !important; box-sizing: border-box !important; }
-  .ai-form > .field:has(#ai-date) { grid-column: 1 !important; min-width: 0 !important; width: auto !important; max-width: none !important; }
+  .ai-form > .field:has(#ai-date) { grid-column: 1 !important; min-width: 0 !important; width: 100% !important; max-width: none !important; }
   .ai-form > .birth-time-place-row { display: contents !important; }
-  .ai-form > .birth-time-place-row > .field:has(#ai-time) { grid-column: 2 !important; min-width: 0 !important; width: auto !important; max-width: none !important; box-sizing: border-box !important; overflow: visible !important; }
+  .ai-form > .birth-time-place-row > .field:has(#ai-time) { grid-column: 2 !important; min-width: 0 !important; width: 100% !important; max-width: none !important; box-sizing: border-box !important; overflow: visible !important; }
   .ai-form > .birth-time-place-row > .field:has(#ai-place) { grid-column: 1 / -1 !important; min-width: 0 !important; width: auto !important; max-width: none !important; box-sizing: border-box !important; }
-  .ai-form input, .ai-form select, .ai-form textarea, .ai-form .custom-time-picker { width: 100% !important; min-width: 0 !important; max-width: 100% !important; box-sizing: border-box !important; }
+  .ai-form input, .ai-form select, .ai-form textarea, .ai-form .custom-time-picker, .ai-form .custom-date-picker { width: 100% !important; min-width: 0 !important; max-width: 100% !important; box-sizing: border-box !important; }
 
-  /* Native date input is intentionally visible on phones for reliable touch support. */
+  /* Use the same custom date display on mobile so the date text is left-aligned like the other form inputs. */
   .ai-form .custom-date-picker,
-  .booking-panel form .custom-date-picker { display: none !important; }
+  .booking-panel form .custom-date-picker {
+    display: flex !important;
+    position: relative !important;
+    height: 52px !important;
+    min-height: 52px !important;
+    max-height: 52px !important;
+    width: 100% !important;
+    padding: 0 10px !important;
+    box-sizing: border-box !important;
+    text-align: left !important;
+    overflow: hidden !important;
+  }
+  .ai-form .custom-date-picker-value,
+  .booking-panel form .custom-date-picker-value {
+    text-align: left !important;
+    justify-content: flex-start !important;
+    align-items: center !important;
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+  }
   .ai-form input[data-custom-date-picker="true"],
   .booking-panel form input[data-custom-date-picker="true"] {
-    position: static !important;
-    inset: auto !important;
+    position: absolute !important;
+    inset: 0 !important;
     display: block !important;
     width: 100% !important;
     height: 52px !important;
@@ -46,22 +65,18 @@
     max-height: 52px !important;
     min-width: 0 !important;
     max-width: 100% !important;
-    opacity: 1 !important;
-    padding: 0 8px !important;
+    opacity: 0 !important;
+    padding: 0 !important;
     margin: 0 !important;
-    border: 1px solid var(--line) !important;
-    background: rgba(15,12,36,.55) !important;
-    color: var(--text) !important;
-    appearance: auto !important;
-    -webkit-appearance: auto !important;
+    border: 0 !important;
+    background: transparent !important;
     pointer-events: auto !important;
     touch-action: manipulation !important;
     cursor: pointer !important;
-    line-height: 20px !important;
     box-sizing: border-box !important;
-    overflow: visible !important;
+    z-index: 2 !important;
   }
-  .ai-form #ai-date { font-size: .82rem !important; padding-left: 6px !important; padding-right: 6px !important; }
+  .ai-form #ai-date { font-size: .82rem !important; }
 
   /* The native time input stays hidden; TimePickerEnhancer supplies the only visible picker. */
   .ai-form input[data-custom-time-picker="true"],
@@ -74,7 +89,7 @@
     pointer-events: none !important;
   }
 
-  /* Visible Birth Time box: exact same outer height as Birth Date. */
+  /* Visible Birth Time box: exact same outer height as Birth Date, with text controls grouped on the left and the clock fixed on the right. */
   .ai-form .custom-time-picker,
   .booking-panel form .custom-time-picker {
     width: 100% !important;
@@ -88,6 +103,19 @@
     display: flex !important;
     flex-wrap: nowrap !important;
     align-items: center !important;
+    justify-content: space-between !important;
+    text-align: left !important;
+  }
+  .ai-form .custom-time-picker-controls,
+  .booking-panel form .custom-time-picker-controls {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    width: auto !important;
+    overflow: visible !important;
+    text-align: left !important;
   }
   .ai-form .custom-time-picker select,
   .booking-panel form .custom-time-picker select {
@@ -130,13 +158,14 @@
     min-width: 40px !important;
     max-width: 46px !important;
   }
-  .ai-form .custom-time-picker > :nth-child(2),
-  .booking-panel form .custom-time-picker > :nth-child(2) {
+  .ai-form .custom-time-picker-controls > :nth-child(2),
+  .booking-panel form .custom-time-picker-controls > :nth-child(2) {
     flex: 0 0 6px !important;
     width: 6px !important;
     min-width: 6px !important;
     max-width: 6px !important;
     overflow: visible !important;
+    text-align: center !important;
   }
   .ai-form .custom-time-picker .custom-time-picker-icon,
   .booking-panel form .custom-time-picker .custom-time-picker-icon {
@@ -144,7 +173,8 @@
     width: 16px !important;
     min-width: 16px !important;
     max-width: 16px !important;
-    margin-left: 1px !important;
+    margin-left: 10px !important;
+    text-align: center !important;
     overflow: visible !important;
   }
 
@@ -157,9 +187,9 @@
     align-self: stretch !important;
     box-sizing: border-box !important;
   }
-  .ai-form > .field:has(#ai-date) input[data-custom-date-picker="true"],
+  .ai-form > .field:has(#ai-date) .custom-date-picker,
   .ai-form > .birth-time-place-row > .field:has(#ai-time) .custom-time-picker,
-  .booking-panel form .booking-birth-row input[data-custom-date-picker="true"],
+  .booking-panel form .booking-birth-row .custom-date-picker,
   .booking-panel form .booking-birth-row .custom-time-picker {
     height: 52px !important;
     min-height: 52px !important;
@@ -175,11 +205,11 @@
 
   .ai-section { padding-bottom: calc(64px + env(safe-area-inset-bottom, 24px)) !important; }
 
-  /* Client booking: explicit 12px gap and matching 52px controls. */
+  /* Client booking: the two columns are explicitly calculated as half of the remaining width after a 12px gap. */
   .booking-panel form .booking-birth-row {
     display: grid !important;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
-    gap: 12px !important;
+    grid-template-columns: minmax(0, calc((100% - 12px) / 2)) minmax(0, calc((100% - 12px) / 2)) !important;
+    gap: 0 !important;
     column-gap: 12px !important;
     row-gap: 0 !important;
     width: 100% !important;
@@ -191,7 +221,7 @@
   }
   .booking-panel form .booking-birth-row > .field {
     min-width: 0 !important;
-    width: auto !important;
+    width: 100% !important;
     max-width: none !important;
     overflow: visible !important;
     box-sizing: border-box !important;
@@ -207,6 +237,7 @@
     font-size: .8rem !important;
     padding: 0 6px !important;
     line-height: 20px !important;
+    text-align: left !important;
   }
 
   /* Astrologer dashboard availability controls also use contained columns. */
@@ -248,11 +279,13 @@
 @media (max-width: 480px) {
   .wrap { padding-left: 12px; padding-right: 12px; }
   .ai-form { column-gap: 12px !important; grid-column-gap: 12px !important; }
-  .ai-form #ai-date, .booking-panel form .booking-birth-row input[type="date"] { font-size: .78rem !important; padding-left: 5px !important; padding-right: 5px !important; height: 52px !important; min-height: 52px !important; max-height: 52px !important; }
+  .ai-form #ai-date, .booking-panel form .booking-birth-row input[type="date"] { font-size: .78rem !important; height: 52px !important; min-height: 52px !important; max-height: 52px !important; }
   .ai-form .custom-time-picker, .booking-panel form .custom-time-picker { height: 52px !important; min-height: 52px !important; max-height: 52px !important; }
   .ai-form .custom-time-picker select, .booking-panel form .custom-time-picker select { font-size: .76rem !important; }
   .ai-form .custom-time-picker select[aria-label="Hour"], .booking-panel form .custom-time-picker select[aria-label="Hour"] { flex: 0 0 28px !important; width: 28px !important; min-width: 28px !important; }
   .ai-form .custom-time-picker select[aria-label="Minute"], .booking-panel form .custom-time-picker select[aria-label="Minute"] { flex: 0 0 30px !important; width: 30px !important; min-width: 30px !important; max-width: 34px !important; padding-left: 4px !important; padding-right: 4px !important; overflow: visible !important; }
   .ai-form .custom-time-picker select[aria-label="AM or PM"], .booking-panel form .custom-time-picker select[aria-label="AM or PM"] { flex: 0 0 40px !important; width: 40px !important; min-width: 40px !important; max-width: 44px !important; }
-  .ai-form .custom-time-picker .custom-time-picker-icon, .booking-panel form .custom-time-picker .custom-time-picker-icon { flex-basis: 14px !important; width: 14px !important; min-width: 14px !important; }
+  .ai-form .custom-time-picker .custom-time-picker-icon, .booking-panel form .custom-time-picker .custom-time-picker-icon { flex-basis: 14px !important; width: 14px !important; min-width: 14px !important; margin-left: 10px !important; }
+  .ai-form .custom-date-picker, .booking-panel form .custom-date-picker { padding-left: 10px !important; padding-right: 10px !important; }
+  .ai-form .custom-date-picker-value, .booking-panel form .custom-date-picker-value { font-size: .84rem !important; text-align: left !important; }
 }
