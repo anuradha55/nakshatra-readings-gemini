@@ -74,11 +74,14 @@ function enhanceDate(input: HTMLInputElement) {
   input.style.display = "block";
   input.style.position = "relative";
   input.style.width = "100%";
+  input.style.minWidth = "0";
+  input.style.maxWidth = "100%";
   input.style.height = "52px";
   input.style.minHeight = "52px";
   input.style.maxHeight = "52px";
   input.style.boxSizing = "border-box";
   input.style.opacity = "1";
+  input.style.overflow = "hidden";
   input.style.pointerEvents = "auto";
   input.style.zIndex = "2";
   input.style.cursor = "pointer";
@@ -88,6 +91,7 @@ function enhanceDate(input: HTMLInputElement) {
   input.style.margin = "0";
   input.style.fontSize = "18px";
   input.style.lineHeight = "52px";
+  input.style.verticalAlign = "middle";
 }
 
 export default function TimePickerEnhancer() {
@@ -103,7 +107,7 @@ export default function TimePickerEnhancer() {
   }, []);
 
   return <style dangerouslySetInnerHTML={{ __html: `
-    .custom-time-picker{position:relative;width:100%;max-width:100%;height:52px;min-height:52px;max-height:52px;display:flex;flex-wrap:nowrap;align-items:center;justify-content:center;gap:0;background:rgba(15,12,36,.55);border:1px solid var(--line);border-radius:10px;padding:0 42px 0 10px;box-sizing:border-box;overflow:visible;min-width:0;touch-action:manipulation}
+    .custom-time-picker{position:relative;width:100%;max-width:100%;height:52px;min-height:52px;display:flex;flex-wrap:nowrap;align-items:center;justify-content:center;gap:0;background:rgba(15,12,36,.55);border:1px solid var(--line);border-radius:10px;padding:0 42px 0 10px;box-sizing:border-box;overflow:visible;min-width:0;touch-action:manipulation}
     .custom-time-picker:focus-within{outline:2px solid var(--gold);outline-offset:1px}
     .custom-time-picker-controls{display:flex;align-items:center;justify-content:center;flex:0 1 auto;min-width:0;width:auto;gap:0;text-align:center;overflow:visible}
     .custom-time-picker select{appearance:none;-webkit-appearance:none;flex:0 0 auto;width:auto;min-width:0;max-width:none;height:40px;border:0;background:transparent;color:var(--text);font:inherit;font-size:18px;line-height:40px;text-align:center;text-align-last:center;cursor:pointer;outline:none;padding:0 2px;margin:0;box-sizing:border-box;overflow:visible;flex-shrink:0;touch-action:manipulation}
@@ -113,11 +117,11 @@ export default function TimePickerEnhancer() {
     .custom-time-picker-controls> :nth-child(2){flex:0 0 8px;width:8px;text-align:center;overflow:visible;font-size:18px;line-height:40px}
     .custom-time-picker-icon{position:absolute;right:10px;top:50%;transform:translateY(-50%);width:18px;color:var(--gold-soft);font-size:18px;line-height:1;text-align:center;pointer-events:none;overflow:visible}
     .custom-time-picker select option{background:#151126;color:#fff}
-    input[data-native-date-picker-ready="true"]{display:block!important;position:relative!important;width:100%!important;height:52px!important;min-height:52px!important;max-height:52px!important;opacity:1!important;pointer-events:auto!important;z-index:2!important;box-sizing:border-box!important;cursor:pointer!important;touch-action:manipulation!important;text-align:center!important;padding:0 42px!important;margin:0!important;font-size:18px!important;line-height:52px!important;}
+    input[data-native-date-picker-ready="true"]{display:block!important;position:relative!important;width:100%!important;min-width:0!important;max-width:100%!important;height:52px!important;min-height:52px!important;max-height:52px!important;opacity:1!important;pointer-events:auto!important;z-index:2!important;box-sizing:border-box!important;overflow:hidden!important;cursor:pointer!important;touch-action:manipulation!important;text-align:center!important;padding:0 42px!important;margin:0!important;font-size:18px!important;line-height:52px!important;vertical-align:middle!important;}
     input[data-native-date-picker-ready="true"]::-webkit-calendar-picker-indicator{opacity:1!important;display:block!important;cursor:pointer!important;width:22px;height:22px;}
-    input[data-native-date-picker-ready="true"]::-webkit-date-and-time-value{text-align:center;line-height:normal;font-size:18px;}
-    input[data-native-date-picker-ready="true"]::-webkit-datetime-edit{text-align:center;padding:0;line-height:normal;font-size:18px;}
-    input[data-native-date-picker-ready="true"]::-webkit-datetime-edit-fields-wrapper{text-align:center;padding:0;line-height:normal;font-size:18px;}
+    input[data-native-date-picker-ready="true"]::-webkit-date-and-time-value{text-align:center;min-height:52px;line-height:52px!important;font-size:18px;display:flex;align-items:center;justify-content:center;}
+    input[data-native-date-picker-ready="true"]::-webkit-datetime-edit{text-align:center;padding:0;line-height:52px!important;font-size:18px;vertical-align:middle;}
+    input[data-native-date-picker-ready="true"]::-webkit-datetime-edit-fields-wrapper{text-align:center;padding:0;line-height:52px!important;font-size:18px;vertical-align:middle;}
     @media(max-width:860px){
       .ai-form{display:flex!important;flex-direction:column!important;gap:16px!important;width:100%!important;min-width:0!important;max-width:100%!important;overflow:visible!important;}
       .ai-form>.field{width:100%!important;min-width:0!important;max-width:none!important;margin-bottom:0!important;}
@@ -127,7 +131,9 @@ export default function TimePickerEnhancer() {
       .booking-panel form .booking-birth-stacked{display:flex!important;flex-direction:column!important;gap:16px!important;width:100%!important;min-width:0!important;max-width:none!important;margin:0!important;grid-template-columns:none!important;}
       .booking-panel form .booking-birth-stacked>.field{width:100%!important;min-width:0!important;max-width:none!important;margin-bottom:0!important;}
       .ai-form input,.ai-form select,.ai-form textarea,.ai-form .custom-time-picker,.booking-panel form input,.booking-panel form select,.booking-panel form textarea,.booking-panel form .custom-time-picker{width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important;}
-      .ai-form input[data-native-date-picker-ready="true"],.booking-panel form input[data-native-date-picker-ready="true"]{text-align:center!important;padding:0 42px!important;font-size:18px!important;line-height:52px!important;}
+      .ai-form input[data-native-date-picker-ready="true"],.booking-panel form input[data-native-date-picker-ready="true"]{text-align:center!important;padding:0 42px!important;font-size:18px!important;line-height:52px!important;min-width:0!important;max-width:100%!important;overflow:hidden!important;}
+      .ai-form input[data-native-date-picker-ready="true"]::-webkit-date-and-time-value,.booking-panel form input[data-native-date-picker-ready="true"]::-webkit-date-and-time-value{min-height:52px!important;line-height:52px!important;display:flex!important;align-items:center!important;justify-content:center!important;}
+      .ai-form input[data-native-date-picker-ready="true"]::-webkit-datetime-edit,.booking-panel form input[data-native-date-picker-ready="true"]::-webkit-datetime-edit,.ai-form input[data-native-date-picker-ready="true"]::-webkit-datetime-edit-fields-wrapper,.booking-panel form input[data-native-date-picker-ready="true"]::-webkit-datetime-edit-fields-wrapper{line-height:52px!important;font-size:18px!important;vertical-align:middle!important;}
       .ai-form .custom-time-picker,.booking-panel form .custom-time-picker{align-items:center!important;justify-content:center!important;text-align:center!important;}
       .ai-form .custom-time-picker-controls,.booking-panel form .custom-time-picker-controls{align-items:center!important;justify-content:center!important;text-align:center!important;}
       .ai-form .custom-time-picker select,.booking-panel form .custom-time-picker select{font-size:18px!important;line-height:40px!important;}
