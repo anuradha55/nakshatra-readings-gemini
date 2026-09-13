@@ -5,8 +5,9 @@ import { releaseExpiredHolds, reserveSlot } from "@/lib/availability";
 
 export const runtime = "nodejs";
 
-const STANDARD_BOOKING_AMOUNT = 100;
-const COMPLETE_KUNDLI_AMOUNT = 500;
+// Prices are stored in rupees. Razorpay requires paise.
+const STANDARD_BOOKING_AMOUNT_RUPEES = 100;
+const COMPLETE_KUNDLI_AMOUNT_RUPEES = 500;
 const SLOT_CONFLICT_MESSAGE = "This appointment slot is no longer available. Please choose another slot.";
 
 function isUniqueConstraintError(error: unknown) {
@@ -25,26 +26,23 @@ export async function POST(request: Request) {
     const keySecret = process.env.RAZORPAY_KEY_SECRET;
     if (!keyId || !keySecret) return NextResponse.json({ error: "Razorpay is not configured on the server." }, { status: 500 });
 
-    const configuredAmount = booking.service === "Entire Kundli Analysis"
-      ? COMPLETE_KUNDLI_AMOUNT
-      : STANDARD_BOOKING_AMOUNT;
+    const configuredAmountRupees = booking.service === "Entire Kundli Analysis"
+      ? COMPLETE_KUNDLI_AMOUNT_RUPEES
+      : STANDARD_BOOKING_AMOUNT_RUPEES;
+    const razorpayAmountPaise = configuredAmountRupees * 100;
 
     const platformPercent = Number(process.env.PLATFORM_SHARE_PERCENT ?? "20");
     const astrologerPercent = Number(process.env.ASTROLOGER_SHARE_PERCENT ?? "80");
     if (!Number.isFinite(platformPercent) || !Number.isFinite(astrologerPercent) || platformPercent < 0 || astrologerPercent < 0 || platformPercent + astrologerPercent !== 100) return NextResponse.json({ error: "Invalid revenue split configuration." }, { status: 500 });
 
-    const platformShare = Math.floor((configuredAmount * platformPercent) / 100);
-    const astrologerShare = configuredAmount - platformShare;
+    // Shares are calculated in rupees. Only the Razorpay order amount is converted to paise.
+    const platformShare = Math.floor((configuredAmountRupees * platformPercent) / 100);
+    const astrologerShare = configuredAmountRupees - platformShare;
     const requestedSlotId = String(booking.slotId);
 
     await releaseExpiredHolds();
-    const existingBooking = await prisma.booking.findUnique({
-      where: { slotId: requestedSlotId },
-      select: { id: true, status: true },
-    });
-    if (existingBooking) {
-      return NextResponse.json({ error: SLOT_CONFLICT_MESSAGE }, { status: 409 });
-    }
+    const existingBooking = await prisma.booking.findUnique({ where: { slotId: requestedSlotId }, select: { id: true, status: true } });
+    if (existingBooking) return NextResponse.json({ error: SLOT_CONFLICT_MESSAGE }, { status: 409 });
 
     reservedSlotId = requestedSlotId;
     await reserveSlot(reservedSlotId);
@@ -52,7 +50,12 @@ export async function POST(request: Request) {
     try {
       const razorpay = new Razorpay({ key_id: keyId, key_secret: keySecret });
       const receipt = `nr_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
-      const order = await razorpay.orders.create({ amount: configuredAmount, currency: "INR", receipt, notes: { service: booking.service, email: booking.email, slotId: reservedSlotId } });
+      const order = await razorpay.orders.create({
+        amount: razorpayAmountPaise,
+        currency: "INR",
+        receipt,
+        notes: { service: booking.service, email: booking.email, slotId: reservedSlotId },
+      });
 
       const savedBooking = await prisma.booking.create({
         data: {
@@ -67,15 +70,9 @@ export async function POST(request: Request) {
     } catch (paymentSetupError) {
       if (reservedSlotId) {
         if (isUniqueConstraintError(paymentSetupError)) {
-          await prisma.availabilitySlot.updateMany({
-            where: { id: reservedSlotId, status: "HELD" },
-            data: { status: "BOOKED", holdExpiresAt: null },
-          });
+          await prisma.availabilitySlot.updateMany({ where: { id: reservedSlotId, status: "HELD" }, data: { status: "BOOKED", holdExpiresAt: null } });
         } else {
-          await prisma.availabilitySlot.updateMany({
-            where: { id: reservedSlotId, status: "HELD" },
-            data: { status: "AVAILABLE", holdExpiresAt: null },
-          });
+          await prisma.availabilitySlot.updateMany({ where: { id: reservedSlotId, status: "HELD" }, data: { status: "AVAILABLE", holdExpiresAt: null } });
         }
       }
       reservedSlotId = null;
@@ -83,10 +80,7 @@ export async function POST(request: Request) {
     }
   } catch (error) {
     if (reservedSlotId) {
-      await prisma.availabilitySlot.updateMany({
-        where: { id: reservedSlotId, status: "HELD" },
-        data: { status: "AVAILABLE", holdExpiresAt: null },
-      }).catch((releaseError) => console.error("CREATE_ORDER_SLOT_RELEASE_ERROR", releaseError));
+      await prisma.availabilitySlot.updateMany({ where: { id: reservedSlotId, status: "HELD" }, data: { status: "AVAILABLE", holdExpiresAt: null } }).catch((releaseError) => console.error("CREATE_ORDER_SLOT_RELEASE_ERROR", releaseError));
     }
 
     if (isUniqueConstraintError(error)) {
