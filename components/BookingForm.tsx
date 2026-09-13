@@ -25,6 +25,19 @@ type Booking = { name: string; phone: string; email: string; service: string; bi
 type PlaceSuggestion = { name: string; admin1?: string; country?: string; latitude: number; longitude: number; timezone?: string };
 type SelectedSlot = { id: string; astrologerName: string; startsAt: string; endsAt: string };
 
+function readBirthTimeFromPicker(fallback: string) {
+  const picker = document.querySelector('.custom-time-picker[data-for="booking-birth-time"]');
+  const selects = picker?.querySelectorAll("select");
+  if (!selects || selects.length < 3) return fallback;
+  const hour = (selects[0] as HTMLSelectElement).value;
+  const minute = (selects[1] as HTMLSelectElement).value;
+  const period = (selects[2] as HTMLSelectElement).value;
+  if (!hour || !minute || !period) return fallback;
+  let hour24 = Number(hour) % 12;
+  if (period === "PM") hour24 += 12;
+  return `${String(hour24).padStart(2, "0")}:${String(Number(minute)).padStart(2, "0")}`;
+}
+
 export default function BookingForm({ language }: { language: Language }) {
   const t = tr(language);
   const [loading, setLoading] = useState(false);
@@ -74,7 +87,8 @@ export default function BookingForm({ language }: { language: Language }) {
     if (!selectedSlot) { setStatus("Please choose an available appointment slot before payment."); return; }
     setLoading(true); setOk(false); setStatus("Starting payment...");
     const form = new FormData(e.currentTarget); const birthDate = String(form.get("birthDate") ?? "").trim();
-    const booking: Booking = { name: String(form.get("name") ?? "").trim(), phone: String(form.get("phone") ?? "").trim(), email: String(form.get("email") ?? "").trim(), service: String(form.get("service") ?? ""), birthdetails: `${birthDate}, ${birthTime}, ${birthPlace}`, slotId: selectedSlot.id };
+    const selectedBirthTime = readBirthTimeFromPicker(birthTime);
+    const booking: Booking = { name: String(form.get("name") ?? "").trim(), phone: String(form.get("phone") ?? "").trim(), email: String(form.get("email") ?? "").trim(), service: String(form.get("service") ?? ""), birthdetails: `${birthDate}, ${selectedBirthTime}, ${birthPlace}`, slotId: selectedSlot.id };
     let createdBookingId: string | null = null; let paymentCompleted = false;
     try {
       if (!RAZORPAY_KEY_ID) throw new Error("Razorpay Key ID is not configured.");
