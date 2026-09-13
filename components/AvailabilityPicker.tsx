@@ -24,7 +24,8 @@ const COPY = {
   mr: { title: "उपलब्ध अपॉइंटमेंट स्लॉट निवडा", oneHour: "1 तासाचे सत्र", fifteen: "15 मिनिटांचे सत्र", shown: "तुम्ही निवडलेल्या सेवेनुसार दाखवले आहेत. सर्व वेळ IST मध्ये आहेत.", loading: "ज्योतिषीची उपलब्धता तपासत आहोत…", unavailable: "सध्या कोणतेही {session} उपलब्ध नाहीत. कृपया नंतर पुन्हा तपासा.", date: "अपॉइंटमेंटची तारीख निवडा", selected: "स्लॉट निवडला आहे. पेमेंट पूर्ण होईपर्यंत तो 5 मिनिटांसाठी राखून ठेवला जाईल.", hour: "1 तास", min: "15 मिनिटे" },
 } as const;
 
-export default function AvailabilityPicker({ selectedSlotId, onSelect, refreshToken = 0, service, language }: { selectedSlotId: string; onSelect: (slot: Slot | null) => void; refreshToken?: number; service: string; language: Language }) {
+export default function AvailabilityPicker({ selectedSlotId, onSelect, refreshToken = 0, service, language: languageProp }: { selectedSlotId: string; onSelect: (slot: Slot | null) => void; refreshToken?: number; service: string; language?: Language }) {
+  const [language, setLanguage] = useState<Language>(languageProp ?? "hi");
   const [slots, setSlots] = useState<Slot[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -32,6 +33,17 @@ export default function AvailabilityPicker({ selectedSlotId, onSelect, refreshTo
   const isCompleteKundli = service === "Entire Kundli Analysis";
   const requiredDuration = isCompleteKundli ? 60 : 15;
   const copy = COPY[language];
+
+  useEffect(() => {
+    if (languageProp) { setLanguage(languageProp); return; }
+    const readLanguage = () => {
+      const stored = window.localStorage.getItem("nakshatra-language-v3");
+      if (stored === "en" || stored === "hi" || stored === "mr") setLanguage(stored);
+    };
+    readLanguage();
+    const timer = window.setInterval(readLanguage, 500);
+    return () => window.clearInterval(timer);
+  }, [languageProp]);
 
   useEffect(() => {
     let active = true;
