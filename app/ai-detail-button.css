@@ -1,0 +1,22 @@
+/* Keep the AI detailed-report toggle readable and consistent on iOS Safari. */
+.ai-detail-btn {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  background: transparent !important;
+  color: var(--text) !important;
+  border: 1px solid var(--line) !important;
+  font-family: 'Work Sans', sans-serif !important;
+  font-size: .95rem !important;
+  line-height: 1.2 !important;
+  text-align: center !important;
+  cursor: pointer !important;
+  opacity: 1 !important;
+}
+
+.ai-detail-btn:active,
+.ai-detail-btn:focus-visible {
+  color: var(--text) !important;
+  background: rgba(205,164,99,.08) !important;
+  outline: 2px solid var(--gold) !important;
+  outline-offset: 1px !important;
+}
