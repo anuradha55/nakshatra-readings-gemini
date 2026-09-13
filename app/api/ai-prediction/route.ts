@@ -26,11 +26,11 @@ function getCurrentPeriodLabel(period: any) {
   return `${period.planet} (${formatDate(period.startTime)} – ${formatDate(period.endTime)})`;
 }
 
-async function geocodeBirthPlace(place: string) {
+async function geocodeBirthPlace(place: string, language: string) {
   const url = new URL("https://geocoding-api.open-meteo.com/v1/search");
   url.searchParams.set("name", place);
   url.searchParams.set("count", "1");
-  url.searchParams.set("language", "en");
+  url.searchParams.set("language", language === "hi" ? "hi" : language === "mr" ? "mr" : "en");
   url.searchParams.set("format", "json");
   const response = await fetch(url.toString(), { headers: { "User-Agent": "NakshatraReadings/1.0" }, cache: "no-store" });
   if (!response.ok) throw new Error("Unable to locate the birth place.");
@@ -138,8 +138,7 @@ export async function POST(request: Request) {
     const model = process.env.GROQ_MODEL ?? "openai/gpt-oss-20b";
     if (!apiKey) return NextResponse.json({ error: "Groq AI service is not configured." }, { status: 500 });
 
-    const location = await geocodeBirthPlace(birthPlace);
-
+    const location = await geocodeBirthPlace(birthPlace, language);
     const birthPlaceKey = `${location.latitude.toFixed(4)}:${location.longitude.toFixed(4)}`;
     const existingFreeClaim = await prisma.aiFreePredictionClaim.findUnique({
       where: {
