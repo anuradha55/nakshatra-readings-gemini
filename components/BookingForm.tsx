@@ -64,14 +64,16 @@ export default function BookingForm({ language }: { language: Language }) {
       try {
         setPlaceLoading(true);
         const url = new URL("https://geocoding-api.open-meteo.com/v1/search");
-        url.searchParams.set("name", query); url.searchParams.set("count", "6"); url.searchParams.set("language", "en"); url.searchParams.set("format", "json");
+        url.searchParams.set("name", query); url.searchParams.set("count", "6");
+        url.searchParams.set("language", language === "hi" ? "hi" : language === "mr" ? "mr" : "en");
+        url.searchParams.set("format", "json");
         const res = await fetch(url.toString(), { signal: controller.signal });
         const data = await res.json(); setPlaceSuggestions(data?.results ?? []); setShowPlaces(Boolean(data?.results?.length));
       } catch (error) { if ((error as Error).name !== "AbortError") setPlaceSuggestions([]); }
       finally { setPlaceLoading(false); }
     }, 350);
     return () => { window.clearTimeout(timer); controller.abort(); };
-  }, [birthPlace]);
+  }, [birthPlace, language]);
 
   function selectPlace(place: PlaceSuggestion) { placeSelectionRef.current = true; setBirthPlace([place.name, place.admin1, place.country].filter(Boolean).join(", ")); setPlaceSuggestions([]); setShowPlaces(false); }
   function setDiagnostic(message: string) { console.info(`[Payment diagnostic] ${message}`); setStatus(message); }
