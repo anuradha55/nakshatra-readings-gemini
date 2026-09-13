@@ -18,17 +18,7 @@ const STANDARD_BOOKING_AMOUNT = 100;
 const COMPLETE_KUNDLI_AMOUNT = 500;
 
 const FOCUS_OPTIONS = [
-  "Marriage",
-  "Relationships",
-  "Career",
-  "Finance",
-  "Family & Children",
-  "Health",
-  "Education",
-  "Spirituality",
-  "Legal & Litigation",
-  "General life prediction",
-  "Entire Kundli Analysis",
+  "Marriage", "Relationships", "Career", "Finance", "Family & Children", "Health", "Education", "Spirituality", "Legal & Litigation", "General life prediction", "Entire Kundli Analysis",
 ] as const;
 
 type Booking = { name: string; phone: string; email: string; service: string; birthdetails: string; slotId: string };
@@ -53,13 +43,7 @@ export default function BookingForm({ language }: { language: Language }) {
   const bookingAmount = service === "Entire Kundli Analysis" ? COMPLETE_KUNDLI_AMOUNT : STANDARD_BOOKING_AMOUNT;
 
   useEffect(() => {
-    if (placeSelectionRef.current) {
-      placeSelectionRef.current = false;
-      setPlaceSuggestions([]);
-      setShowPlaces(false);
-      return;
-    }
-
+    if (placeSelectionRef.current) { placeSelectionRef.current = false; setPlaceSuggestions([]); setShowPlaces(false); return; }
     const query = birthPlace.trim();
     if (query.length < 2) { setPlaceSuggestions([]); setShowPlaces(false); return; }
     const controller = new AbortController();
@@ -76,35 +60,12 @@ export default function BookingForm({ language }: { language: Language }) {
     return () => { window.clearTimeout(timer); controller.abort(); };
   }, [birthPlace]);
 
-  function selectPlace(place: PlaceSuggestion) {
-    placeSelectionRef.current = true;
-    setBirthPlace([place.name, place.admin1, place.country].filter(Boolean).join(", ")); setPlaceSuggestions([]); setShowPlaces(false);
-  }
+  function selectPlace(place: PlaceSuggestion) { placeSelectionRef.current = true; setBirthPlace([place.name, place.admin1, place.country].filter(Boolean).join(", ")); setPlaceSuggestions([]); setShowPlaces(false); }
   function setDiagnostic(message: string) { console.info(`[Payment diagnostic] ${message}`); setStatus(message); }
-
-  async function releaseBookingHold(bookingId: string) {
-    try {
-      await fetch("/api/release-booking", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bookingId }),
-        keepalive: true,
-      });
-    } catch (error) {
-      console.error("[Payment diagnostic] Could not release booking hold:", error);
-    } finally {
-      setSelectedSlot(null);
-      setAvailabilityRefreshToken((value) => value + 1);
-    }
-  }
-
+  async function releaseBookingHold(bookingId: string) { try { await fetch("/api/release-booking", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ bookingId }), keepalive: true }); } catch (error) { console.error("[Payment diagnostic] Could not release booking hold:", error); } finally { setSelectedSlot(null); setAvailabilityRefreshToken((value) => value + 1); } }
   async function loadRazorpay() {
     if (window.Razorpay) return true;
-    await new Promise<void>((resolve, reject) => {
-      const script = document.createElement("script"); script.src = "https://checkout.razorpay.com/v1/checkout.js";
-      script.onload = () => window.Razorpay ? resolve() : reject(new Error("Razorpay script loaded, but Checkout is not available."));
-      script.onerror = () => reject(new Error("Could not load Razorpay Checkout.")); document.body.appendChild(script);
-    });
+    await new Promise<void>((resolve, reject) => { const script = document.createElement("script"); script.src = "https://checkout.razorpay.com/v1/checkout.js"; script.onload = () => window.Razorpay ? resolve() : reject(new Error("Razorpay script loaded, but Checkout is not available.")); script.onerror = () => reject(new Error("Could not load Razorpay Checkout.")); document.body.appendChild(script); });
     return true;
   }
 
@@ -114,95 +75,23 @@ export default function BookingForm({ language }: { language: Language }) {
     setLoading(true); setOk(false); setStatus("Starting payment...");
     const form = new FormData(e.currentTarget); const birthDate = String(form.get("birthDate") ?? "").trim();
     const booking: Booking = { name: String(form.get("name") ?? "").trim(), phone: String(form.get("phone") ?? "").trim(), email: String(form.get("email") ?? "").trim(), service: String(form.get("service") ?? ""), birthdetails: `${birthDate}, ${birthTime}, ${birthPlace}`, slotId: selectedSlot.id };
-    let createdBookingId: string | null = null;
-    let paymentCompleted = false;
+    let createdBookingId: string | null = null; let paymentCompleted = false;
     try {
       if (!RAZORPAY_KEY_ID) throw new Error("Razorpay Key ID is not configured.");
-      setDiagnostic("Step 1/4: Loading Razorpay Checkout..."); await loadRazorpay();
-      setDiagnostic("Step 2/4: Razorpay Checkout loaded. Creating payment order...");
+      setDiagnostic("Step 1/4: Loading Razorpay Checkout..."); await loadRazorpay(); setDiagnostic("Step 2/4: Razorpay Checkout loaded. Creating payment order...");
       const orderRes = await fetch("/api/create-order", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ booking }) });
-      let order: Record<string, unknown>;
-      try { order = await orderRes.json(); } catch { throw new Error(`Order API returned an invalid response (HTTP ${orderRes.status}).`); }
-      if (!orderRes.ok) {
-        if (orderRes.status === 409) { setSelectedSlot(null); setAvailabilityRefreshToken((value) => value + 1); }
-        const baseError = typeof order.error === "string" ? order.error : "Could not start payment. Please choose another appointment slot and try again.";
-        throw new Error(baseError);
-      }
+      let order: Record<string, unknown>; try { order = await orderRes.json(); } catch { throw new Error(`Order API returned an invalid response (HTTP ${orderRes.status}).`); }
+      if (!orderRes.ok) { if (orderRes.status === 409) { setSelectedSlot(null); setAvailabilityRefreshToken((value) => value + 1); } const baseError = typeof order.error === "string" ? order.error : "Could not start payment. Please choose another appointment slot and try again."; throw new Error(baseError); }
       if (!order.id || !order.amount || !order.currency || !order.bookingId) throw new Error("Order was created but the website received incomplete payment details.");
-      createdBookingId = String(order.bookingId);
-      setDiagnostic("Step 3/4: Payment order created. Initializing Razorpay popup...");
+      createdBookingId = String(order.bookingId); setDiagnostic("Step 3/4: Payment order created. Initializing Razorpay popup...");
       if (!window.Razorpay) throw new Error("Razorpay Checkout is not available after loading the script.");
       let rzp;
-      try {
-        rzp = new window.Razorpay({
-          key: RAZORPAY_KEY_ID, amount: order.amount, currency: order.currency, name: "Nakshatra Readings", description: `${booking.service} — Astrology session`, prefill: { name: booking.name, email: booking.email, contact: booking.phone }, theme: { color: "#CDA463" }, order_id: order.id,
-          modal: { ondismiss: () => { if (paymentCompleted || !createdBookingId) return; paymentCompleted = false; setLoading(false); setOk(false); setStatus(""); void releaseBookingHold(createdBookingId); } },
-          handler: async (response: Record<string, string>) => {
-            paymentCompleted = true; setStatus("Payment received securely. Confirming your booking…"); let verificationFinished = false;
-            const timeoutId = window.setTimeout(() => { if (!verificationFinished) { setLoading(false); setOk(true); setStatus("Payment received successfully. We’re confirming your booking in the background. Please do not make another payment."); } }, 12000);
-            try {
-              const verifyRes = await fetch("/api/verify-payment", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ razorpay_order_id: response.razorpay_order_id, razorpay_payment_id: response.razorpay_payment_id, razorpay_signature: response.razorpay_signature, bookingId: order.bookingId }) });
-              const result = await verifyRes.json().catch(() => ({})); verificationFinished = true; window.clearTimeout(timeoutId); setLoading(false);
-              if (verifyRes.ok && result.success) { setOk(true); setStatus("Payment confirmed! Opening your booking confirmation…"); window.location.assign("/booking-success?booking=" + encodeURIComponent(String(order.bookingId))); return; }
-              setOk(true); setStatus("Payment received successfully. We could not complete the final confirmation on this screen. Please do not make another payment; we will reconcile your booking automatically.");
-            } catch { verificationFinished = true; window.clearTimeout(timeoutId); setLoading(false); setOk(true); setStatus("Payment received successfully. Confirmation is taking longer than expected. Please do not make another payment; we will reconcile your booking automatically."); }
-          }
-        });
-      } catch (error) { throw new Error(`Razorpay popup initialization failed: ${error instanceof Error ? error.message : "Unknown error"}`); }
-      rzp.on("payment.failed", () => { if (paymentCompleted || !createdBookingId) return; setOk(false); setStatus("Payment failed. Please try again."); setLoading(false); void releaseBookingHold(createdBookingId); });
-      setDiagnostic("Step 4/4: Opening secure Razorpay payment window...");
-      try { rzp.open(); window.setTimeout(() => { setStatus((current) => current === "Step 4/4: Opening secure Razorpay payment window..." ? "" : current); }, 1500); } catch (error) { throw new Error(`Razorpay popup could not open: ${error instanceof Error ? error.message : "Unknown error"}`); }
-    } catch (error) {
-      if (createdBookingId && !paymentCompleted) await releaseBookingHold(createdBookingId);
-      const message = error instanceof Error ? error.message : "Something went wrong.";
-      console.error("[Payment diagnostic] Payment flow failed:", error); setOk(false); setStatus(message); setLoading(false);
-    }
+      try { rzp = new window.Razorpay({ key: RAZORPAY_KEY_ID, amount: order.amount, currency: order.currency, name: "Nakshatra Readings", description: `${booking.service} — Astrology session`, prefill: { name: booking.name, email: booking.email, contact: booking.phone }, theme: { color: "#CDA463" }, order_id: order.id, modal: { ondismiss: () => { if (paymentCompleted || !createdBookingId) return; paymentCompleted = false; setLoading(false); setOk(false); setStatus(""); void releaseBookingHold(createdBookingId); } }, handler: async (response: Record<string, string>) => { paymentCompleted = true; setStatus("Payment received securely. Confirming your booking…"); let verificationFinished = false; const timeoutId = window.setTimeout(() => { if (!verificationFinished) { setLoading(false); setOk(true); setStatus("Payment received successfully. We’re confirming your booking in the background. Please do not make another payment."); } }, 12000); try { const verifyRes = await fetch("/api/verify-payment", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ razorpay_order_id: response.razorpay_order_id, razorpay_payment_id: response.razorpay_payment_id, razorpay_signature: response.razorpay_signature, bookingId: order.bookingId }) }); const result = await verifyRes.json().catch(() => ({})); verificationFinished = true; window.clearTimeout(timeoutId); setLoading(false); if (verifyRes.ok && result.success) { setOk(true); setStatus("Payment confirmed! Opening your booking confirmation…"); window.location.assign("/booking-success?booking=" + encodeURIComponent(String(order.bookingId))); return; } setOk(true); setStatus("Payment received successfully. We could not complete the final confirmation on this screen. Please do not make another payment; we will reconcile your booking automatically."); } catch { verificationFinished = true; window.clearTimeout(timeoutId); setLoading(false); setOk(true); setStatus("Payment received successfully. Confirmation is taking longer than expected. Please do not make another payment; we will reconcile your booking automatically."); } } }); } catch (error) { throw new Error(`Razorpay popup initialization failed: ${error instanceof Error ? error.message : "Unknown error"}`); }
+      rzp.on("payment.failed", () => { if (paymentCompleted || !createdBookingId) return; setOk(false); setStatus("Payment failed. Please try again."); setLoading(false); void releaseBookingHold(createdBookingId); }); setDiagnostic("Step 4/4: Opening secure Razorpay payment window..."); try { rzp.open(); window.setTimeout(() => { setStatus((current) => current === "Step 4/4: Opening secure Razorpay payment window..." ? "" : current); }, 1500); } catch (error) { throw new Error(`Razorpay popup could not open: ${error instanceof Error ? error.message : "Unknown error"}`); }
+    } catch (error) { if (createdBookingId && !paymentCompleted) await releaseBookingHold(createdBookingId); const message = error instanceof Error ? error.message : "Something went wrong."; console.error("[Payment diagnostic] Payment flow failed:", error); setOk(false); setStatus(message); setLoading(false); }
   }
 
-  return <section className="booking" id="booking"><style dangerouslySetInnerHTML={{ __html: `
-    /* iOS Safari can give native date inputs an intrinsic width larger than their flex/grid item. */
-    @media (max-width: 860px) {
-      @supports (-webkit-touch-callout: none) {
-        .booking-panel form .birth-date-field {
-          width: 100% !important;
-          min-width: 0 !important;
-          max-width: 100% !important;
-          min-inline-size: 0 !important;
-          max-inline-size: 100% !important;
-          box-sizing: border-box !important;
-          overflow: hidden !important;
-          align-self: stretch !important;
-        }
-        .booking-panel form .birth-date-field > #booking-birth-date {
-          display: block !important;
-          width: 100% !important;
-          min-width: 0 !important;
-          max-width: 100% !important;
-          min-inline-size: 0 !important;
-          max-inline-size: 100% !important;
-          inline-size: 100% !important;
-          box-sizing: border-box !important;
-          -webkit-box-sizing: border-box !important;
-          -webkit-appearance: none !important;
-          appearance: none !important;
-          margin: 0 !important;
-          overflow: hidden !important;
-          padding: 0 42px 0 14px !important;
-          background-color: rgba(15,12,36,.55) !important;
-          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23E7D3A6' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4.5' width='18' height='16' rx='2'/%3E%3Cpath d='M7 2.8v3.5M17 2.8v3.5M3 9h18'/%3E%3C/svg%3E") !important;
-          background-repeat: no-repeat !important;
-          background-position: right 12px center !important;
-          background-size: 20px 20px !important;
-        }
-        .booking-panel form .birth-date-field > #booking-birth-date::-webkit-calendar-picker-indicator {
-          opacity: 0 !important;
-          width: 100% !important;
-          height: 100% !important;
-          cursor: pointer !important;
-        }
-      }
-    }
-  ` }} /><div className="wrap"><div className="booking-panel"><div><h2>{t.bookingTitle}</h2><p>{t.bookingText}</p><div className={ok ? "status-msg status-ok" : "status-msg status-err"}>{status}</div></div><form onSubmit={handleSubmit} onInvalidCapture={(event) => { const target = event.target as HTMLInputElement | HTMLSelectElement; if (target.id === "booking-birth-time") return; setStatus(`Form validation: please complete the required field "${target.name || target.id || "unknown"}".`); }}>
+  return <section className="booking" id="booking"><div className="wrap"><div className="booking-panel"><div><h2>{t.bookingTitle}</h2><p>{t.bookingText}</p><div className={ok ? "status-msg status-ok" : "status-msg status-err"}>{status}</div></div><form onSubmit={handleSubmit} onInvalidCapture={(event) => { const target = event.target as HTMLInputElement | HTMLSelectElement; if (target.id === "booking-birth-time") return; setStatus(`Form validation: please complete the required field "${target.name || target.id || "unknown"}".`); }}>
     <div className="field"><label htmlFor="name">{t.name}</label><input name="name" id="name" type="text" required /></div>
     <div className="field"><label htmlFor="phone">{t.phone}</label><input name="phone" id="phone" type="tel" required /></div>
     <div className="field"><label htmlFor="email">{t.email}</label><input name="email" id="email" type="email" required autoComplete="email" placeholder="name@example.com" title="Please enter a valid email address, for example name@example.com" /></div>
@@ -210,7 +99,6 @@ export default function BookingForm({ language }: { language: Language }) {
     <div className="ai-two booking-birth-stacked"><div className="field birth-date-field"><label htmlFor="booking-birth-date">{t.birthDate}</label><input name="birthDate" id="booking-birth-date" type="date" required /></div><div className="field"><label htmlFor="booking-birth-time">{t.birthTime}</label><input id="booking-birth-time" name="birthTime" type="time" value={birthTime} onChange={(e) => setBirthTime(e.target.value)} step="60" style={{ width: "100%", height: "46px", minWidth: 0, boxSizing: "border-box" }} /><small className="field-hint">Select the exact hour and minute.</small></div></div>
     <div className="field place-field"><label htmlFor="booking-birth-place">{t.birthPlace}</label><div className="place-input-wrap"><input id="booking-birth-place" name="birthPlace" value={birthPlace} onChange={(e) => setBirthPlace(e.target.value)} onFocus={() => placeSuggestions.length && setShowPlaces(true)} placeholder={t.placePlaceholder} autoComplete="off" required />{placeLoading && <span className="place-loading">{t.searching}</span>}</div>{showPlaces && placeSuggestions.length > 0 && <div className="place-suggestions">{placeSuggestions.map((place, index) => <button type="button" className="place-option" key={`${place.name}-${place.latitude}-${index}`} onMouseDown={(event) => event.preventDefault()} onClick={() => selectPlace(place)}><strong>{place.name}</strong><span>{[place.admin1, place.country].filter(Boolean).join(", ")}</span></button>)}</div>}</div>
     <AvailabilityPicker selectedSlotId={selectedSlot?.id ?? ""} onSelect={setSelectedSlot} refreshToken={availabilityRefreshToken} service={service} />
-    <div className="price-line"><span>{t.sessionFee}</span><span className="amt">₹{bookingAmount}</span></div>
-    <button type="submit" className="btn-primary pay-btn" disabled={loading || ok}>{ok ? t.confirmed : loading ? (status.includes("Confirming") || status.includes("Payment received") ? t.confirming : t.preparing) : `Pay ₹${bookingAmount} & book session`}</button><p className="note">{t.secure}</p>
+    <div className="price-line"><span>{t.sessionFee}</span><span className="amt">₹{bookingAmount}</span></div><button type="submit" className="btn-primary pay-btn" disabled={loading || ok}>{ok ? t.confirmed : loading ? (status.includes("Confirming") || status.includes("Payment received") ? t.confirming : t.preparing) : `Pay ₹${bookingAmount} & book session`}</button><p className="secure-note">Secure payment via Razorpay</p>
   </form></div></div></section>;
 }
