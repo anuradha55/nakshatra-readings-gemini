@@ -14,8 +14,8 @@ declare global {
 }
 
 const RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ?? "";
-const STANDARD_BOOKING_AMOUNT = 1;
-const COMPLETE_KUNDLI_AMOUNT = 1;
+const STANDARD_BOOKING_AMOUNT = 100;
+const COMPLETE_KUNDLI_AMOUNT = 500;
 
 const FOCUS_OPTIONS = [
   "Marriage", "Relationships", "Career", "Finance", "Family & Children", "Health", "Education", "Spirituality", "Legal & Litigation", "General life prediction", "Entire Kundli Analysis",
