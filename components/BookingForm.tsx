@@ -159,7 +159,48 @@ export default function BookingForm({ language }: { language: Language }) {
     }
   }
 
-  return <section className="booking" id="booking"><div className="wrap"><div className="booking-panel"><div><h2>{t.bookingTitle}</h2><p>{t.bookingText}</p><div className={ok ? "status-msg status-ok" : "status-msg status-err"}>{status}</div></div><form onSubmit={handleSubmit} onInvalidCapture={(event) => { const target = event.target as HTMLInputElement | HTMLSelectElement; if (target.id === "booking-birth-time") return; setStatus(`Form validation: please complete the required field "${target.name || target.id || "unknown"}".`); }}>
+  return <section className="booking" id="booking"><style dangerouslySetInnerHTML={{ __html: `
+    /* iOS Safari can give native date inputs an intrinsic width larger than their flex/grid item. */
+    @media (max-width: 860px) and (supports (-webkit-touch-callout: none)) {
+      .booking-panel form .birth-date-field {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        min-inline-size: 0 !important;
+        max-inline-size: 100% !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+        align-self: stretch !important;
+      }
+      .booking-panel form .birth-date-field > #booking-birth-date {
+        display: block !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        min-inline-size: 0 !important;
+        max-inline-size: 100% !important;
+        inline-size: 100% !important;
+        box-sizing: border-box !important;
+        -webkit-box-sizing: border-box !important;
+        -webkit-appearance: none !important;
+        appearance: none !important;
+        margin: 0 !important;
+        overflow: hidden !important;
+        padding: 0 42px 0 14px !important;
+        background-color: rgba(15,12,36,.55) !important;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23E7D3A6' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4.5' width='18' height='16' rx='2'/%3E%3Cpath d='M7 2.8v3.5M17 2.8v3.5M3 9h18'/%3E%3C/svg%3E") !important;
+        background-repeat: no-repeat !important;
+        background-position: right 12px center !important;
+        background-size: 20px 20px !important;
+      }
+      .booking-panel form .birth-date-field > #booking-birth-date::-webkit-calendar-picker-indicator {
+        opacity: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        cursor: pointer !important;
+      }
+    }
+  ` }} /><div className="wrap"><div className="booking-panel"><div><h2>{t.bookingTitle}</h2><p>{t.bookingText}</p><div className={ok ? "status-msg status-ok" : "status-msg status-err"}>{status}</div></div><form onSubmit={handleSubmit} onInvalidCapture={(event) => { const target = event.target as HTMLInputElement | HTMLSelectElement; if (target.id === "booking-birth-time") return; setStatus(`Form validation: please complete the required field "${target.name || target.id || "unknown"}".`); }}>
     <div className="field"><label htmlFor="name">{t.name}</label><input name="name" id="name" type="text" required /></div>
     <div className="field"><label htmlFor="phone">{t.phone}</label><input name="phone" id="phone" type="tel" required /></div>
     <div className="field"><label htmlFor="email">{t.email}</label><input name="email" id="email" type="email" required autoComplete="email" placeholder="name@example.com" title="Please enter a valid email address, for example name@example.com" /></div>
