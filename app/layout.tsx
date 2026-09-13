@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import "./ai-mobile-layout.css";
+import "./ai-mobile-refinement.css";
 import "./services.css";
 import "./ai-detail-button.css";
 import TimePickerEnhancer from "@/components/TimePickerEnhancer";
