@@ -1,22 +1,30 @@
-/* Keep the AI detailed-report toggle readable and consistent on iOS Safari. */
+/* Keep the AI detailed-report button visually identical to the site's primary buttons. */
 .ai-detail-btn {
   appearance: none !important;
   -webkit-appearance: none !important;
-  background: transparent !important;
-  color: var(--text) !important;
-  border: 1px solid var(--line) !important;
+  background: linear-gradient(135deg,var(--gold-soft),var(--gold)) !important;
+  color: #1A1440 !important;
+  border: none !important;
+  padding: 14px 26px !important;
+  border-radius: 999px !important;
   font-family: 'Work Sans', sans-serif !important;
   font-size: .95rem !important;
+  font-weight: 600 !important;
   line-height: 1.2 !important;
   text-align: center !important;
   cursor: pointer !important;
   opacity: 1 !important;
+  box-shadow: 0 8px 30px -8px rgba(205,164,99,.55) !important;
+}
+
+.ai-detail-btn:hover {
+  color: #1A1440 !important;
 }
 
 .ai-detail-btn:active,
 .ai-detail-btn:focus-visible {
-  color: var(--text) !important;
-  background: rgba(205,164,99,.08) !important;
+  color: #1A1440 !important;
+  background: linear-gradient(135deg,var(--gold-soft),var(--gold)) !important;
   outline: 2px solid var(--gold) !important;
   outline-offset: 1px !important;
 }
