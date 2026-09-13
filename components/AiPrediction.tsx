@@ -3,7 +3,6 @@ import React, { FormEvent, useEffect, useState } from "react";
 import NorthIndianChart from "@/components/NorthIndianChart";
 import { Language, tr } from "@/lib/i18n";
 
-
 const RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ?? "";
 
 type ChartData = React.ComponentProps<typeof NorthIndianChart>;
@@ -118,7 +117,7 @@ export default function AiPrediction({ language }: { language: Language }) {
         const url = new URL("https://geocoding-api.open-meteo.com/v1/search");
         url.searchParams.set("name", query);
         url.searchParams.set("count", "6");
-        url.searchParams.set("language", "en");
+        url.searchParams.set("language", language === "hi" ? "hi" : language === "mr" ? "mr" : "en");
         url.searchParams.set("format", "json");
         const res = await fetch(url.toString(), { signal: controller.signal });
         const data = await res.json();
@@ -129,7 +128,7 @@ export default function AiPrediction({ language }: { language: Language }) {
       } finally { setPlaceLoading(false); }
     }, 350);
     return () => { window.clearTimeout(timer); controller.abort(); };
-  }, [birthPlace, selectedPlace]);
+  }, [birthPlace, selectedPlace, language]);
 
   function selectPlace(place: PlaceSuggestion) {
     const fullPlace = [place.name, place.admin1, place.country].filter(Boolean).join(", ");
@@ -258,7 +257,6 @@ export default function AiPrediction({ language }: { language: Language }) {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ name: form.get("name"), email, answer: generatedAnswer }),
               });
-              const emailData = await emailRes.json().catch(() => null);
               setEmailStatus(emailRes.ok ? "A copy of your AI prediction has been sent to your email." : "");
             } catch {
               setEmailStatus("");
@@ -298,7 +296,6 @@ export default function AiPrediction({ language }: { language: Language }) {
             <div className="ai-benefits">{t.aiBenefits.map((benefit) => <span key={benefit}>✦ {benefit}</span>)}</div>
           </div>
           <form className="ai-form" onSubmit={submit} onInput={() => { setFreePredictionUsed(false); setPaidPaymentId(""); }}>
-            
             <div className="field"><label htmlFor="ai-name">{t.aiName}</label><input id="ai-name" name="name" /></div>
             <div className="field"><label htmlFor="ai-email">{t.email}</label><input id="ai-email" name="email" type="email" required autoComplete="email" placeholder="name@example.com" title="Enter a valid email address, for example name@example.com" /></div>
             <div className="field"><label htmlFor="ai-date">{t.birthDate}</label><input id="ai-date" name="birthDate" type="date" required /></div>
@@ -316,7 +313,7 @@ export default function AiPrediction({ language }: { language: Language }) {
                   ? (language === "hi" ? `₹${paidPrice} में AI भविष्यवाणी प्राप्त करें` : language === "mr" ? `₹${paidPrice} मध्ये AI भविष्यवाणी मिळवा` : `Get an AI prediction for ₹${paidPrice}`)
                   : (language === "hi" ? "1 मुफ्त AI भविष्यवाणी प्राप्त करें" : language === "mr" ? "1 मोफत AI भविष्यवाणी मिळवा" : "Get 1 free AI prediction")}
             </button>
-{freePredictionUsed && <p className="ai-paid-note">{paidPaymentId ? "Payment confirmed. Generating your AI prediction…" : `The free AI prediction has already been used. Additional AI predictions are ₹${paidPrice} each.`}</p>}
+            {freePredictionUsed && <p className="ai-paid-note">{paidPaymentId ? "Payment confirmed. Generating your AI prediction…" : `The free AI prediction has already been used. Additional AI predictions are ₹${paidPrice} each.`}</p>}
             {remaining !== null && <p className="ai-remaining">{remaining} free prediction{remaining === 1 ? "" : "s"} remaining</p>}
             {message && <p className="status-msg status-err">{message}</p>}
             {emailStatus && <p className="status-msg status-ok">{emailStatus}</p>}
@@ -326,7 +323,7 @@ export default function AiPrediction({ language }: { language: Language }) {
           <div className="ai-conclusion"><div className="ai-conclusion-label">{t.conclusion}</div>{renderMarkdown(extractConclusion(answer) || (language === "hi" ? "आपकी भविष्यवाणी तैयार है। विस्तृत जानकारी देखने के लिए नीचे दिए गए बटन पर क्लिक करें।" : language === "mr" ? "तुमचे वाचन तयार आहे. सविस्तर माहिती पाहण्यासाठी खालील बटणावर क्लिक करा." : "Your reading is ready. Click below to view the detailed report."))}</div>
           <button type="button" className="btn-ghost ai-detail-btn" onClick={() => setShowDetailedReport((value) => !value)}>{showDetailedReport ? t.hideDetailed : t.detailed}</button>
           {showDetailedReport && <div className="ai-detailed-report">{chart && <NorthIndianChart {...chart} />}<div className="ai-answer" style={{ maxHeight: "none", overflowY: "visible", overflowX: "visible", paddingRight: "0", paddingBottom: "32px" }}>{renderMarkdown(extractDetailedReport(answer))}</div></div>}
-          <div className="ai-cta"><div><strong>{language === "hi" ? "गहराई से पढ़ना चाहते हैं?" : language === "mr" ? "सखोल वाचन हवे आहे?" : "Want a deeper reading?"}</strong><p>{language === "hi" ? "अपने पूरे चार्ट पर मानव ज्योतिषी से चर्चा करें।" : language === "mr" ? "तुमच्या संपूर्ण कुंडलीवर मानवी ज्योतिषासोबत चर्चा करा." : "Discuss your complete chart with a human astrologer for 30–45 minutes."}</p></div><a href="#booking" className="btn-primary">{language === "hi" ? "₹500 में बुक करें" : language === "mr" ? "₹500 मध्ये बुक करा" : "Book for ₹500"}</a></div></div>}
+          <div className="ai-cta"><div><strong>{language === "hi" ? "गहराई से पढ़ना चाहते हैं?" : language === "mr" ? "सखोल वाचन हवे आहे?" : "Want a deeper reading?"}</strong><p>{language === "hi" ? "अपने पूरे चार्ट पर मानव ज्योतिषी से चर्चा करें।" : language === "mr" ? "तुमच्या संपूर्ण कुंडलीवर मानवी ज्योतिषासोबत चर्चा करा." : "Discuss your complete chart with a human astrologer for 30–45 minutes."}</p></div><a href="#booking" className="btn-primary">{language === "hi" ? "ज्योतिषी से बुक करें" : language === "mr" ? "ज्योतिषीची बुकिंग करा" : "Book an Astrologer Slot"}</a></div></div>}
         <p className="ai-disclaimer">AI-generated astrology guidance is for personal reflection and is not a scientific prediction, guarantee of future events, or professional advice.</p>
       </div>
     </section>
