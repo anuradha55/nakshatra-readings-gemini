@@ -6,7 +6,7 @@ import { releaseExpiredHolds, reserveSlot } from "@/lib/availability";
 export const runtime = "nodejs";
 
 const STANDARD_BOOKING_AMOUNT = 100;
-const COMPLETE_KUNDLI_AMOUNT = 100;
+const COMPLETE_KUNDLI_AMOUNT = 500;
 const SLOT_CONFLICT_MESSAGE = "This appointment slot is no longer available. Please choose another slot.";
 
 function isUniqueConstraintError(error: unknown) {
