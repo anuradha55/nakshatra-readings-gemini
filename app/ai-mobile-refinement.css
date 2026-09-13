@@ -1,0 +1,59 @@
+/* Final mobile AI layout: keep the prediction form readable on Android and iOS. */
+@media (max-width: 860px) {
+  .ai-form {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 16px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  .ai-form > .field,
+  .ai-form > .birth-time-place-row,
+  .ai-form > .birth-time-place-row > .field {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .ai-form > .birth-time-place-row {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 16px !important;
+    margin: 0 !important;
+  }
+
+  .ai-form > .field:has(#ai-date),
+  .ai-form > .birth-time-place-row > .field:has(#ai-time),
+  .ai-form > .birth-time-place-row > .field:has(#ai-place) {
+    grid-column: auto !important;
+  }
+
+  .ai-form input,
+  .ai-form textarea,
+  .ai-form select,
+  .ai-form .custom-time-picker,
+  .ai-form .custom-date-picker {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .ai-form .custom-time-picker {
+    overflow: visible !important;
+  }
+
+  .ai-form .ai-btn {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+}
