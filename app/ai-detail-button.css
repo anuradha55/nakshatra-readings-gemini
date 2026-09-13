@@ -1,5 +1,6 @@
 /* Keep the AI detailed-report button visually identical to the site's primary buttons. */
-.ai-detail-btn {
+.ai-result .ai-detail-btn,
+.ai-result button.ai-detail-btn {
   appearance: none !important;
   -webkit-appearance: none !important;
   background: linear-gradient(135deg,var(--gold-soft),var(--gold)) !important;
@@ -17,14 +18,21 @@
   box-shadow: 0 8px 30px -8px rgba(205,164,99,.55) !important;
 }
 
-.ai-detail-btn:hover {
-  color: #1A1440 !important;
-}
-
-.ai-detail-btn:active,
-.ai-detail-btn:focus-visible {
+.ai-result .ai-detail-btn:hover,
+.ai-result button.ai-detail-btn:hover {
   color: #1A1440 !important;
   background: linear-gradient(135deg,var(--gold-soft),var(--gold)) !important;
+}
+
+.ai-result .ai-detail-btn:active,
+.ai-result .ai-detail-btn:focus,
+.ai-result .ai-detail-btn:focus-visible,
+.ai-result button.ai-detail-btn:active,
+.ai-result button.ai-detail-btn:focus,
+.ai-result button.ai-detail-btn:focus-visible {
+  color: #1A1440 !important;
+  background: linear-gradient(135deg,var(--gold-soft),var(--gold)) !important;
+  border: none !important;
   outline: 2px solid var(--gold) !important;
   outline-offset: 1px !important;
 }
