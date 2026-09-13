@@ -97,7 +97,11 @@ function enhanceIOSBookingDate(input: HTMLInputElement) {
   icon.setAttribute("aria-hidden", "true");
   icon.textContent = "▣";
 
-  wrapper.append(value, icon);
+  // The native date input must be INSIDE the visible wrapper. Previously it was
+  // inserted as a sibling, so its absolute hit target was positioned relative
+  // to the form/field rather than the 52px date box. On iOS Safari that could
+  // make the visible box non-interactive and prevent the native picker opening.
+  wrapper.append(value, icon, input);
   input.parentElement?.insertBefore(wrapper, input);
 
   input.classList.add("ios-native-date-input");
@@ -163,11 +167,11 @@ export default function TimePickerEnhancer() {
     input[data-native-date-picker-ready="true"]::-webkit-datetime-edit{text-align:center;padding:0;line-height:52px!important;font-size:18px;vertical-align:middle;}
     input[data-native-date-picker-ready="true"]::-webkit-datetime-edit-fields-wrapper{text-align:center;padding:0;line-height:52px!important;font-size:18px;vertical-align:middle;}
 
-    /* iOS-only booking Birth Date shell. The visible box is a normal element with fixed containment; the native date input is an invisible full-size hit target. */
+    /* iOS-only booking Birth Date shell. The visible box contains the native date input as its full-size hit target. */
     .ios-native-date-wrapper{position:relative;width:100%;min-width:0;max-width:100%;height:52px;min-height:52px;max-height:52px;display:flex;align-items:center;justify-content:center;box-sizing:border-box;overflow:hidden;background:rgba(15,12,36,.55);border:1px solid var(--line);border-radius:10px;padding:0 42px 0 14px;color:var(--text);font-size:18px;line-height:52px;text-align:center;}
     .ios-native-date-value{display:block;width:100%;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;line-height:52px;pointer-events:none;}
     .ios-native-date-icon{position:absolute;right:12px;top:50%;width:20px;height:20px;transform:translateY(-50%);pointer-events:none;color:var(--gold-soft);font-size:18px;line-height:20px;text-align:center;}
-    .ios-native-date-input{position:absolute!important;inset:0!important;width:100%!important;inline-size:100%!important;min-width:0!important;min-inline-size:0!important;max-width:100%!important;max-inline-size:100%!important;height:100%!important;min-height:0!important;max-height:none!important;margin:0!important;padding:0!important;border:0!important;box-sizing:border-box!important;opacity:0!important;background:transparent!important;color:transparent!important;z-index:3!important;cursor:pointer!important;overflow:hidden!important;appearance:auto!important;-webkit-appearance:auto!important;}
+    .ios-native-date-input{position:absolute!important;inset:0!important;width:100%!important;inline-size:100%!important;min-width:0!important;min-inline-size:0!important;max-width:100%!important;max-inline-size:100%!important;height:100%!important;min-height:0!important;max-height:none!important;margin:0!important;padding:0!important;border:0!important;box-sizing:border-box!important;opacity:.01!important;background:transparent!important;color:transparent!important;z-index:3!important;pointer-events:auto!important;cursor:pointer!important;overflow:hidden!important;appearance:auto!important;-webkit-appearance:auto!important;}
     .ios-native-date-input::-webkit-calendar-picker-indicator{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;margin:0!important;padding:0!important;opacity:0!important;cursor:pointer!important;}
 
     @media(max-width:860px){
