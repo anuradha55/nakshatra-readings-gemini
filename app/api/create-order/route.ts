@@ -5,8 +5,8 @@ import { releaseExpiredHolds, reserveSlot } from "@/lib/availability";
 
 export const runtime = "nodejs";
 
-const STANDARD_BOOKING_AMOUNT = 10000;
-const COMPLETE_KUNDLI_AMOUNT = 50000;
+const STANDARD_BOOKING_AMOUNT = 100;
+const COMPLETE_KUNDLI_AMOUNT = 100;
 const SLOT_CONFLICT_MESSAGE = "This appointment slot is no longer available. Please choose another slot.";
 
 function isUniqueConstraintError(error: unknown) {
@@ -37,7 +37,6 @@ export async function POST(request: Request) {
     const astrologerShare = configuredAmount - platformShare;
     const requestedSlotId = String(booking.slotId);
 
-    // Clean up expired holds before checking the slot's existing booking relation.
     await releaseExpiredHolds();
     const existingBooking = await prisma.booking.findUnique({
       where: { slotId: requestedSlotId },
