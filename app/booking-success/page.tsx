@@ -4,303 +4,40 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 type Confirmation = {
-  booking: {
-    id: string;
-    name: string;
-    phone: string;
-    email: string;
-    birthDetails: string | null;
-    service: string;
-    amount: number;
-    currency: string;
-    status: string;
-    createdAt: string;
-  };
-  appointment: {
-    startsAt: string;
-    endsAt: string;
-  } | null;
-  astrologer: {
-    name: string;
-    phone: string;
-  };
+  booking: { id: string; name: string; phone: string; email: string; birthDetails: string | null; service: string; amount: number; currency: string; status: string; createdAt: string };
+  appointment: { startsAt: string; endsAt: string } | null;
+  astrologer: { name: string; phone: string };
 };
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("en-IN", {
-    dateStyle: "medium",
-    timeZone: "Asia/Kolkata",
-  }).format(new Date(value));
-}
-
-function formatTime(value: string) {
-  return new Intl.DateTimeFormat("en-IN", {
-    timeStyle: "short",
-    timeZone: "Asia/Kolkata",
-  }).format(new Date(value));
-}
-
-function formatAppointment(start: string, end: string) {
-  const startDate = new Date(start);
-  const endDate = new Date(end);
-  const sameDay = formatDate(start) === formatDate(end);
-  return {
-    date: formatDate(start),
-    time: sameDay ? `${formatTime(start)} – ${formatTime(end)} IST` : `${formatTime(start)} IST – ${formatDate(end)}, ${formatTime(end)} IST`,
-  };
-}
-
-function WhatsAppIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className="whatsapp-icon">
-      <path fill="currentColor" d="M20.5 3.5A11.8 11.8 0 0 0 12.08 0C5.54 0 .22 5.32.22 11.86c0 2.09.55 4.13 1.59 5.92L.12 23.9l6.27-1.64a11.85 11.85 0 0 0 5.69 1.45h.01c6.53 0 11.85-5.32 11.85-11.86 0-3.17-1.23-6.14-3.44-8.35Zm-8.42 18.17h-.01a9.82 9.82 0 0 1-5.01-1.37l-.36-.21-3.72.97.99-3.63-.23-.37a9.84 9.84 0 1 1 8.34 4.61Zm5.4-7.36c-.3-.15-1.77-.87-2.04-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.64.07-.3-.15-1.25-.46-2.39-1.47-.88-.78-1.48-1.75-1.65-2.05-.17-.3-.02-.46.13-.61.14-.14.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.49s1.07 2.89 1.22 3.09c.15.2 2.1 3.2 5.09 4.49.71.31 1.26.49 1.69.63.71.23 1.35.2 1.86.12.57-.09 1.77-.72 2.02-1.42.25-.7.25-1.3.17-1.42-.07-.12-.27-.2-.57-.35Z" />
-    </svg>
-  );
-}
+function formatDate(value: string) { return new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeZone: "Asia/Kolkata" }).format(new Date(value)); }
+function formatTime(value: string) { return new Intl.DateTimeFormat("en-IN", { timeStyle: "short", timeZone: "Asia/Kolkata" }).format(new Date(value)); }
+function formatAppointment(start: string, end: string) { const sameDay = formatDate(start) === formatDate(end); return { date: formatDate(start), time: sameDay ? `${formatTime(start)} – ${formatTime(end)} IST` : `${formatTime(start)} IST – ${formatDate(end)}, ${formatTime(end)} IST` }; }
+function parseBirthDetails(value: string | null) { if (!value) return { date: "Not provided", time: "Not provided", place: "Not provided" }; const match = value.match(/^\s*([^,]+)\s*,\s*([^,]*)\s*,\s*(.*)\s*$/); if (!match) return { date: value, time: "Not provided", place: "Not provided" }; return { date: match[1].trim() || "Not provided", time: match[2].trim() || "Not provided", place: match[3].trim() || "Not provided" }; }
+function WhatsAppIcon() { return <svg viewBox="0 0 24 24" aria-hidden="true" className="whatsapp-icon"><path fill="currentColor" d="M20.5 3.5A11.8 11.8 0 0 0 12.08 0C5.54 0 .22 5.32.22 11.86c0 2.09.55 4.13 1.59 5.92L.12 23.9l6.27-1.64a11.85 11.85 0 0 0 5.69 1.45h.01c6.53 0 11.85-5.32 11.85-11.86 0-3.17-1.23-6.14-3.44-8.35Zm-8.42 18.17h-.01a9.82 9.82 0 0 1-5.01-1.37l-.36-.21-3.72.97.99-3.63-.23-.37a9.84 9.84 0 1 1 8.34 4.61Zm5.4-7.36c-.3-.15-1.77-.87-2.04-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.64.07-.3-.15-1.25-.46-2.39-1.47-.88-.78-1.48-1.75-1.65-2.05-.17-.3-.02-.46.13-.61.14-.14.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.49s1.07 2.89 1.22 3.09c.15.2 2.1 3.2 5.09 4.49.71.31 1.26.49 1.69.63.71.23 1.35.2 1.86.12.57-.09 1.77-.72 2.02-1.42.25-.7.25-1.3.17-1.42-.07-.12-.27-.2-.57-.35Z" /></svg>; }
 
 function BookingSuccessContent() {
-  const searchParams = useSearchParams();
-  const bookingId = searchParams.get("booking");
-  const [data, setData] = useState<Confirmation | null>(null);
-  const [error, setError] = useState("");
-  const [downloading, setDownloading] = useState<"pdf" | "png" | null>(null);
-  const receiptRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const id = searchParams.get("booking");
-    if (!id) {
-      setError("Booking reference is missing.");
-      return;
-    }
-
-    fetch("/api/bookings/" + encodeURIComponent(id))
-      .then(async (res) => {
-        const body = await res.json();
-        if (!res.ok) throw new Error(body.error || "Unable to load booking.");
-        setData(body);
-      })
-      .catch((err) => setError(err instanceof Error ? err.message : "Unable to load booking."));
-  }, [searchParams]);
-
-  const getReceiptCanvas = async () => {
-    if (!receiptRef.current) throw new Error("Booking receipt is not ready yet.");
-    const html2canvas = (await import("html2canvas")).default;
-    return html2canvas(receiptRef.current, {
-      scale: 2,
-      backgroundColor: "#0d0b1f",
-      useCORS: true,
-      logging: false,
-    });
-  };
-
-  const downloadPng = async () => {
-    if (!data) return;
-    setDownloading("png");
-    try {
-      const canvas = await getReceiptCanvas();
-      const link = document.createElement("a");
-      link.download = "nakshatra-readings-booking-" + data.booking.id + ".png";
-      link.href = canvas.toDataURL("image/png");
-      link.click();
-    } catch (downloadError) {
-      console.error("PNG_DOWNLOAD_ERROR", downloadError);
-      alert("Unable to download the booking confirmation image. Please try again.");
-    } finally {
-      setDownloading(null);
-    }
-  };
-
-  const downloadPdf = async () => {
-    if (!data) return;
-    setDownloading("pdf");
-    try {
-      const [canvas, jsPdfModule] = await Promise.all([getReceiptCanvas(), import("jspdf")]);
-      const { jsPDF } = jsPdfModule;
-      const imageData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const margin = 12;
-      const imageWidth = pageWidth - margin * 2;
-      const imageHeight = (canvas.height * imageWidth) / canvas.width;
-
-      if (imageHeight <= pageHeight - margin * 2) {
-        pdf.addImage(imageData, "PNG", margin, margin, imageWidth, imageHeight);
-      } else {
-        let remainingHeight = imageHeight;
-        pdf.addImage(imageData, "PNG", margin, margin, imageWidth, imageHeight);
-        remainingHeight -= pageHeight - margin * 2;
-        while (remainingHeight > 0) {
-          pdf.addPage();
-          const position = margin - (imageHeight - remainingHeight);
-          pdf.addImage(imageData, "PNG", margin, position, imageWidth, imageHeight);
-          remainingHeight -= pageHeight - margin * 2;
-        }
-      }
-      pdf.save("nakshatra-readings-booking-" + data.booking.id + ".pdf");
-    } catch (downloadError) {
-      console.error("PDF_DOWNLOAD_ERROR", downloadError);
-      alert("Unable to download the booking PDF. Please try again.");
-    } finally {
-      setDownloading(null);
-    }
-  };
-
-  if (error) {
-    return (
-      <main className="confirmation-page">
-        <div className="confirmation-card confirmation-error-card">
-          <h1>Booking confirmation unavailable</h1>
-          <p>{error}</p>
-          <a className="confirmation-home-button" href="/">Back to home</a>
-        </div>
-      </main>
-    );
-  }
-
-  if (!data) {
-    return (
-      <main className="confirmation-page">
-        <div className="confirmation-card confirmation-loading-card">
-          <div className="confirmation-loading-icon">✓</div>
-          <p>Loading your secure booking confirmation…</p>
-        </div>
-      </main>
-    );
-  }
-
-  const appointment = data.appointment ? formatAppointment(data.appointment.startsAt, data.appointment.endsAt) : null;
-  const whatsappDigits = data.astrologer.phone.replace(/\D/g, "");
-  const whatsappMessage = encodeURIComponent(`Hello ${data.astrologer.name}, I have confirmed my ${data.booking.service} booking with Nakshatra Readings. Booking reference: ${data.booking.id}.`);
-  const whatsappUrl = `https://wa.me/${whatsappDigits}?text=${whatsappMessage}`;
-
-  return (
-    <main className="confirmation-page">
-      <div className="confirmation-shell">
-        <div ref={receiptRef} className="booking-receipt">
-          <header className="confirmation-header">
-            <div className="confirmation-success-mark">✓</div>
-            <div>
-              <p className="confirmation-eyebrow">PAYMENT SUCCESSFUL</p>
-              <h1>Your booking is confirmed</h1>
-              <p className="confirmation-intro">Thank you, <strong>{data.booking.name}</strong>. Your payment has been verified successfully.</p>
-            </div>
-          </header>
-
-          {appointment && (
-            <section className="appointment-highlight">
-              <div>
-                <p className="confirmation-eyebrow">YOUR APPOINTMENT</p>
-                <h2>{appointment.date}</h2>
-                <p className="appointment-time">{appointment.time}</p>
-              </div>
-              <span className="appointment-badge">Confirmed slot</span>
-            </section>
-          )}
-
-          <section className="confirmation-section">
-            <p className="confirmation-eyebrow">CUSTOMER DETAILS</p>
-            <div className="confirmation-details">
-              <div><span>Customer name</span><strong>{data.booking.name}</strong></div>
-              <div><span>Mobile number</span><strong>{data.booking.phone}</strong></div>
-              <div className="full-width"><span>Birth details</span><strong>{data.booking.birthDetails || "Not provided"}</strong></div>
-            </div>
-          </section>
-
-          <section className="confirmation-section">
-            <p className="confirmation-eyebrow">BOOKING DETAILS</p>
-            <div className="confirmation-details">
-              <div><span>Booking reference</span><strong className="reference-value">{data.booking.id}</strong></div>
-              <div><span>Service</span><strong>{data.booking.service}</strong></div>
-              <div><span>Amount paid</span><strong>₹{data.booking.amount.toFixed(2)}</strong></div>
-              <div><span>Booked on</span><strong>{formatDate(data.booking.createdAt)}, {formatTime(data.booking.createdAt)} IST</strong></div>
-              <div><span>Status</span><strong className="confirmed">Confirmed</strong></div>
-            </div>
-          </section>
-
-          <section className="astrologer-card">
-            <p className="confirmation-eyebrow">YOUR ASTROLOGER</p>
-            <h2>{data.astrologer.name}</h2>
-            <a className="whatsapp-button" href={whatsappUrl} target="_blank" rel="noopener noreferrer">
-              <WhatsAppIcon />
-              <span>Chat with {data.astrologer.name} on WhatsApp</span>
-            </a>
-          </section>
-
-          <section className="share-section">
-            <p className="confirmation-eyebrow">NEXT STEP</p>
-            <h2>Share your booking confirmation</h2>
-            <p>
-              You can share the downloaded PDF or image with your astrologer. <strong>A screenshot of this confirmation screen is also sufficient</strong> to share your booking details.
-            </p>
-          </section>
-
-          <p className="confirmation-note">Please keep your booking reference and appointment date & time for your records.</p>
-        </div>
-
-        <div className="confirmation-actions">
-          <button type="button" className="confirmation-primary-button" onClick={downloadPdf} disabled={downloading !== null}>
-            {downloading === "pdf" ? "Preparing PDF…" : "Download PDF"}
-          </button>
-          <button type="button" className="confirmation-secondary-button" onClick={downloadPng} disabled={downloading !== null}>
-            {downloading === "png" ? "Preparing image…" : "Download Image"}
-          </button>
-          <a className="confirmation-home-link" href="/">← Back to home</a>
-        </div>
-      </div>
-
-      <style jsx>{`
-        .confirmation-page{min-height:100vh;padding:32px 20px 64px;background:radial-gradient(circle at 50% -10%,#2a2164 0%,#0d0b1f 52%);color:#f3efe6;position:relative;z-index:2}
-        .confirmation-shell{width:min(760px,100%);margin:0 auto}
-        .booking-receipt{background:linear-gradient(160deg,#211a55,#171238);border:1px solid rgba(205,164,99,.28);border-radius:28px;padding:38px;box-shadow:0 24px 70px rgba(0,0,0,.35)}
-        .confirmation-header{display:flex;gap:20px;align-items:flex-start;padding-bottom:28px;border-bottom:1px solid rgba(243,239,230,.12)}
-        .confirmation-success-mark{width:52px;height:52px;flex:0 0 52px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#e7d3a6,#cda463);color:#171238;font-size:28px;font-weight:700;box-shadow:0 8px 28px rgba(205,164,99,.28)}
-        .confirmation-eyebrow{margin:0 0 8px;color:#cda463;font:500 .72rem/1.3 'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase}
-        .confirmation-header h1{margin:0;font:500 clamp(2rem,5vw,3rem)/1.08 'Fraunces',serif;letter-spacing:-.02em}
-        .confirmation-intro{margin:12px 0 0;color:#b9b3d6;font-size:.96rem;line-height:1.6}
-        .appointment-highlight{margin:24px 0;padding:22px 24px;border:1px solid rgba(205,164,99,.42);border-radius:18px;background:rgba(205,164,99,.09);display:flex;justify-content:space-between;gap:20px;align-items:center}
-        .appointment-highlight h2{margin:0;font:500 1.55rem/1.2 'Fraunces',serif}
-        .appointment-time{margin:7px 0 0;color:#e7d3a6;font:500 1rem/1.4 'JetBrains Mono',monospace}
-        .appointment-badge{white-space:nowrap;border:1px solid rgba(205,164,99,.4);border-radius:999px;padding:8px 12px;color:#e7d3a6;font-size:.72rem}
-        .confirmation-section{padding:25px 0;border-bottom:1px solid rgba(243,239,230,.1)}
-        .confirmation-details{display:grid;grid-template-columns:1fr 1fr;gap:18px 26px}
-        .confirmation-details div{min-width:0}
-        .confirmation-details .full-width{grid-column:1/-1}
-        .confirmation-details span{display:block;color:#a9a2c7;font-size:.75rem;margin-bottom:4px}
-        .confirmation-details strong{display:block;color:#f3efe6;font-size:.94rem;line-height:1.45;overflow-wrap:anywhere}
-        .reference-value{font-family:'JetBrains Mono',monospace;font-size:.82rem!important;color:#e7d3a6!important}
-        .confirmed{color:#8fd6a8!important}
-        .astrologer-card{margin-top:25px;padding:24px;border:1px solid rgba(205,164,99,.24);border-radius:18px;background:rgba(15,12,36,.35)}
-        .astrologer-card h2,.share-section h2{margin:0 0 15px;font:500 1.5rem/1.2 'Fraunces',serif}
-        .whatsapp-button{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:13px 18px;border-radius:999px;background:#25d366;color:#082b17;text-decoration:none;font-weight:600;font-size:.9rem;box-shadow:0 8px 25px rgba(37,211,102,.18)}
-        .whatsapp-button:hover{filter:brightness(1.05)}
-        .whatsapp-icon{width:22px;height:22px;flex:0 0 22px}
-        .share-section{padding:25px 0 20px}
-        .share-section p{margin:0;color:#b9b3d6;line-height:1.65;font-size:.9rem}
-        .share-section strong{color:#e7d3a6}
-        .confirmation-note{margin:0;color:#8f89aa;font-size:.75rem;line-height:1.55;padding-top:6px}
-        .confirmation-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}
-        .confirmation-primary-button,.confirmation-secondary-button{appearance:none;-webkit-appearance:none;width:100%;min-height:52px;border-radius:999px;padding:13px 18px;font:600 .92rem 'Work Sans',sans-serif;cursor:pointer}
-        .confirmation-primary-button{border:1px solid #cda463;background:linear-gradient(135deg,#e7d3a6,#cda463);color:#1a1440;box-shadow:0 8px 30px -8px rgba(205,164,99,.55)}
-        .confirmation-secondary-button{border:1px solid rgba(205,164,99,.55);background:#211a55;color:#e7d3a6}
-        .confirmation-primary-button:disabled,.confirmation-secondary-button:disabled{opacity:.6;cursor:not-allowed}
-        .confirmation-home-link{grid-column:1/-1;text-align:center;color:#b9b3d6;text-decoration:none;font-size:.85rem;padding:8px}
-        .confirmation-home-link:hover{color:#e7d3a6}
-        .confirmation-error-card,.confirmation-loading-card{padding:42px;text-align:center}
-        .confirmation-error-card h1{font:500 2rem 'Fraunces',serif;margin-bottom:12px}
-        .confirmation-error-card p,.confirmation-loading-card p{color:#b9b3d6;margin-bottom:22px}
-        .confirmation-home-button{display:inline-flex;padding:13px 22px;border-radius:999px;background:linear-gradient(135deg,#e7d3a6,#cda463);color:#1a1440;text-decoration:none;font-weight:600}
-        .confirmation-loading-icon{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;margin:0 auto 16px;background:#cda463;color:#171238;font-weight:700;font-size:24px}
-        @media(max-width:600px){.confirmation-page{padding:18px 12px 44px}.booking-receipt{padding:24px 18px;border-radius:22px}.confirmation-header{gap:14px;padding-bottom:22px}.confirmation-success-mark{width:44px;height:44px;flex-basis:44px;font-size:23px}.confirmation-header h1{font-size:2rem}.confirmation-intro{font-size:.9rem}.appointment-highlight{padding:18px;display:block}.appointment-badge{display:inline-block;margin-top:12px}.confirmation-details{grid-template-columns:1fr;gap:15px}.confirmation-details .full-width{grid-column:auto}.confirmation-actions{grid-template-columns:1fr}.confirmation-home-link{grid-column:auto}.astrologer-card h2,.share-section h2{font-size:1.35rem}}
-      `}</style>
-    </main>
-  );
+  const searchParams = useSearchParams(); const [data, setData] = useState<Confirmation | null>(null); const [error, setError] = useState(""); const [downloading, setDownloading] = useState<"pdf" | "png" | null>(null); const receiptRef = useRef<HTMLDivElement>(null);
+  useEffect(() => { const id = searchParams.get("booking"); if (!id) { setError("Booking reference is missing."); return; } fetch("/api/bookings/" + encodeURIComponent(id)).then(async (res) => { const body = await res.json(); if (!res.ok) throw new Error(body.error || "Unable to load booking."); setData(body); }).catch((err) => setError(err instanceof Error ? err.message : "Unable to load booking.")); }, [searchParams]);
+  const getReceiptCanvas = async () => { if (!receiptRef.current) throw new Error("Booking receipt is not ready yet."); const html2canvas = (await import("html2canvas")).default; return html2canvas(receiptRef.current, { scale: 2, backgroundColor: "#0d0b1f", useCORS: true, logging: false }); };
+  const downloadPng = async () => { if (!data) return; setDownloading("png"); try { const canvas = await getReceiptCanvas(); const link = document.createElement("a"); link.download = `nakshatra-readings-booking-${data.booking.id}.png`; link.href = canvas.toDataURL("image/png"); link.click(); } catch (err) { console.error("PNG_DOWNLOAD_ERROR", err); alert("Unable to download the booking confirmation image. Please try again."); } finally { setDownloading(null); } };
+  const downloadPdf = async () => { if (!data) return; setDownloading("pdf"); try { const [canvas, jsPdfModule] = await Promise.all([getReceiptCanvas(), import("jspdf")]); const { jsPDF } = jsPdfModule; const imageData = canvas.toDataURL("image/png"); const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" }); const pageWidth = pdf.internal.pageSize.getWidth(); const pageHeight = pdf.internal.pageSize.getHeight(); const margin = 12; const imageWidth = pageWidth - margin * 2; const imageHeight = (canvas.height * imageWidth) / canvas.width; if (imageHeight <= pageHeight - margin * 2) pdf.addImage(imageData, "PNG", margin, margin, imageWidth, imageHeight); else { let remainingHeight = imageHeight; pdf.addImage(imageData, "PNG", margin, margin, imageWidth, imageHeight); remainingHeight -= pageHeight - margin * 2; while (remainingHeight > 0) { pdf.addPage(); const position = margin - (imageHeight - remainingHeight); pdf.addImage(imageData, "PNG", margin, position, imageWidth, imageHeight); remainingHeight -= pageHeight - margin * 2; } } pdf.save(`nakshatra-readings-booking-${data.booking.id}.pdf`); } catch (err) { console.error("PDF_DOWNLOAD_ERROR", err); alert("Unable to download the booking PDF. Please try again."); } finally { setDownloading(null); } };
+  if (error) return <main className="confirmation-page"><div className="confirmation-shell"><div className="confirmation-card"><h1>Booking confirmation unavailable</h1><p>{error}</p><a className="confirmation-primary-button" href="/">Back to home</a></div></div></main>;
+  if (!data) return <main className="confirmation-page"><div className="confirmation-shell"><div className="confirmation-card loading-card"><div className="confirmation-success-mark">✓</div><p>Loading your secure booking confirmation…</p></div></div></main>;
+  const appointment = data.appointment ? formatAppointment(data.appointment.startsAt, data.appointment.endsAt) : null; const birth = parseBirthDetails(data.booking.birthDetails); const whatsappDigits = data.astrologer.phone.replace(/\D/g, "");
+  const whatsappMessage = encodeURIComponent([`Hello ${data.astrologer.name},`,`I have confirmed my ${data.booking.service} booking with Nakshatra Readings.`,"",`Booking reference: ${data.booking.id}`,`Service: ${data.booking.service}`,`Appointment: ${appointment ? `${appointment.date}, ${appointment.time}` : "Not available"}`,`Customer name: ${data.booking.name}`,`Birth date: ${birth.date}`,`Birth time: ${birth.time}`,`Birth place: ${birth.place}`,`Amount paid: ₹${data.booking.amount.toFixed(2)}`,"","Please confirm the appointment from your side."].join("\n")); const whatsappUrl = `https://wa.me/${whatsappDigits}?text=${whatsappMessage}`;
+  return <main className="confirmation-page"><div className="confirmation-shell"><div ref={receiptRef} className="booking-receipt">
+    <header className="confirmation-header"><div className="confirmation-success-mark">✓</div><div className="confirmation-title-wrap"><p className="confirmation-eyebrow">PAYMENT SUCCESSFUL</p><h1>Your booking is confirmed</h1><p className="confirmation-intro">Thank you, <strong>{data.booking.name}</strong>. Your payment has been verified successfully.</p></div></header>
+    {appointment && <section className="appointment-highlight"><div><p className="confirmation-eyebrow">YOUR APPOINTMENT</p><h2>{appointment.date}</h2><p className="appointment-time">{appointment.time}</p></div><span className="appointment-badge">Confirmed slot</span></section>}
+    <section className="confirmation-section"><p className="confirmation-eyebrow">CUSTOMER DETAILS</p><div className="confirmation-details"><div><span>Customer name</span><strong>{data.booking.name}</strong></div><div><span>Mobile number</span><strong>{data.booking.phone}</strong></div></div></section>
+    <section className="confirmation-section"><p className="confirmation-eyebrow">BIRTH DETAILS</p><div className="confirmation-details"><div><span>Birth date</span><strong>{birth.date}</strong></div><div><span>Birth time</span><strong>{birth.time}</strong></div><div className="full-width"><span>Birth place</span><strong>{birth.place}</strong></div></div></section>
+    <section className="confirmation-section"><p className="confirmation-eyebrow">BOOKING DETAILS</p><div className="confirmation-details"><div><span>Service booked</span><strong className="service-value">{data.booking.service}</strong></div><div><span>Amount paid</span><strong>₹{data.booking.amount.toFixed(2)}</strong></div><div><span>Booking reference</span><strong className="reference-value">{data.booking.id}</strong></div><div><span>Booked on</span><strong>{formatDate(data.booking.createdAt)}, {formatTime(data.booking.createdAt)} IST</strong></div><div><span>Status</span><strong className="confirmed">Confirmed</strong></div></div></section>
+    <section className="astrologer-card"><p className="confirmation-eyebrow">YOUR ASTROLOGER</p><h2>{data.astrologer.name}</h2><a className="whatsapp-button" href={whatsappUrl} target="_blank" rel="noopener noreferrer"><WhatsAppIcon/><span>Chat with {data.astrologer.name} on WhatsApp</span></a></section>
+    <section className="share-section"><p className="confirmation-eyebrow">NEXT STEP</p><h2>Share your booking confirmation</h2><p>You can share the downloaded PDF or image with your astrologer. <strong>A screenshot of this confirmation screen is also sufficient</strong> to share your booking details.</p></section>
+    <p className="confirmation-note">Please keep your booking reference and appointment date & time for your records.</p>
+  </div><div className="confirmation-actions"><button type="button" className="confirmation-primary-button" onClick={downloadPdf} disabled={downloading!==null}>{downloading === "pdf" ? "Preparing PDF…" : "Download PDF"}</button><button type="button" className="confirmation-secondary-button" onClick={downloadPng} disabled={downloading!==null}>{downloading === "png" ? "Preparing image…" : "Download Image"}</button><a className="confirmation-home-link" href="/">← Back to home</a></div></div>
+  <style jsx>{`
+    .confirmation-page{min-height:100vh;padding:32px 20px 64px;background:radial-gradient(circle at 50% -10%,#2a2164 0%,#0d0b1f 52%);color:#f3efe6;position:relative;z-index:2}.confirmation-shell{width:min(760px,100%);margin:0 auto}.booking-receipt,.confirmation-card{background:linear-gradient(160deg,#211a55,#171238);border:1px solid rgba(205,164,99,.28);border-radius:28px;padding:38px;box-shadow:0 24px 70px rgba(0,0,0,.35)}.confirmation-header{display:flex;gap:20px;align-items:flex-start;padding-bottom:28px;border-bottom:1px solid rgba(243,239,230,.12)}.confirmation-success-mark{width:52px;height:52px;flex:0 0 52px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#e7d3a6,#cda463);color:#171238;font-size:28px;font-weight:700;box-shadow:0 8px 28px rgba(205,164,99,.28)}.confirmation-eyebrow{margin:0 0 8px;color:#cda463;font:500 .72rem/1.3 'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase}.confirmation-header h1{margin:0;font:500 clamp(2rem,5vw,3rem)/1.08 'Fraunces',serif;letter-spacing:-.02em}.confirmation-intro{margin:12px 0 0;color:#b9b3d6;font-size:.96rem;line-height:1.6}.appointment-highlight{margin:24px 0;padding:22px 24px;border:1px solid rgba(205,164,99,.42);border-radius:18px;background:rgba(205,164,99,.09);display:flex;justify-content:space-between;gap:20px;align-items:center}.appointment-highlight h2{margin:0;font:500 1.55rem/1.2 'Fraunces',serif}.appointment-time{margin:7px 0 0;color:#e7d3a6;font:500 1rem/1.4 'JetBrains Mono',monospace}.appointment-badge{white-space:nowrap;border:1px solid rgba(205,164,99,.4);border-radius:999px;padding:8px 12px;color:#e7d3a6;font-size:.72rem}.confirmation-section{padding:25px 0;border-bottom:1px solid rgba(243,239,230,.1)}.confirmation-details{display:grid;grid-template-columns:1fr 1fr;gap:18px 26px}.confirmation-details div{min-width:0}.confirmation-details .full-width{grid-column:1/-1}.confirmation-details span{display:block;color:#a9a2c7;font-size:.75rem;margin-bottom:4px}.confirmation-details strong{display:block;color:#f3efe6;font-size:.94rem;line-height:1.45;overflow-wrap:anywhere}.service-value{color:#e7d3a6!important;font-size:1.05rem!important}.reference-value{font-family:'JetBrains Mono',monospace;font-size:.82rem!important;color:#e7d3a6!important}.confirmed{color:#8fd6a8!important}.astrologer-card{margin-top:25px;padding:24px;border:1px solid rgba(205,164,99,.24);border-radius:18px;background:rgba(15,12,36,.35)}.astrologer-card h2,.share-section h2{margin:0 0 15px;font:500 1.5rem/1.25 'Fraunces',serif}.whatsapp-button{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:13px 18px;border-radius:999px;background:#25D366;color:#071b10;text-decoration:none;font-weight:600;font-size:.9rem}.whatsapp-icon{width:22px;height:22px;flex:0 0 22px}.share-section{padding:25px 0 10px}.share-section p{color:#b9b3d6;font-size:.9rem;line-height:1.65}.confirmation-note{margin:18px 0 0;padding-top:18px;border-top:1px solid rgba(243,239,230,.1);color:#918bab;font-size:.76rem;line-height:1.5}.confirmation-actions{display:grid;grid-template-columns:1fr 1fr auto;align-items:center;gap:12px;padding-top:18px}.confirmation-primary-button,.confirmation-secondary-button{appearance:none;-webkit-appearance:none;border:0;min-height:48px;padding:13px 18px;border-radius:999px;font:600 .9rem/1.2 'Work Sans',sans-serif;cursor:pointer;text-align:center}.confirmation-primary-button{background:linear-gradient(135deg,#e7d3a6,#cda463);color:#171238}.confirmation-secondary-button{background:transparent;color:#e7d3a6;border:1px solid rgba(205,164,99,.55)}.confirmation-primary-button:disabled,.confirmation-secondary-button:disabled{opacity:.55;cursor:not-allowed}.confirmation-home-link{color:#cfc9e2;font-size:.86rem;white-space:nowrap}.loading-card{min-height:240px;display:grid;place-items:center;text-align:center}.confirmation-card h1{font:500 2rem/1.1 'Fraunces',serif;margin-bottom:12px}.confirmation-card p{color:#b9b3d6;margin-bottom:20px}@media(max-width:640px){.confirmation-page{padding:16px 12px 40px}.booking-receipt,.confirmation-card{padding:24px 18px;border-radius:22px}.confirmation-header{gap:12px;padding-bottom:22px}.confirmation-success-mark{width:46px;height:46px;flex-basis:46px;font-size:24px}.confirmation-header h1{font-size:2rem}.confirmation-intro{font-size:.88rem}.appointment-highlight{padding:18px;display:block}.appointment-highlight h2{font-size:1.4rem}.appointment-badge{display:inline-block;margin-top:12px}.confirmation-details{grid-template-columns:1fr;gap:15px}.confirmation-details .full-width{grid-column:auto}.confirmation-section{padding:21px 0}.astrologer-card{padding:20px}.share-section{padding-top:22px}.confirmation-actions{grid-template-columns:1fr 1fr;gap:10px}.confirmation-home-link{grid-column:1/-1;text-align:center;padding-top:4px}.confirmation-primary-button,.confirmation-secondary-button{width:100%;padding:13px 10px;font-size:.82rem}}@media(max-width:380px){.confirmation-actions{grid-template-columns:1fr}.confirmation-home-link{grid-column:auto}.confirmation-header{display:block}.confirmation-success-mark{margin-bottom:14px}}
+  `}</style></main>;
 }
 
-export default function BookingSuccessPage() {
-  return (
-    <Suspense fallback={<main className="confirmation-page"><div className="confirmation-card confirmation-loading-card"><p>Loading your secure booking confirmation…</p></div></main>}>
-      <BookingSuccessContent />
-    </Suspense>
-  );
-}
+export default function BookingSuccessPage() { return <Suspense fallback={<main className="confirmation-page"><div className="confirmation-shell"><div className="confirmation-card loading-card"><div className="confirmation-success-mark">✓</div><p>Loading your secure booking confirmation…</p></div></div></main>}><BookingSuccessContent /></Suspense>; }
