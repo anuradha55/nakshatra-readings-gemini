@@ -24,7 +24,7 @@ const CONTENT = {
       "Gain clarity when you are facing important decisions about career, relationships, money or family.",
       "Explore timing — understand periods that may support growth, change, opportunity or greater patience.",
     ],
-    choose: "Choose the area where you want clarity",
+    choose: "Our Services",
     closing: "You do not need to have all the answers before a reading. Bring the question that is on your mind, and let your birth chart provide another perspective.",
   },
   hi: {
@@ -36,7 +36,7 @@ const CONTENT = {
       "करियर, रिश्तों, धन या परिवार से जुड़े महत्वपूर्ण निर्णयों में अधिक स्पष्टता पाएं।",
       "समय को समझें — विकास, बदलाव, अवसर या अधिक धैर्य की आवश्यकता वाले दौर को पहचानें।",
     ],
-    choose: "जिस क्षेत्र में स्पष्टता चाहिए, उसे चुनें",
+    choose: "हमारी सेवाएँ",
     closing: "रीडिंग से पहले आपके पास सभी उत्तर होना जरूरी नहीं है। जो प्रश्न अभी आपके मन में है, तो घेऊन या, और अपनी जन्म कुंडली से एक नया दृष्टिकोण प्राप्त करें।",
   },
   mr: {
@@ -48,7 +48,7 @@ const CONTENT = {
       "करिअर, नातेसंबंध, पैसा किंवा कुटुंबाबाबत महत्त्वाचे निर्णय घेताना अधिक स्पष्टता मिळवा.",
       "योग्य वेळ समजून घ्या — प्रगती, बदल, संधी किंवा अधिक संयमाची गरज असलेले काळ ओळखा.",
     ],
-    choose: "ज्या विषयात स्पष्टता हवी तो निवडा",
+    choose: "आमच्या सेवा",
     closing: "रीडिंगसाठी येण्यापूर्वी तुमच्याकडे सर्व उत्तरे असणे आवश्यक नाही. सध्या तुमच्या मनात असलेला प्रश्न घेऊन या आणि तुमच्या जन्मकुंडलीतून एक वेगळा दृष्टिकोन मिळवा.",
   },
 } as const;
