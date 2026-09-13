@@ -21,6 +21,48 @@ const FOCUS_OPTIONS = [
   "Marriage", "Relationships", "Career", "Finance", "Family & Children", "Health", "Education", "Spirituality", "Legal & Litigation", "General life prediction", "Entire Kundli Analysis",
 ] as const;
 
+const SERVICE_LABELS: Record<Language, Record<(typeof FOCUS_OPTIONS)[number], string>> = {
+  en: {
+    "Marriage": "Marriage",
+    "Relationships": "Relationships",
+    "Career": "Career",
+    "Finance": "Finance",
+    "Family & Children": "Family & Children",
+    "Health": "Health",
+    "Education": "Education",
+    "Spirituality": "Spirituality",
+    "Legal & Litigation": "Legal & Litigation",
+    "General life prediction": "General life prediction",
+    "Entire Kundli Analysis": "Entire Kundli Analysis",
+  },
+  hi: {
+    "Marriage": "विवाह",
+    "Relationships": "रिश्ते",
+    "Career": "करियर",
+    "Finance": "वित्त",
+    "Family & Children": "परिवार और बच्चे",
+    "Health": "स्वास्थ्य",
+    "Education": "शिक्षा",
+    "Spirituality": "आध्यात्मिकता",
+    "Legal & Litigation": "कानूनी और मुकदमेबाजी",
+    "General life prediction": "सामान्य जीवन भविष्यवाणी",
+    "Entire Kundli Analysis": "संपूर्ण कुंडली विश्लेषण",
+  },
+  mr: {
+    "Marriage": "विवाह",
+    "Relationships": "नातेसंबंध",
+    "Career": "करिअर",
+    "Finance": "आर्थिक विषय",
+    "Family & Children": "कुटुंब आणि मुले",
+    "Health": "आरोग्य",
+    "Education": "शिक्षण",
+    "Spirituality": "अध्यात्म",
+    "Legal & Litigation": "कायदा आणि न्यायालयीन प्रकरणे",
+    "General life prediction": "सामान्य जीवन भविष्यवाणी",
+    "Entire Kundli Analysis": "संपूर्ण कुंडली विश्लेषण",
+  },
+};
+
 type Booking = { name: string; phone: string; email: string; service: string; birthdetails: string; slotId: string };
 type PlaceSuggestion = { name: string; admin1?: string; country?: string; latitude: number; longitude: number; timezone?: string };
 type SelectedSlot = { id: string; astrologerName: string; startsAt: string; endsAt: string };
@@ -111,10 +153,10 @@ export default function BookingForm({ language }: { language: Language }) {
     <div className="field"><label htmlFor="name">{t.name}</label><input name="name" id="name" type="text" required /></div>
     <div className="field"><label htmlFor="phone">{t.phone}</label><input name="phone" id="phone" type="tel" required /></div>
     <div className="field"><label htmlFor="email">{t.email}</label><input name="email" id="email" type="email" required autoComplete="email" placeholder="name@example.com" title="Please enter a valid email address, for example name@example.com" /></div>
-    <div className="field"><label htmlFor="service">{t.focus}</label><select name="service" id="service" value={service} onChange={(e) => { setService(e.target.value); setSelectedSlot(null); }}>{FOCUS_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}</select></div>
+    <div className="field"><label htmlFor="service">{t.focus}</label><select name="service" id="service" value={service} onChange={(e) => { setService(e.target.value); setSelectedSlot(null); }}>{FOCUS_OPTIONS.map((option) => <option key={option} value={option}>{SERVICE_LABELS[language][option]}</option>)}</select></div>
     <div className="ai-two booking-birth-stacked"><div className="field birth-date-field"><label htmlFor="booking-birth-date">{t.birthDate}</label><input name="birthDate" id="booking-birth-date" type="date" required /></div><div className="field"><label htmlFor="booking-birth-time">{t.birthTime}</label><input id="booking-birth-time" name="birthTime" type="time" value={birthTime} onChange={(e) => setBirthTime(e.target.value)} step="60" style={{ width: "100%", height: "46px", minWidth: 0, boxSizing: "border-box" }} /><small className="field-hint">{language === "hi" ? "सटीक घंटा और मिनट चुनें।" : language === "mr" ? "अचूक तास आणि मिनिट निवडा." : "Select the exact hour and minute."}</small></div></div>
     <div className="field place-field"><label htmlFor="booking-birth-place">{t.birthPlace}</label><div className="place-input-wrap"><input id="booking-birth-place" name="birthPlace" value={birthPlace} onChange={(e) => setBirthPlace(e.target.value)} onFocus={() => placeSuggestions.length && setShowPlaces(true)} placeholder={t.placePlaceholder} autoComplete="off" required />{placeLoading && <span className="place-loading">{t.searching}</span>}</div>{showPlaces && placeSuggestions.length > 0 && <div className="place-suggestions">{placeSuggestions.map((place, index) => <button type="button" className="place-option" key={`${place.name}-${place.latitude}-${index}`} onMouseDown={(event) => event.preventDefault()} onClick={() => selectPlace(place)}><strong>{place.name}</strong><span>{[place.admin1, place.country].filter(Boolean).join(", ")}</span></button>)}</div>}</div>
-    <AvailabilityPicker selectedSlotId={selectedSlot?.id ?? ""} onSelect={setSelectedSlot} refreshToken={availabilityRefreshToken} service={service} />
+    <AvailabilityPicker language={language} selectedSlotId={selectedSlot?.id ?? ""} onSelect={setSelectedSlot} refreshToken={availabilityRefreshToken} service={service} />
     <div className="price-line"><span>{t.sessionFee}</span><span className="amt">₹{bookingAmount}</span></div><button type="submit" className="btn-primary pay-btn" disabled={loading || ok}>{ok ? t.confirmed : loading ? (status.includes("Confirming") || status.includes("Payment received") ? t.confirming : t.preparing) : `Pay ₹${bookingAmount} & book session`}</button><p className="secure-note">Secure payment via Razorpay</p>
   </form></div></div></section>;
 }
