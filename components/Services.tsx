@@ -80,9 +80,19 @@ export default function Services({ language }: { language: Language }) {
           <p className="services-closing">{content.closing}</p>
         </div>
 
-        <div className="services-choice">
+        <div
+          className="services-choice"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-start",
+            gap: "16px",
+          }}
+        >
           <h3>{content.choose}</h3>
-          <a href="#booking" className="btn-primary">{language === "hi" ? "ज्योतिषी स्लॉट बुक करें" : language === "mr" ? "ज्योतिषी स्लॉट बुक करा" : "Book an Astrologer Slot"}</a>
+          <a href="#booking" className="btn-primary" style={{ display: "inline-flex", alignItems: "center" }}>
+            {language === "hi" ? "ज्योतिषी स्लॉट बुक करें" : language === "mr" ? "ज्योतिषी स्लॉट बुक करा" : "Book an Astrologer Slot"}
+          </a>
         </div>
 
         <div className="service-grid service-grid-all">
