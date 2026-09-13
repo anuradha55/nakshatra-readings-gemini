@@ -140,9 +140,6 @@ export async function POST(request: Request) {
 
     const location = await geocodeBirthPlace(birthPlace);
 
-    // The free prediction is tied to the actual birth details, not the
-    // customer's name or email. The geocoded coordinates prevent small
-    // spelling variations in the same birth place from bypassing the limit.
     const birthPlaceKey = `${location.latitude.toFixed(4)}:${location.longitude.toFixed(4)}`;
     const existingFreeClaim = await prisma.aiFreePredictionClaim.findUnique({
       where: {
@@ -183,12 +180,15 @@ export async function POST(request: Request) {
     const chart = buildChartData(kundli);
 
     const groq = new Groq({ apiKey, maxRetries: 0 });
+    const currentDate = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
 
     const systemPrompt = `You are the AI assistant for Nakshatra Readings, a Vedic-astrology consultation website.
 
 You are given a VERIFIED Vedic chart calculated by the application's astrology engine. The chart data, not your own guess, is the source of truth for planetary positions, houses, Nakshatras and Vimshottari Dasha.
 
 Your job is to interpret that chart in a clear, warm and convincing way for a customer who asked a specific question.\n\nRESPONSE LANGUAGE: ${language === "hi" ? "Hindi (Devanagari script)" : language === "mr" ? "Marathi (Devanagari script)" : "English"}. Write every section heading and the complete interpretation in this language.
+
+CURRENT DATE FOR FUTURE-TIMING INTERPRETATION: ${currentDate} (India time, Asia/Kolkata).
 
 MANDATORY RESPONSE STRUCTURE:
 ## 1. Birth Chart Snapshot
@@ -218,6 +218,11 @@ RULES:
 - Do not say a paid consultation is required to prevent a bad outcome.
 - The reading is an AI-generated astrology interpretation and is not a scientific prediction or guarantee.
 - Return the COMPLETE reading. Do not stop after the first few sections and do not omit the planetary table, Dasha, analysis, practical outlook or conclusion.
+- For any statement about a future event or future timing, NEVER present a date or year before the CURRENT DATE as an upcoming possibility. Do not say an event "will happen" or "is likely to happen" in a past period.
+- Historical periods may be mentioned only when explicitly identified as past context, for example "this period has already passed".
+- When discussing future timing, use only periods that begin on or after the CURRENT DATE. If an astrological indicator points to a past period, acknowledge that it has passed and identify the next supported future period instead, if the supplied chart data supports one.
+- Do not copy old example years or generic timing windows from prior patterns. Derive timing from the supplied chart and current Dasha data.
+- Distinguish clearly between historical Dasha periods and future predictive windows.
 - Aim for approximately 800-1200 words. Prioritize completeness over brevity.
 - End the response only after writing the full Conclusion section.`;
 
@@ -237,9 +242,6 @@ ${chartSummary}`;
       response = await groq.chat.completions.create({
         model,
         messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userMessage }],
-        // GPT-OSS uses part of the completion budget for reasoning. Use the
-        // current Groq parameter name and give the visible answer enough room
-        // to finish all six required sections.
         max_completion_tokens: 6000,
         reasoning_effort: "low",
         temperature: 0.35,
