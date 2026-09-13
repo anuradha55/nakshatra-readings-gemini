@@ -5,14 +5,20 @@ import { useEffect } from "react";
 const TIME_IDS = ["ai-time", "booking-birth-time"];
 const DATE_IDS = ["ai-date", "booking-birth-date"];
 
-function pad(value: number) { return String(value).padStart(2, "0"); }
+function pad(value: number) {
+  return String(value).padStart(2, "0");
+}
 
 function parseTime(value: string) {
   const match = value.match(/^(\d{1,2}):(\d{2})$/);
   if (!match) return { hour: 12, minute: 0, period: "AM" };
   const h = Number(match[1]);
   const minute = Number(match[2]);
-  return { hour: h === 0 ? 12 : h > 12 ? h - 12 : h, minute: Math.min(59, Math.max(0, minute)), period: h >= 12 ? "PM" : "AM" };
+  return {
+    hour: h === 0 ? 12 : h > 12 ? h - 12 : h,
+    minute: Math.min(59, Math.max(0, minute)),
+    period: h >= 12 ? "PM" : "AM",
+  };
 }
 
 function to24Hour(hour: number, minute: number, period: string) {
@@ -29,11 +35,6 @@ function enhanceTime(input: HTMLInputElement) {
   const wrapper = document.createElement("div");
   wrapper.className = "custom-time-picker";
   wrapper.setAttribute("data-for", input.id);
-  wrapper.style.height = "52px";
-  wrapper.style.minHeight = "52px";
-  wrapper.style.maxHeight = "52px";
-  wrapper.style.boxSizing = "border-box";
-  wrapper.style.overflow = "visible";
 
   const controls = document.createElement("div");
   controls.className = "custom-time-picker-controls";
@@ -44,20 +45,41 @@ function enhanceTime(input: HTMLInputElement) {
   minuteSelect.setAttribute("aria-label", "Minute");
   periodSelect.setAttribute("aria-label", "AM or PM");
 
-  for (let h = 1; h <= 12; h += 1) { const option = document.createElement("option"); option.value = String(h); option.textContent = pad(h); hourSelect.appendChild(option); }
-  for (let m = 0; m <= 59; m += 1) { const option = document.createElement("option"); option.value = String(m); option.textContent = pad(m); minuteSelect.appendChild(option); }
-  ["AM", "PM"].forEach((period) => { const option = document.createElement("option"); option.value = period; option.textContent = period; periodSelect.appendChild(option); });
+  for (let h = 1; h <= 12; h += 1) {
+    const option = document.createElement("option");
+    option.value = String(h);
+    option.textContent = pad(h);
+    hourSelect.appendChild(option);
+  }
+  for (let m = 0; m <= 59; m += 1) {
+    const option = document.createElement("option");
+    option.value = String(m);
+    option.textContent = pad(m);
+    minuteSelect.appendChild(option);
+  }
+  ["AM", "PM"].forEach((period) => {
+    const option = document.createElement("option");
+    option.value = period;
+    option.textContent = period;
+    periodSelect.appendChild(option);
+  });
 
-  const setFromInput = () => { const parsed = parseTime(input.value); hourSelect.value = String(parsed.hour); minuteSelect.value = String(parsed.minute); periodSelect.value = parsed.period; };
+  const setFromInput = () => {
+    const parsed = parseTime(input.value);
+    hourSelect.value = String(parsed.hour);
+    minuteSelect.value = String(parsed.minute);
+    periodSelect.value = parsed.period;
+  };
   const syncInput = () => {
     input.value = to24Hour(Number(hourSelect.value), Number(minuteSelect.value), periodSelect.value);
     input.dispatchEvent(new Event("input", { bubbles: true }));
     input.dispatchEvent(new Event("change", { bubbles: true }));
   };
+
   [hourSelect, minuteSelect, periodSelect].forEach((select) => select.addEventListener("change", syncInput));
-  setFromInput();
   input.addEventListener("change", setFromInput);
   input.addEventListener("input", setFromInput);
+  setFromInput();
 
   const icon = document.createElement("span");
   icon.className = "custom-time-picker-icon";
@@ -68,81 +90,51 @@ function enhanceTime(input: HTMLInputElement) {
   input.parentElement?.insertBefore(wrapper, input.nextSibling);
 }
 
-function isIOS() {
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-}
-
-function formatDateForDisplay(value: string) {
-  if (!value) return "Birth date";
-  const parts = value.split("-");
-  if (parts.length !== 3) return value;
-  return `${parts[2]}/${parts[1]}/${parts[0]}`;
-}
-
-function enhanceIOSBookingDate(input: HTMLInputElement) {
-  if (input.dataset.iosDatePickerReady === "true") return;
-  input.dataset.iosDatePickerReady = "true";
-
-  const wrapper = document.createElement("div");
-  wrapper.className = "ios-native-date-wrapper";
-  wrapper.setAttribute("data-for", input.id);
-
-  const value = document.createElement("span");
-  value.className = "ios-native-date-value";
-  value.textContent = formatDateForDisplay(input.value);
-
-  const icon = document.createElement("span");
-  icon.className = "ios-native-date-icon";
-  icon.setAttribute("aria-hidden", "true");
-  icon.textContent = "▣";
-
-  // The native date input must be INSIDE the visible wrapper. Previously it was
-  // inserted as a sibling, so its absolute hit target was positioned relative
-  // to the form/field rather than the 52px date box. On iOS Safari that could
-  // make the visible box non-interactive and prevent the native picker opening.
-  wrapper.append(value, icon, input);
-  input.parentElement?.insertBefore(wrapper, input);
-
-  input.classList.add("ios-native-date-input");
-  input.addEventListener("input", () => { value.textContent = formatDateForDisplay(input.value); });
-  input.addEventListener("change", () => { value.textContent = formatDateForDisplay(input.value); });
-}
-
 function enhanceDate(input: HTMLInputElement) {
   if (input.dataset.nativeDatePickerReady === "true") return;
   input.dataset.nativeDatePickerReady = "true";
-  input.style.display = "block";
-  input.style.position = "relative";
-  input.style.width = "100%";
-  input.style.minWidth = "0";
-  input.style.maxWidth = "100%";
-  input.style.height = "52px";
-  input.style.minHeight = "52px";
-  input.style.maxHeight = "52px";
-  input.style.boxSizing = "border-box";
-  input.style.opacity = "1";
-  input.style.overflow = "hidden";
-  input.style.pointerEvents = "auto";
-  input.style.zIndex = "2";
-  input.style.cursor = "pointer";
-  input.style.touchAction = "manipulation";
-  input.style.textAlign = "center";
-  input.style.padding = "0 42px";
-  input.style.margin = "0";
-  input.style.fontSize = "18px";
-  input.style.lineHeight = "52px";
-  input.style.verticalAlign = "middle";
 
-  if (isIOS() && input.id === "booking-birth-date") enhanceIOSBookingDate(input);
+  // Keep the native date input in React's DOM tree. Do not move it into a
+  // dynamically-created wrapper: React owns this node and moving it can cause
+  // a client-side hydration/runtime exception. Native iOS date inputs are also
+  // the most reliable way to open Safari's calendar picker.
+  Object.assign(input.style, {
+    display: "block",
+    position: "relative",
+    width: "100%",
+    minWidth: "0",
+    maxWidth: "100%",
+    height: "52px",
+    minHeight: "52px",
+    maxHeight: "52px",
+    boxSizing: "border-box",
+    opacity: "1",
+    pointerEvents: "auto",
+    zIndex: "2",
+    cursor: "pointer",
+    touchAction: "manipulation",
+    textAlign: "center",
+    padding: "0 42px",
+    margin: "0",
+    fontSize: "18px",
+    lineHeight: "52px",
+    verticalAlign: "middle",
+  });
 }
 
 export default function TimePickerEnhancer() {
   useEffect(() => {
     const apply = () => {
-      TIME_IDS.forEach((id) => { const input = document.getElementById(id) as HTMLInputElement | null; if (input) enhanceTime(input); });
-      DATE_IDS.forEach((id) => { const input = document.getElementById(id) as HTMLInputElement | null; if (input) enhanceDate(input); });
+      TIME_IDS.forEach((id) => {
+        const input = document.getElementById(id) as HTMLInputElement | null;
+        if (input) enhanceTime(input);
+      });
+      DATE_IDS.forEach((id) => {
+        const input = document.getElementById(id) as HTMLInputElement | null;
+        if (input) enhanceDate(input);
+      });
     };
+
     apply();
     const observer = new MutationObserver(apply);
     observer.observe(document.body, { childList: true, subtree: true });
@@ -150,47 +142,37 @@ export default function TimePickerEnhancer() {
   }, []);
 
   return <style dangerouslySetInnerHTML={{ __html: `
-    .custom-time-picker{position:relative;width:100%;max-width:100%;height:52px;min-height:52px;display:flex;flex-wrap:nowrap;align-items:center;justify-content:center;gap:0;background:rgba(15,12,36,.55);border:1px solid var(--line);border-radius:10px;padding:0 42px 0 10px;box-sizing:border-box;overflow:visible;min-width:0;touch-action:manipulation}
+    .custom-time-picker{position:relative;width:100%;max-width:100%;height:52px;min-height:52px;display:flex;align-items:center;justify-content:center;background:rgba(15,12,36,.55);border:1px solid var(--line);border-radius:10px;padding:0 42px 0 10px;box-sizing:border-box;min-width:0;touch-action:manipulation}
     .custom-time-picker:focus-within{outline:2px solid var(--gold);outline-offset:1px}
     .custom-time-picker-controls{display:flex;align-items:center;justify-content:center;flex:0 1 auto;min-width:0;width:auto;gap:0;text-align:center;overflow:visible}
-    .custom-time-picker select{appearance:none;-webkit-appearance:none;flex:0 0 auto;width:auto;min-width:0;max-width:none;height:40px;border:0;background:transparent;color:var(--text);font:inherit;font-size:18px;line-height:40px;text-align:center;text-align-last:center;cursor:pointer;outline:none;padding:0 2px;margin:0;box-sizing:border-box;overflow:visible;flex-shrink:0;touch-action:manipulation}
+    .custom-time-picker select{appearance:none;-webkit-appearance:none;flex:0 0 auto;width:auto;min-width:0;max-width:none;height:40px;border:0;background:transparent;color:var(--text);font:inherit;font-size:18px;line-height:40px;text-align:center;text-align-last:center;cursor:pointer;outline:none;padding:0 2px;margin:0;box-sizing:border-box;overflow:visible;touch-action:manipulation}
     .custom-time-picker select[aria-label="Hour"]{flex:0 0 32px;min-width:32px;width:32px}
-    .custom-time-picker select[aria-label="Minute"]{flex:0 0 34px;min-width:34px;width:34px;padding-left:4px;padding-right:4px;overflow:visible}
+    .custom-time-picker select[aria-label="Minute"]{flex:0 0 34px;min-width:34px;width:34px;padding-left:4px;padding-right:4px}
     .custom-time-picker select[aria-label="AM or PM"]{flex:0 0 46px;min-width:46px;width:46px}
-    .custom-time-picker-controls> :nth-child(2){flex:0 0 8px;width:8px;text-align:center;overflow:visible;font-size:18px;line-height:40px}
-    .custom-time-picker-icon{position:absolute;right:10px;top:50%;transform:translateY(-50%);width:18px;color:var(--gold-soft);font-size:18px;line-height:1;text-align:center;pointer-events:none;overflow:visible}
+    .custom-time-picker-controls> :nth-child(2){flex:0 0 8px;width:8px;text-align:center;font-size:18px;line-height:40px}
+    .custom-time-picker-icon{position:absolute;right:10px;top:50%;transform:translateY(-50%);width:18px;color:var(--gold-soft);font-size:18px;line-height:1;text-align:center;pointer-events:none}
     .custom-time-picker select option{background:#151126;color:#fff}
 
-    input[data-native-date-picker-ready="true"]{display:block!important;position:relative!important;width:100%!important;inline-size:100%!important;min-width:0!important;min-inline-size:0!important;max-width:100%!important;max-inline-size:100%!important;height:52px!important;min-height:52px!important;max-height:52px!important;opacity:1!important;pointer-events:auto!important;z-index:2!important;box-sizing:border-box!important;overflow:hidden!important;cursor:pointer!important;touch-action:manipulation!important;text-align:center!important;padding:0 42px!important;margin:0!important;font-size:18px!important;line-height:52px!important;vertical-align:middle!important;display:block!important;}
+    input[data-native-date-picker-ready="true"]{display:block!important;position:relative!important;width:100%!important;inline-size:100%!important;min-width:0!important;min-inline-size:0!important;max-width:100%!important;max-inline-size:100%!important;height:52px!important;min-height:52px!important;max-height:52px!important;opacity:1!important;pointer-events:auto!important;z-index:2!important;box-sizing:border-box!important;cursor:pointer!important;touch-action:manipulation!important;text-align:center!important;padding:0 42px!important;margin:0!important;font-size:18px!important;line-height:52px!important;vertical-align:middle!important;}
     input[data-native-date-picker-ready="true"]::-webkit-calendar-picker-indicator{opacity:1!important;display:block!important;cursor:pointer!important;width:22px;height:22px;}
-    input[data-native-date-picker-ready="true"]::-webkit-date-and-time-value{text-align:center;min-height:52px;line-height:52px!important;font-size:18px;display:flex;align-items:center;justify-content:center;}
+    input[data-native-date-picker-ready="true"]::-webkit-date-and-time-value{text-align:center;min-height:52px;line-height:52px!important;font-size:18px;}
     input[data-native-date-picker-ready="true"]::-webkit-datetime-edit{text-align:center;padding:0;line-height:52px!important;font-size:18px;vertical-align:middle;}
     input[data-native-date-picker-ready="true"]::-webkit-datetime-edit-fields-wrapper{text-align:center;padding:0;line-height:52px!important;font-size:18px;vertical-align:middle;}
-
-    /* iOS-only booking Birth Date shell. The visible box contains the native date input as its full-size hit target. */
-    .ios-native-date-wrapper{position:relative;width:100%;min-width:0;max-width:100%;height:52px;min-height:52px;max-height:52px;display:flex;align-items:center;justify-content:center;box-sizing:border-box;overflow:hidden;background:rgba(15,12,36,.55);border:1px solid var(--line);border-radius:10px;padding:0 42px 0 14px;color:var(--text);font-size:18px;line-height:52px;text-align:center;}
-    .ios-native-date-value{display:block;width:100%;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;line-height:52px;pointer-events:none;}
-    .ios-native-date-icon{position:absolute;right:12px;top:50%;width:20px;height:20px;transform:translateY(-50%);pointer-events:none;color:var(--gold-soft);font-size:18px;line-height:20px;text-align:center;}
-    .ios-native-date-input{position:absolute!important;inset:0!important;width:100%!important;inline-size:100%!important;min-width:0!important;min-inline-size:0!important;max-width:100%!important;max-inline-size:100%!important;height:100%!important;min-height:0!important;max-height:none!important;margin:0!important;padding:0!important;border:0!important;box-sizing:border-box!important;opacity:.01!important;background:transparent!important;color:transparent!important;z-index:3!important;pointer-events:auto!important;cursor:pointer!important;overflow:hidden!important;appearance:auto!important;-webkit-appearance:auto!important;}
-    .ios-native-date-input::-webkit-calendar-picker-indicator{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;margin:0!important;padding:0!important;opacity:0!important;cursor:pointer!important;}
 
     @media(max-width:860px){
       .ai-form{display:flex!important;flex-direction:column!important;gap:16px!important;width:100%!important;min-width:0!important;max-width:100%!important;overflow:visible!important;}
       .ai-form>.field{width:100%!important;min-width:0!important;max-width:none!important;margin-bottom:0!important;box-sizing:border-box!important;}
-      .ai-form>.field:has(#ai-date){width:100%!important;min-width:0!important;max-width:none!important;box-sizing:border-box!important;overflow:hidden!important;}
-      .ai-form>.field:has(#ai-date)>#ai-date{display:block!important;width:100%!important;inline-size:100%!important;min-width:0!important;min-inline-size:0!important;max-width:100%!important;max-inline-size:100%!important;box-sizing:border-box!important;}
+      .ai-form>.field:has(#ai-date){overflow:hidden!important;}
+      .ai-form>.field:has(#ai-date)>#ai-date{width:100%!important;inline-size:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important;}
       .ai-form>.birth-time-place-row{display:flex!important;flex-direction:column!important;gap:16px!important;width:100%!important;min-width:0!important;max-width:none!important;margin:0!important;grid-template-columns:none!important;}
       .ai-form>.birth-time-place-row>.field{width:100%!important;min-width:0!important;max-width:none!important;margin-bottom:0!important;box-sizing:border-box!important;}
       .booking-panel form .booking-birth-stacked{display:flex!important;flex-direction:column!important;gap:16px!important;width:100%!important;min-width:0!important;max-width:none!important;margin:0!important;grid-template-columns:none!important;box-sizing:border-box!important;}
       .booking-panel form .booking-birth-stacked>.field{width:100%!important;min-width:0!important;max-width:none!important;margin-bottom:0!important;box-sizing:border-box!important;overflow:hidden!important;}
-      .booking-panel form .booking-birth-stacked>.field:has(#booking-birth-date)>#booking-birth-date{display:block!important;width:100%!important;inline-size:100%!important;min-width:0!important;min-inline-size:0!important;max-width:100%!important;max-inline-size:100%!important;box-sizing:border-box!important;}
-      .booking-panel form .birth-date-field .ios-native-date-wrapper{width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important;}
-
+      .booking-panel form .booking-birth-stacked>.field:has(#booking-birth-date)>#booking-birth-date{width:100%!important;inline-size:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important;}
       .ai-form input,.ai-form select,.ai-form textarea,.ai-form .custom-time-picker,.booking-panel form input,.booking-panel form select,.booking-panel form textarea,.booking-panel form .custom-time-picker{min-width:0!important;box-sizing:border-box!important;}
-      .ai-form input[data-native-date-picker-ready="true"],.booking-panel form input[data-native-date-picker-ready="true"]{width:100%!important;inline-size:100%!important;min-width:0!important;min-inline-size:0!important;max-width:100%!important;max-inline-size:100%!important;box-sizing:border-box!important;text-align:center!important;padding:0 42px!important;font-size:18px!important;line-height:52px!important;overflow:hidden!important;}
-      .ai-form input[data-native-date-picker-ready="true"]::-webkit-date-and-time-value,.booking-panel form input[data-native-date-picker-ready="true"]::-webkit-date-and-time-value{min-height:52px!important;line-height:52px!important;display:flex!important;align-items:center!important;justify-content:center!important;}
-      .ai-form input[data-native-date-picker-ready="true"]::-webkit-datetime-edit,.booking-panel form input[data-native-date-picker-ready="true"]::-webkit-datetime-edit,.ai-form input[data-native-date-picker-ready="true"]::-webkit-datetime-edit-fields-wrapper,.booking-panel form input[data-native-date-picker-ready="true"]::-webkit-datetime-edit-fields-wrapper{line-height:52px!important;font-size:18px!important;vertical-align:middle!important;text-align:center!important;}
-
+      .ai-form input[data-native-date-picker-ready="true"],.booking-panel form input[data-native-date-picker-ready="true"]{width:100%!important;inline-size:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important;text-align:center!important;padding:0 42px!important;font-size:18px!important;line-height:52px!important;}
+      .ai-form input[data-native-date-picker-ready="true"]::-webkit-date-and-time-value,.booking-panel form input[data-native-date-picker-ready="true"]::-webkit-date-and-time-value{min-height:52px!important;line-height:52px!important;}
+      .ai-form input[data-native-date-picker-ready="true"]::-webkit-datetime-edit,.booking-panel form input[data-native-date-picker-ready="true"]::-webkit-datetime-edit,.ai-form input[data-native-date-picker-ready="true"]::-webkit-datetime-edit-fields-wrapper,.booking-panel form input[data-native-date-picker-ready="true"]::-webkit-datetime-edit-fields-wrapper{line-height:52px!important;font-size:18px!important;text-align:center!important;}
       .ai-form .custom-time-picker,.booking-panel form .custom-time-picker{align-items:center!important;justify-content:center!important;text-align:center!important;}
       .ai-form .custom-time-picker-controls,.booking-panel form .custom-time-picker-controls{align-items:center!important;justify-content:center!important;text-align:center!important;}
       .ai-form .custom-time-picker select,.booking-panel form .custom-time-picker select{font-size:18px!important;line-height:40px!important;}
@@ -203,7 +185,7 @@ export default function TimePickerEnhancer() {
       .custom-time-picker select[aria-label="Hour"]{flex-basis:32px;min-width:32px;width:32px}
       .custom-time-picker select[aria-label="Minute"]{flex-basis:34px;min-width:34px;width:34px;padding-left:4px;padding-right:4px}
       .custom-time-picker select[aria-label="AM or PM"]{flex-basis:46px;min-width:46px;width:46px}
-      .custom-time-picker-controls> :nth-child(2){flex-basis:6px;width:6px;overflow:visible;font-size:18px;line-height:40px}
+      .custom-time-picker-controls> :nth-child(2){flex-basis:6px;width:6px;font-size:18px;line-height:40px}
       .custom-time-picker-icon{right:10px;width:16px;font-size:18px}
     }
   ` }} />;
