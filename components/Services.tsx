@@ -14,6 +14,48 @@ const SERVICES = [
   ["◈", "Entire Kundli Analysis", "₹500", "60 min"],
 ] as const;
 
+const SERVICE_LABELS: Record<Language, Record<string, string>> = {
+  en: {
+    "Marriage": "Marriage",
+    "Relationships": "Relationships",
+    "Career": "Career",
+    "Finance": "Finance",
+    "Family & Children": "Family & Children",
+    "Health": "Health",
+    "Education": "Education",
+    "Spirituality": "Spirituality",
+    "Legal & Litigation": "Legal & Litigation",
+    "General life prediction": "General life prediction",
+    "Entire Kundli Analysis": "Entire Kundli Analysis",
+  },
+  hi: {
+    "Marriage": "विवाह",
+    "Relationships": "रिश्ते",
+    "Career": "करियर",
+    "Finance": "वित्त",
+    "Family & Children": "परिवार और बच्चे",
+    "Health": "स्वास्थ्य",
+    "Education": "शिक्षा",
+    "Spirituality": "आध्यात्मिकता",
+    "Legal & Litigation": "कानूनी और मुकदमेबाजी",
+    "General life prediction": "सामान्य जीवन भविष्यवाणी",
+    "Entire Kundli Analysis": "संपूर्ण कुंडली विश्लेषण",
+  },
+  mr: {
+    "Marriage": "विवाह",
+    "Relationships": "नातेसंबंध",
+    "Career": "करिअर",
+    "Finance": "आर्थिक विषय",
+    "Family & Children": "कुटुंब आणि मुले",
+    "Health": "आरोग्य",
+    "Education": "शिक्षण",
+    "Spirituality": "अध्यात्म",
+    "Legal & Litigation": "कायदा आणि न्यायालयीन प्रकरणे",
+    "General life prediction": "सामान्य जीवन भविष्यवाणी",
+    "Entire Kundli Analysis": "संपूर्ण कुंडली विश्लेषण",
+  },
+};
+
 const CONTENT = {
   en: {
     title: "Your Kundli — A Personal Map of Life",
@@ -102,7 +144,7 @@ export default function Services({ language }: { language: Language }) {
                 <span className="glyph service-glyph">{glyph}</span>
                 <span className="service-duration">{duration}</span>
               </div>
-              <h3>{title}</h3>
+              <h3>{SERVICE_LABELS[language][title]}</h3>
               <span className="price">{price} / {t.perSession}</span>
             </div>
           ))}
