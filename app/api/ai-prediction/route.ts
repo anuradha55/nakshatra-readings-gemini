@@ -141,34 +141,19 @@ export async function POST(request: Request) {
     const location = await geocodeBirthPlace(birthPlace, language);
     const birthPlaceKey = `${location.latitude.toFixed(4)}:${location.longitude.toFixed(4)}`;
     const existingFreeClaim = await prisma.aiFreePredictionClaim.findUnique({
-      where: {
-        birthDate_birthTime_birthPlaceKey: {
-          birthDate,
-          birthTime,
-          birthPlaceKey,
-        },
-      },
+      where: { birthDate_birthTime_birthPlaceKey: { birthDate, birthTime, birthPlaceKey } },
       select: { id: true },
     });
 
     let paidPrediction = false;
     if (existingFreeClaim) {
       if (!paidPaymentId) {
-        return NextResponse.json(
-          {
-            error: "The free AI prediction has already been used. You can get additional AI predictions for ₹10 each.",
-            freePredictionUsed: true,
-            paidPrice: 10,
-          },
-          { status: 429, headers: { "Cache-Control": "no-store" } }
-        );
+        return NextResponse.json({ error: "The free AI prediction has already been used. You can get additional AI predictions for ₹10 each.", freePredictionUsed: true, paidPrice: 10 }, { status: 429, headers: { "Cache-Control": "no-store" } });
       }
-
       const payment = await prisma.aiPredictionPayment.findUnique({ where: { id: paidPaymentId } });
       if (!payment || payment.status !== "PAID" || payment.consumedAt || payment.birthDate !== birthDate || payment.birthTime !== birthTime || payment.birthPlaceKey !== birthPlaceKey) {
         return NextResponse.json({ error: "A valid ₹10 AI prediction payment is required." }, { status: 402 });
       }
-
       paidPrediction = true;
     }
 
@@ -177,15 +162,23 @@ export async function POST(request: Request) {
     const kundli = getKundli(birthInstantUtc, observer, { houseSystem: "whole_sign", ayanamsa: "lahiri" });
     const chartSummary = buildChartSummary(kundli);
     const chart = buildChartData(kundli);
+    const currentDate = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+    const now = new Date();
+    const futureDashaTimeline = (kundli.dasha?.mahadashas ?? [])
+      .filter((d: any) => d?.endTime && new Date(String(d.endTime)).getTime() >= now.getTime())
+      .slice(0, 8)
+      .map((d: any) => `${d.planet}: ${formatDate(d.startTime)} – ${formatDate(d.endTime)}`)
+      .join("\n");
 
     const groq = new Groq({ apiKey, maxRetries: 0 });
-    const currentDate = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
 
     const systemPrompt = `You are the AI assistant for Nakshatra Readings, a Vedic-astrology consultation website.
 
 You are given a VERIFIED Vedic chart calculated by the application's astrology engine. The chart data, not your own guess, is the source of truth for planetary positions, houses, Nakshatras and Vimshottari Dasha.
 
-Your job is to interpret that chart in a clear, warm and convincing way for a customer who asked a specific question.\n\nRESPONSE LANGUAGE: ${language === "hi" ? "Hindi (Devanagari script)" : language === "mr" ? "Marathi (Devanagari script)" : "English"}. Write every section heading and the complete interpretation in this language.
+Your job is to interpret that chart in a clear, warm and convincing way for a customer who asked a specific question.
+
+RESPONSE LANGUAGE: ${language === "hi" ? "Hindi (Devanagari script)" : language === "mr" ? "Marathi (Devanagari script)" : "English"}. Write every section heading and the complete interpretation in this language.
 
 CURRENT DATE FOR FUTURE-TIMING INTERPRETATION: ${currentDate} (India time, Asia/Kolkata).
 
@@ -208,6 +201,15 @@ Give 3-5 concise points about likely themes, opportunities and cautions. Use ast
 ## 6. Conclusion
 Give a concise, personalized conclusion that directly answers the question.
 
+STRICT FUTURE-TIMING RULES:
+- Today is ${currentDate}. Treat this as the cutoff for all future predictions.
+- Never present a date or year before today as an upcoming or future event.
+- Do not write that marriage, career, finance, relationship or another event "will happen" or "is likely" in a period that has already ended.
+- Historical dates may be mentioned only when explicitly labelled as past context.
+- For future timing, use the CURRENT or NEXT supported period from the supplied chart. Prefer the future Dasha windows explicitly provided in the user data below.
+- If a commonly expected/example year is in the past, do not reuse it. Recalculate the interpretation from the supplied Dasha timeline.
+- If the chart does not support a reliable future year, say that the timing cannot be narrowed reliably instead of inventing a year.
+
 RULES:
 - Never alter or invent the supplied planetary positions, houses, degrees, Nakshatras or Dasha dates.
 - Do not claim that you independently calculated the Kundli; say the chart was calculated from the supplied birth details by the site's astrology engine when relevant.
@@ -217,11 +219,6 @@ RULES:
 - Do not say a paid consultation is required to prevent a bad outcome.
 - The reading is an AI-generated astrology interpretation and is not a scientific prediction or guarantee.
 - Return the COMPLETE reading. Do not stop after the first few sections and do not omit the planetary table, Dasha, analysis, practical outlook or conclusion.
-- For any statement about a future event or future timing, NEVER present a date or year before the CURRENT DATE as an upcoming possibility. Do not say an event "will happen" or "is likely to happen" in a past period.
-- Historical periods may be mentioned only when explicitly identified as past context, for example "this period has already passed".
-- When discussing future timing, use only periods that begin on or after the CURRENT DATE. If an astrological indicator points to a past period, acknowledge that it has passed and identify the next supported future period instead, if the supplied chart data supports one.
-- Do not copy old example years or generic timing windows from prior patterns. Derive timing from the supplied chart and current Dasha data.
-- Distinguish clearly between historical Dasha periods and future predictive windows.
 - Aim for approximately 800-1200 words. Prioritize completeness over brevity.
 - End the response only after writing the full Conclusion section.`;
 
@@ -234,17 +231,14 @@ Resolved place: ${location.resolvedName}
 Question: ${question}
 
 CALCULATED VEDIC CHART
-${chartSummary}`;
+${chartSummary}
+
+FUTURE DASHA WINDOWS AVAILABLE FOR PREDICTION
+${futureDashaTimeline || "No future Dasha window could be determined from the supplied chart."}`;
 
     let response;
     try {
-      response = await groq.chat.completions.create({
-        model,
-        messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userMessage }],
-        max_completion_tokens: 6000,
-        reasoning_effort: "low",
-        temperature: 0.35,
-      });
+      response = await groq.chat.completions.create({ model, messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userMessage }], max_completion_tokens: 6000, reasoning_effort: "low", temperature: 0.35 });
     } catch (error) {
       if (error instanceof Groq.APIError && error.status === 429) {
         const retryAfterHeader = error.headers?.get("retry-after");
@@ -263,53 +257,26 @@ ${chartSummary}`;
     const choice = response.choices[0];
     const answer = choice?.message?.content?.trim();
     if (!answer) return NextResponse.json({ error: "No prediction was generated. Please try again." }, { status: 502 });
-
-    if (choice?.finish_reason === "length") {
-      console.warn("AI_PREDICTION_TRUNCATED", {
-        finishReason: choice.finish_reason,
-        completionTokens: response.usage?.completion_tokens,
-        model,
-      });
-    }
+    if (choice?.finish_reason === "length") console.warn("AI_PREDICTION_TRUNCATED", { finishReason: choice.finish_reason, completionTokens: response.usage?.completion_tokens, model });
 
     try {
       if (paidPrediction) {
         const consumed = await prisma.$transaction(async (tx) => {
-          const result = await tx.aiPredictionPayment.updateMany({
-            where: { id: paidPaymentId, status: "PAID", consumedAt: null },
-            data: { consumedAt: new Date() },
-          });
+          const result = await tx.aiPredictionPayment.updateMany({ where: { id: paidPaymentId, status: "PAID", consumedAt: null }, data: { consumedAt: new Date() } });
           if (result.count !== 1) return false;
-          await tx.aiPrediction.create({
-            data: { email, name: name || null, birthDate, birthTime, birthPlace, question, answer, model },
-          });
+          await tx.aiPrediction.create({ data: { email, name: name || null, birthDate, birthTime, birthPlace, question, answer, model } });
           return true;
         });
-        if (!consumed) {
-          return NextResponse.json({ error: "This AI prediction payment has already been used." }, { status: 409 });
-        }
+        if (!consumed) return NextResponse.json({ error: "This AI prediction payment has already been used." }, { status: 409 });
       } else {
         await prisma.$transaction([
-          prisma.aiFreePredictionClaim.create({
-            data: { birthDate, birthTime, birthPlaceKey },
-          }),
-          prisma.aiPrediction.create({
-            data: { email, name: name || null, birthDate, birthTime, birthPlace, question, answer, model },
-          }),
+          prisma.aiFreePredictionClaim.create({ data: { birthDate, birthTime, birthPlaceKey } }),
+          prisma.aiPrediction.create({ data: { email, name: name || null, birthDate, birthTime, birthPlace, question, answer, model } }),
         ]);
       }
     } catch (databaseError) {
       const code = (databaseError as { code?: string }).code;
-      if (code === "P2002") {
-        return NextResponse.json(
-          {
-            error: "A free AI prediction has already been used for these birth details. You can get additional AI predictions for ₹10 each.",
-            freePredictionUsed: true,
-            paidPrice: 10,
-          },
-          { status: 429, headers: { "Cache-Control": "no-store" } }
-        );
-      }
+      if (code === "P2002") return NextResponse.json({ error: "A free AI prediction has already been used for these birth details. You can get additional AI predictions for ₹10 each.", freePredictionUsed: true, paidPrice: 10 }, { status: 429, headers: { "Cache-Control": "no-store" } });
       console.error("AI_PREDICTION_SAVE_ERROR", databaseError);
       return NextResponse.json({ error: "Unable to securely save your free prediction. Please try again." }, { status: 500 });
     }
