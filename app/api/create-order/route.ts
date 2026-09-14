@@ -6,7 +6,7 @@ import { releaseExpiredHolds, reserveSlot } from "@/lib/availability";
 export const runtime = "nodejs";
 
 // Prices are stored in rupees. Razorpay requires paise.
-const STANDARD_BOOKING_AMOUNT_RUPEES = 100;
+const STANDARD_BOOKING_AMOUNT_RUPEES = 10;
 const COMPLETE_KUNDLI_AMOUNT_RUPEES = 500;
 const SLOT_CONFLICT_MESSAGE = "This appointment slot is no longer available. Please choose another slot.";
 
