@@ -1,26 +1,46 @@
-/* Final AI mobile containment for Android and iOS. */
+/* Mobile AI layout: consistent, readable presentation on Android and iOS. */
 @media (max-width: 860px) {
   .ai-section .ai-panel,
   .ai-section .ai-form,
   .ai-section .ai-result,
   .ai-section .ai-detailed-report,
-  .ai-section .ai-answer {
+  .ai-section .ai-answer,
+  .ai-section .ai-conclusion,
+  .ai-section .ai-cta {
     width: 100% !important;
     min-width: 0 !important;
     max-width: 100% !important;
     box-sizing: border-box !important;
   }
 
-  .ai-section .ai-panel { grid-template-columns: minmax(0, 1fr) !important; }
-  .ai-section .ai-form { display: flex !important; flex-direction: column !important; align-items: stretch !important; gap: 16px !important; overflow: visible !important; }
+  .ai-section .ai-panel {
+    grid-template-columns: minmax(0, 1fr) !important;
+    overflow: hidden !important;
+  }
+
+  .ai-section .ai-form {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 16px !important;
+    overflow: visible !important;
+  }
 
   .ai-section .ai-form > .field,
   .ai-section .ai-form > .birth-time-place-row,
   .ai-section .ai-form > .birth-time-place-row > .field {
-    width: 100% !important; min-width: 0 !important; max-width: 100% !important; box-sizing: border-box !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
   }
 
-  .ai-section .ai-form > .birth-time-place-row { display: flex !important; flex-direction: column !important; gap: 16px !important; margin: 0 !important; }
+  .ai-section .ai-form > .birth-time-place-row {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+    margin: 0 !important;
+  }
 
   .ai-section .ai-form input,
   .ai-section .ai-form textarea,
@@ -28,13 +48,133 @@
   .ai-section .ai-form .custom-date-picker,
   .ai-section .ai-form .custom-time-picker,
   .ai-section .ai-form .ai-btn {
-    width: 100% !important; min-width: 0 !important; max-width: 100% !important; box-sizing: border-box !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
   }
 
-  .ai-section .ai-form .place-suggestions { width: 100% !important; max-width: 100% !important; box-sizing: border-box !important; overflow-x: hidden !important; }
-  .ai-section .ai-form .place-option { width: 100% !important; min-width: 0 !important; max-width: 100% !important; box-sizing: border-box !important; text-align: left !important; }
-  .ai-section .ai-result { overflow: hidden !important; }
-  .ai-section .ai-table-wrap { width: 100% !important; max-width: 100% !important; overflow-x: auto !important; -webkit-overflow-scrolling: touch !important; }
-  .ai-section .ai-table { min-width: 560px !important; }
-  .ai-section .ai-answer, .ai-section .ai-conclusion, .ai-section .ai-cta { overflow-wrap: anywhere !important; }
+  .ai-section .ai-form .place-suggestions {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+  }
+
+  .ai-section .ai-form .place-option {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    text-align: left !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  /* Keep the generated reading inside the mobile viewport instead of letting
+     long AI text, tables or headings distort the card. */
+  .ai-section .ai-result {
+    display: block !important;
+    overflow: hidden !important;
+    padding: 24px 18px !important;
+    margin-top: 20px !important;
+    border-radius: 22px !important;
+  }
+
+  .ai-section .ai-result-head {
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    margin-bottom: 18px !important;
+  }
+
+  .ai-section .ai-result-head h3 {
+    margin: 0 0 8px !important;
+    font-size: clamp(24px, 7vw, 32px) !important;
+    line-height: 1.15 !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  .ai-section .ai-conclusion {
+    padding: 18px !important;
+    margin: 0 0 18px !important;
+    border-radius: 18px !important;
+    overflow: hidden !important;
+  }
+
+  .ai-section .ai-conclusion p,
+  .ai-section .ai-answer p,
+  .ai-section .ai-answer li {
+    font-size: 16px !important;
+    line-height: 1.65 !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  .ai-section .ai-detail-btn,
+  .ai-section .ai-cta .btn-primary {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .ai-section .ai-detailed-report {
+    display: block !important;
+    overflow: hidden !important;
+    margin-top: 18px !important;
+  }
+
+  .ai-section .ai-table-wrap {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    border-radius: 12px !important;
+  }
+
+  .ai-section .ai-table {
+    min-width: 560px !important;
+  }
+
+  .ai-section .ai-answer {
+    overflow-wrap: anywhere !important;
+    word-break: normal !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  .ai-section .ai-cta {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 16px !important;
+    margin-top: 22px !important;
+    padding: 18px !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+
+  .ai-section .ai-cta p {
+    line-height: 1.55 !important;
+    overflow-wrap: anywhere !important;
+  }
+}
+
+/* Android Chrome/WebView can apply a narrower visual text area to native
+   controls. Keep all AI form controls explicitly contained without changing
+   the native date/time picker behavior. */
+@media (max-width: 860px) and (pointer: coarse) {
+  .ai-section .ai-form .field,
+  .ai-section .ai-form .place-input-wrap {
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .ai-section .ai-form input,
+  .ai-section .ai-form textarea,
+  .ai-section .ai-form select {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
 }
