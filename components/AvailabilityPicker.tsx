@@ -19,9 +19,9 @@ function slotDurationMinutes(slot: Slot) {
 }
 
 const COPY = {
-  en: { title: "Choose an available appointment slot", oneHour: "1-hour sessions", fifteen: "15-minute sessions", shown: "are shown based on your selected service. All times are in IST.", loading: "Checking astrologer availability…", unavailable: "No {session} are available yet. Please check again later.", date: "Choose appointment date", selected: "Selected slot. It will be held for 5 minutes while payment is completed.", hour: "1 hour", min: "15 min" },
-  hi: { title: "उपलब्ध अपॉइंटमेंट स्लॉट चुनें", oneHour: "1 घंटे के सत्र", fifteen: "15 मिनट के सत्र", shown: "आपकी चुनी हुई सेवा के अनुसार दिखाए गए हैं। सभी समय IST में हैं।", loading: "ज्योतिषी की उपलब्धता जाँची जा रही है…", unavailable: "अभी कोई {session} उपलब्ध नहीं हैं। कृपया बाद में फिर देखें।", date: "अपॉइंटमेंट की तारीख चुनें", selected: "स्लॉट चुन लिया गया है। भुगतान पूरा होने तक इसे 5 मिनट के लिए सुरक्षित रखा जाएगा।", hour: "1 घंटा", min: "15 मिनट" },
-  mr: { title: "उपलब्ध अपॉइंटमेंट स्लॉट निवडा", oneHour: "1 तासाचे सत्र", fifteen: "15 मिनिटांचे सत्र", shown: "तुम्ही निवडलेल्या सेवेनुसार दाखवले आहेत. सर्व वेळ IST मध्ये आहेत.", loading: "ज्योतिषीची उपलब्धता तपासत आहोत…", unavailable: "सध्या कोणतेही {session} उपलब्ध नाहीत. कृपया नंतर पुन्हा तपासा.", date: "अपॉइंटमेंटची तारीख निवडा", selected: "स्लॉट निवडला आहे. पेमेंट पूर्ण होईपर्यंत तो 5 मिनिटांसाठी राखून ठेवला जाईल.", hour: "1 तास", min: "15 मिनिटे" },
+  en: { title: "Choose an available appointment slot", oneHour: "1-hour sessions", ten: "10-minute sessions", shown: "are shown based on your selected service. All times are in IST.", loading: "Checking astrologer availability…", unavailable: "No {session} are available yet. Please check again later.", date: "Choose appointment date", selected: "Selected slot. It will be held for 5 minutes while payment is completed.", hour: "1 hour", min: "10 min" },
+  hi: { title: "उपलब्ध अपॉइंटमेंट स्लॉट चुनें", oneHour: "1 घंटे के सत्र", ten: "10 मिनट के सत्र", shown: "आपकी चुनी हुई सेवा के अनुसार दिखाए गए हैं। सभी समय IST में हैं।", loading: "ज्योतिषी की उपलब्धता जाँची जा रही है…", unavailable: "अभी कोई {session} उपलब्ध नहीं हैं। कृपया बाद में फिर देखें।", date: "अपॉइंटमेंट की तारीख चुनें", selected: "स्लॉट चुन लिया गया है। भुगतान पूरा होने तक इसे 5 मिनट के लिए सुरक्षित रखा जाएगा।", hour: "1 घंटा", min: "10 मिनट" },
+  mr: { title: "उपलब्ध अपॉइंटमेंट स्लॉट निवडा", oneHour: "1 तासाचे सत्र", ten: "10 मिनिटांचे सत्र", shown: "तुम्ही निवडलेल्या सेवेनुसार दाखवले आहेत. सर्व वेळ IST मध्ये आहेत.", loading: "ज्योतिषीची उपलब्धता तपासत आहोत…", unavailable: "सध्या कोणतेही {session} उपलब्ध नाहीत. कृपया नंतर पुन्हा तपासा.", date: "अपॉइंटमेंटची तारीख निवडा", selected: "स्लॉट निवडला आहे. पेमेंट पूर्ण होईपर्यंत तो 5 मिनिटांसाठी राखून ठेवला जाईल.", hour: "1 तास", min: "10 मिनिटे" },
 } as const;
 
 export default function AvailabilityPicker({ selectedSlotId, onSelect, refreshToken = 0, service, language: languageProp }: { selectedSlotId: string; onSelect: (slot: Slot | null) => void; refreshToken?: number; service: string; language?: Language }) {
@@ -31,7 +31,7 @@ export default function AvailabilityPicker({ selectedSlotId, onSelect, refreshTo
   const [error, setError] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
   const isCompleteKundli = service === "Entire Kundli Analysis";
-  const requiredDuration = isCompleteKundli ? 60 : 15;
+  const requiredDuration = isCompleteKundli ? 60 : 10;
   const copy = COPY[language];
 
   useEffect(() => {
@@ -84,7 +84,7 @@ export default function AvailabilityPicker({ selectedSlotId, onSelect, refreshTo
 
   const selectedGroup = groups.find(([key]) => key === selectedDate)?.[1] ?? [];
   const selectedGroupDate = selectedGroup[0]?.startsAt;
-  const sessionLabel = isCompleteKundli ? copy.oneHour : copy.fifteen;
+  const sessionLabel = isCompleteKundli ? copy.oneHour : copy.ten;
 
   return (
     <div className="field" style={{ marginTop: 18 }}>
