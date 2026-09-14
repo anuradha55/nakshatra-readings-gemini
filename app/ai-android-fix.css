@@ -1,0 +1,40 @@
+/* Final AI mobile containment for Android and iOS. */
+@media (max-width: 860px) {
+  .ai-section .ai-panel,
+  .ai-section .ai-form,
+  .ai-section .ai-result,
+  .ai-section .ai-detailed-report,
+  .ai-section .ai-answer {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .ai-section .ai-panel { grid-template-columns: minmax(0, 1fr) !important; }
+  .ai-section .ai-form { display: flex !important; flex-direction: column !important; align-items: stretch !important; gap: 16px !important; overflow: visible !important; }
+
+  .ai-section .ai-form > .field,
+  .ai-section .ai-form > .birth-time-place-row,
+  .ai-section .ai-form > .birth-time-place-row > .field {
+    width: 100% !important; min-width: 0 !important; max-width: 100% !important; box-sizing: border-box !important;
+  }
+
+  .ai-section .ai-form > .birth-time-place-row { display: flex !important; flex-direction: column !important; gap: 16px !important; margin: 0 !important; }
+
+  .ai-section .ai-form input,
+  .ai-section .ai-form textarea,
+  .ai-section .ai-form select,
+  .ai-section .ai-form .custom-date-picker,
+  .ai-section .ai-form .custom-time-picker,
+  .ai-section .ai-form .ai-btn {
+    width: 100% !important; min-width: 0 !important; max-width: 100% !important; box-sizing: border-box !important;
+  }
+
+  .ai-section .ai-form .place-suggestions { width: 100% !important; max-width: 100% !important; box-sizing: border-box !important; overflow-x: hidden !important; }
+  .ai-section .ai-form .place-option { width: 100% !important; min-width: 0 !important; max-width: 100% !important; box-sizing: border-box !important; text-align: left !important; }
+  .ai-section .ai-result { overflow: hidden !important; }
+  .ai-section .ai-table-wrap { width: 100% !important; max-width: 100% !important; overflow-x: auto !important; -webkit-overflow-scrolling: touch !important; }
+  .ai-section .ai-table { min-width: 560px !important; }
+  .ai-section .ai-answer, .ai-section .ai-conclusion, .ai-section .ai-cta { overflow-wrap: anywhere !important; }
+}
