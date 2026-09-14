@@ -130,6 +130,37 @@ export default function AiPrediction({ language }: { language: Language }) {
     return () => { window.clearTimeout(timer); controller.abort(); };
   }, [birthPlace, selectedPlace, language]);
 
+  /* When the user changes Hindi/Marathi/English after selecting a place,
+     refresh that selected place in the new locale instead of leaving the
+     AI form showing the old-language place name. */
+  useEffect(() => {
+    if (!selectedPlace.trim()) return;
+    const query = selectedPlace.trim();
+    const controller = new AbortController();
+    const refreshLocalizedPlace = async () => {
+      try {
+        const url = new URL("https://geocoding-api.open-meteo.com/v1/search");
+        url.searchParams.set("name", query);
+        url.searchParams.set("count", "1");
+        url.searchParams.set("language", language === "hi" ? "hi" : language === "mr" ? "mr" : "en");
+        url.searchParams.set("format", "json");
+        const res = await fetch(url.toString(), { signal: controller.signal });
+        const data = await res.json();
+        const place = data?.results?.[0];
+        if (!place) return;
+        const localized = [place.name, place.admin1, place.country].filter(Boolean).join(", ");
+        if (localized) {
+          setSelectedPlace(localized);
+          setBirthPlace(localized);
+        }
+      } catch (error) {
+        if ((error as Error).name !== "AbortError") return;
+      }
+    };
+    void refreshLocalizedPlace();
+    return () => controller.abort();
+  }, [language]);
+
   function selectPlace(place: PlaceSuggestion) {
     const fullPlace = [place.name, place.admin1, place.country].filter(Boolean).join(", ");
     setSelectedPlace(fullPlace);
@@ -152,64 +183,25 @@ export default function AiPrediction({ language }: { language: Language }) {
   async function startPaidPredictionPayment(form: FormData) {
     if (!RAZORPAY_KEY_ID) throw new Error("Razorpay Key ID is not configured.");
     await loadRazorpay();
-
     const birthDate = String(form.get("birthDate") ?? "").trim();
     const birthTimeValue = String(form.get("birthTime") ?? "").trim();
     const birthPlaceValue = String(form.get("birthPlace") ?? "").trim();
-
-    const orderRes = await fetch("/api/ai-prediction/create-order", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ birthDate, birthTime: birthTimeValue, birthPlace: birthPlaceValue }),
-    });
+    const orderRes = await fetch("/api/ai-prediction/create-order", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ birthDate, birthTime: birthTimeValue, birthPlace: birthPlaceValue }) });
     const order = await orderRes.json().catch(() => null);
-    if (!orderRes.ok || !order?.id || !order?.paymentId) {
-      throw new Error(order?.error ?? "Unable to create the ₹10 AI prediction payment.");
-    }
+    if (!orderRes.ok || !order?.id || !order?.paymentId) throw new Error(order?.error ?? "Unable to create the ₹10 AI prediction payment.");
     if (!window.Razorpay) throw new Error("Razorpay Checkout is not available.");
-
-    const rzp = new window.Razorpay({
-      key: RAZORPAY_KEY_ID,
-      amount: order.amount,
-      currency: order.currency,
-      name: "Nakshatra Readings",
-      description: "AI Astrology Prediction",
-      order_id: order.id,
-      prefill: {
-        name: String(form.get("name") ?? ""),
-        email: String(form.get("email") ?? ""),
-      },
-      theme: { color: "#CDA463" },
-      handler: async (response: Record<string, string>) => {
-        try {
-          const verifyRes = await fetch("/api/ai-prediction/verify-payment", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-              paymentId: order.paymentId,
-            }),
-          });
-          const verified = await verifyRes.json().catch(() => null);
-          if (!verifyRes.ok || !verified?.success) throw new Error(verified?.error ?? "Payment verification failed.");
-
-          setPaidPaymentId(String(order.paymentId));
-          setMessage("Payment confirmed. Generating your AI prediction…");
-          setLoading(false);
-          window.setTimeout(() => document.getElementById("ai-paid-prediction-submit")?.click(), 150);
-        } catch (error) {
-          setMessage(error instanceof Error ? error.message : "Payment was received but could not be verified on the website.");
-        } finally {
-          setLoading(false);
-        }
-      },
-    });
-
-    rzp.on("payment.failed", () => {
-      setLoading(false);
-      setMessage("Payment was not completed. You have not been charged for the prediction.");
-    });
+    const rzp = new window.Razorpay({ key: RAZORPAY_KEY_ID, amount: order.amount, currency: order.currency, name: "Nakshatra Readings", description: "AI Astrology Prediction", order_id: order.id, prefill: { name: String(form.get("name") ?? ""), email: String(form.get("email") ?? "") }, theme: { color: "#CDA463" }, handler: async (response: Record<string, string>) => {
+      try {
+        const verifyRes = await fetch("/api/ai-prediction/verify-payment", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ razorpay_payment_id: response.razorpay_payment_id, razorpay_signature: response.razorpay_signature, paymentId: order.paymentId }) });
+        const verified = await verifyRes.json().catch(() => null);
+        if (!verifyRes.ok || !verified?.success) throw new Error(verified?.error ?? "Payment verification failed.");
+        setPaidPaymentId(String(order.paymentId));
+        setMessage("Payment confirmed. Generating your AI prediction…");
+        setLoading(false);
+        window.setTimeout(() => document.getElementById("ai-paid-prediction-submit")?.click(), 150);
+      } catch (error) { setMessage(error instanceof Error ? error.message : "Payment was received but could not be verified on the website."); } finally { setLoading(false); }
+    } });
+    rzp.on("payment.failed", () => { setLoading(false); setMessage("Payment was not completed. You have not been charged for the prediction."); });
     rzp.open();
   }
 
@@ -217,84 +209,40 @@ export default function AiPrediction({ language }: { language: Language }) {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
     const email = String(form.get("email") ?? "").trim().toLowerCase();
-
     setLoading(true); setAnswer(""); setChart(null); setMessage(""); setEmailStatus(""); setShowDetailedReport(false);
-
     if (freePredictionUsed && !paidPaymentId) {
-      try {
-        await startPaidPredictionPayment(form);
-      } catch (error) {
-        setLoading(false);
-        setMessage(error instanceof Error ? error.message : "Unable to start the ₹10 payment.");
-      }
+      try { await startPaidPredictionPayment(form); } catch (error) { setLoading(false); setMessage(error instanceof Error ? error.message : "Unable to start the ₹10 payment."); }
       return;
     }
-
     const payload = JSON.stringify({ name: form.get("name"), email, birthDate: form.get("birthDate"), birthTime: form.get("birthTime"), birthPlace: form.get("birthPlace"), question: form.get("question"), paidPaymentId: paidPaymentId || undefined, language });
-
     try {
       let lastError = "Could not generate a prediction.";
       for (let attempt = 0; attempt < 3; attempt += 1) {
         try {
           const res = await fetch("/api/ai-prediction", { method: "POST", headers: { "Content-Type": "application/json" }, body: payload });
-          let data: any = null;
-          try { data = await res.json(); } catch { data = null; }
-
+          let data: any = null; try { data = await res.json(); } catch { data = null; }
           if (res.ok) {
             const generatedAnswer = data?.answer ?? "";
-            setAnswer(generatedAnswer);
-            setPaidPaymentId("");
-            setChart(data?.chart ?? null);
-            setRemaining(data?.remaining ?? null);
-            if (data?.freePredictionUsed) {
-              setFreePredictionUsed(true);
-              setPaidPrice(Number(data?.paidPrice ?? 10));
-            }
-
-            try {
-              const emailRes = await fetch("/api/send-prediction-email", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name: form.get("name"), email, answer: generatedAnswer }),
-              });
-              setEmailStatus(emailRes.ok ? "A copy of your AI prediction has been sent to your email." : "");
-            } catch {
-              setEmailStatus("");
-            }
+            setAnswer(generatedAnswer); setPaidPaymentId(""); setChart(data?.chart ?? null); setRemaining(data?.remaining ?? null);
+            if (data?.freePredictionUsed) { setFreePredictionUsed(true); setPaidPrice(Number(data?.paidPrice ?? 10)); }
+            try { const emailRes = await fetch("/api/send-prediction-email", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: form.get("name"), email, answer: generatedAnswer }) }); setEmailStatus(emailRes.ok ? "A copy of your AI prediction has been sent to your email." : ""); } catch { setEmailStatus(""); }
             return;
           }
-
-          if (data?.freePredictionUsed) {
-            setFreePredictionUsed(true);
-            setPaidPrice(Number(data?.paidPrice ?? 10));
-            setMessage(data?.error ?? "The free AI prediction has already been used.");
-            return;
-          }
-
+          if (data?.freePredictionUsed) { setFreePredictionUsed(true); setPaidPrice(Number(data?.paidPrice ?? 10)); setMessage(data?.error ?? "The free AI prediction has already been used."); return; }
           lastError = data?.error ?? `Prediction service returned ${res.status}.`;
           if (!RETRYABLE_STATUS.has(res.status) || attempt === 2) break;
-        } catch (error) {
-          lastError = error instanceof Error ? error.message : "Network error while generating the prediction.";
-          if (attempt === 2) break;
-        }
+        } catch (error) { lastError = error instanceof Error ? error.message : "Network error while generating the prediction."; if (attempt === 2) break; }
         await wait(700 * (attempt + 1));
       }
       setMessage(lastError || "Could not generate a prediction. Please try again.");
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   }
 
   return (
     <section className="ai-section" id="free-prediction">
       <div className="wrap">
         <div className="ai-panel">
-          <div className="ai-copy">
-            <div className="eyebrow">{t.aiEyebrow}</div>
-            <h2>{t.aiTitle}</h2>
-            <p>{t.aiText}</p>
-            <div className="ai-benefits">{t.aiBenefits.map((benefit) => <span key={benefit}>✦ {benefit}</span>)}</div>
-          </div>
+          <div className="ai-copy"><div className="eyebrow">{t.aiEyebrow}</div><h2>{t.aiTitle}</h2><p>{t.aiText}</p><div className="ai-benefits">{t.aiBenefits.map((benefit) => <span key={benefit}>✦ {benefit}</span>)}</div></div>
           <form className="ai-form" onSubmit={submit} onInput={() => { setFreePredictionUsed(false); setPaidPaymentId(""); }}>
             <div className="field"><label htmlFor="ai-name">{t.aiName}</label><input id="ai-name" name="name" /></div>
             <div className="field"><label htmlFor="ai-email">{t.email}</label><input id="ai-email" name="email" type="email" required autoComplete="email" placeholder="name@example.com" title="Enter a valid email address, for example name@example.com" /></div>
@@ -306,13 +254,7 @@ export default function AiPrediction({ language }: { language: Language }) {
               </div>
             </div>
             <div className="field"><label htmlFor="ai-question">{t.question}</label><textarea id="ai-question" name="question" rows={4} maxLength={500} placeholder={language === "hi" ? "उदाहरण: मेरे करियर के लिए आने वाला समय कैसा रहेगा?" : language === "mr" ? "उदा. माझ्या करिअरसाठी येणारा काळ कसा असेल?" : "e.g. What does the coming period look like for my career?"} required /></div>
-            <button id="ai-paid-prediction-submit" className="btn-primary ai-btn" type="submit" disabled={loading}>
-              {loading
-                ? (language === "hi" ? "आपकी कुंडली की गणना हो रही है…" : language === "mr" ? "तुमच्या कुंडलीची गणना होत आहे…" : "Calculating your chart…")
-                : freePredictionUsed
-                  ? (language === "hi" ? `₹${paidPrice} में AI भविष्यवाणी प्राप्त करें` : language === "mr" ? `₹${paidPrice} मध्ये AI भविष्यवाणी मिळवा` : `Get an AI prediction for ₹${paidPrice}`)
-                  : (language === "hi" ? "1 मुफ्त AI भविष्यवाणी प्राप्त करें" : language === "mr" ? "1 मोफत AI भविष्यवाणी मिळवा" : "Get 1 free AI prediction")}
-            </button>
+            <button id="ai-paid-prediction-submit" className="btn-primary ai-btn" type="submit" disabled={loading}>{loading ? (language === "hi" ? "आपकी कुंडली की गणना हो रही है…" : language === "mr" ? "तुमच्या कुंडलीची गणना होत आहे…" : "Calculating your chart…") : freePredictionUsed ? (language === "hi" ? `₹${paidPrice} में AI भविष्यवाणी प्राप्त करें` : language === "mr" ? `₹${paidPrice} मध्ये AI भविष्यवाणी मिळवा` : `Get an AI prediction for ₹${paidPrice}`) : (language === "hi" ? "1 मुफ्त AI भविष्यवाणी प्राप्त करें" : language === "mr" ? "1 मोफत AI भविष्यवाणी मिळवा" : "Get 1 free AI prediction")}</button>
             {freePredictionUsed && <p className="ai-paid-note">{paidPaymentId ? "Payment confirmed. Generating your AI prediction…" : `The free AI prediction has already been used. Additional AI predictions are ₹${paidPrice} each.`}</p>}
             {remaining !== null && <p className="ai-remaining">{remaining} free prediction{remaining === 1 ? "" : "s"} remaining</p>}
             {message && <p className="status-msg status-err">{message}</p>}
