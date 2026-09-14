@@ -81,12 +81,18 @@ export async function ensureDailySessions(days = DAILY_SESSION_DAYS) {
 
   const existing = await prisma.availabilitySlot.findMany({
     where: { astrologerEmail, startsAt: { gte: rangeStart, lte: rangeEnd } },
-    select: { startsAt: true, endsAt: true },
+    select: { startsAt: true, endsAt: true, status: true },
   });
 
   const existingKeys = new Set(existing.map((slot) => `${slot.startsAt.toISOString()}|${slot.endsAt.toISOString()}`));
   const data: Array<{ astrologerEmail: string; astrologerName: string; startsAt: Date; endsAt: Date }> = [];
-  const intervals = existing.map((slot) => ({ startsAt: slot.startsAt.getTime(), endsAt: slot.endsAt.getTime() }));
+  // Legacy 15-minute AVAILABLE slots are ignored for overlap checks so they
+  // cannot prevent the new 10-minute schedule from being generated. They are
+  // also not shown by AvailabilityPicker anymore. Held/booked/blocked slots
+  // continue to protect their time from being double-booked.
+  const intervals = existing
+    .filter((slot) => slot.status !== "AVAILABLE")
+    .map((slot) => ({ startsAt: slot.startsAt.getTime(), endsAt: slot.endsAt.getTime() }));
 
   for (const date of dates) {
     for (const [startTime, endTime] of DAILY_SESSION_TEMPLATE) {
