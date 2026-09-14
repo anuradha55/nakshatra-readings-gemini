@@ -1,16 +1,16 @@
 import { Language, tr } from "@/lib/i18n";
 
 const SERVICES = [
-  ["☉", "Marriage", "₹100", "15 min"],
-  ["♀", "Relationships", "₹100", "15 min"],
-  ["♃", "Career", "₹100", "15 min"],
-  ["₹", "Finance", "₹100", "15 min"],
-  ["♧", "Family & Children", "₹100", "15 min"],
-  ["☿", "Health", "₹100", "15 min"],
-  ["✦", "Education", "₹100", "15 min"],
-  ["☾", "Spirituality", "₹100", "15 min"],
-  ["⚖", "Legal & Litigation", "₹100", "15 min"],
-  ["✧", "General life prediction", "₹100", "15 min"],
+  ["☉", "Marriage", "₹10", "1 question"],
+  ["♀", "Relationships", "₹10", "1 question"],
+  ["♃", "Career", "₹10", "1 question"],
+  ["₹", "Finance", "₹10", "1 question"],
+  ["♧", "Family & Children", "₹10", "1 question"],
+  ["☿", "Health", "₹10", "1 question"],
+  ["✦", "Education", "₹10", "1 question"],
+  ["☾", "Spirituality", "₹10", "1 question"],
+  ["⚖", "Legal & Litigation", "₹10", "1 question"],
+  ["✧", "General life prediction", "₹10", "1 question"],
   ["◈", "Entire Kundli Analysis", "₹500", "60 min"],
 ] as const;
 
@@ -145,7 +145,7 @@ export default function Services({ language }: { language: Language }) {
                 <span className="service-duration">{duration}</span>
               </div>
               <h3>{SERVICE_LABELS[language][title]}</h3>
-              <span className="price">{price} / {t.perSession}</span>
+              <span className="price">{price} / {title === "Entire Kundli Analysis" ? t.perSession : t.perQuestion}</span>
             </div>
           ))}
         </div>
